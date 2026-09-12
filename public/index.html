@@ -9,7 +9,7 @@
     <meta name="description" content="Nyayi - India's AI-powered Legal Assistant for citizens. Get instant legal guidance in Hindi & English.">
     <title>Nyayi Pro (न्यायी) - Indian Legal AI Assistant</title>
     <link rel="icon" type="image/png" href="images/logo.png">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=2">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
 </head>
 <body>
@@ -43,10 +43,6 @@
                 <i class="fa-solid fa-newspaper"></i>
                 <span>Legal Updates</span>
             </div>
-            <div class="tool-item" onclick="openTool('fir')">
-                <i class="fa-solid fa-file-shield"></i>
-                <span>FIR Writer</span>
-            </div>
             <div class="tool-item" onclick="openTool('bns')">
                 <i class="fa-solid fa-right-left"></i>
                 <span>IPC ⇋ BNS</span>
@@ -62,10 +58,6 @@
             <div class="tool-item" onclick="openTool('lawyer')">
                 <i class="fa-solid fa-user-tie"></i>
                 <span>Legal Aid</span>
-            </div>
-            <div class="tool-item" onclick="openTool('videos')">
-                <i class="fa-brands fa-youtube" style="color:#ef4444;"></i>
-                <span>Video Guides</span>
             </div>
         </div>
 
@@ -200,8 +192,8 @@
             <div class="wizard-step-content" id="firStep5">
                 <h4><i class="fa-solid fa-file-signature"></i> Step 5: Generate FIR / Complaint Draft</h4>
                 <p>थाना प्रभारी के नाम ऑफिशियल FIR एप्लीकेशन ड्राफ्ट तैयार करें:</p>
-                <button class="modal-btn" style="margin-top:10px;" onclick="closeAllModals(); openTool('fir');">
-                    <i class="fa-solid fa-arrow-right-to-bracket"></i> Open FIR Generator Tool
+                <button class="modal-btn" style="margin-top:10px;" onclick="closeAllModals(); openTool('drafter');">
+                    <i class="fa-solid fa-file-signature"></i> Open Legal Drafter Tool
                 </button>
                 <button class="modal-btn" style="margin-top:10px; background:var(--bg-body); color:var(--text-main); border:1px solid var(--border);" onclick="goToFIRStep(6)">Next: Police Refusal Remedy →</button>
             </div>
@@ -275,22 +267,6 @@
         </div>
     </div>
 
-    <!-- 1. FIR WRITER MODAL -->
-    <div class="modal-overlay" id="modal-fir">
-        <div class="modal-box">
-            <span class="modal-close" onclick="closeAllModals()">&times;</span>
-            <h3><i class="fa-solid fa-file-shield"></i> Instant FIR Generator</h3>
-            <p class="modal-desc">Police complaint draft taiyar karein aur seedhe print ya copy karein.</p>
-            <input type="text" id="fir-name" class="modal-input" placeholder="Victim Name (शिकायतकर्ता का नाम)">
-            <input type="text" id="fir-police" class="modal-input" placeholder="Police Station & City (थाना और शहर)">
-            <input type="text" id="fir-accused" class="modal-input" placeholder="Opponent / Accused Name (विपक्षी का नाम - Optional)">
-            <textarea id="fir-incident" class="modal-textarea" rows="4" placeholder="Describe Incident (Kya hua tha? Kab hua, kahan hua aur kitna nuksan hua?)"></textarea>
-            <button class="modal-btn" onclick="generateFIR()">
-                <i class="fa-solid fa-file-lines"></i> Generate Official FIR Draft
-            </button>
-            <div class="modal-result" id="fir-result"></div>
-        </div>
-    </div>
 
     <!-- 2. IPC <-> BNS CONVERTER MODAL -->
     <div class="modal-overlay" id="modal-bns">
@@ -393,32 +369,6 @@
         </div>
     </div>
 
-    <!-- 6. VIDEO GUIDES MODAL -->
-    <div class="modal-overlay" id="modal-videos">
-        <div class="modal-box" style="max-width:640px;">
-            <span class="modal-close" onclick="closeAllModals()">&times;</span>
-            <h3><i class="fa-brands fa-youtube" style="color:#ef4444;"></i> Citizen Rights & Legal Videos</h3>
-            <p class="modal-desc">Kanooni prakriya aur adhikar aasan bhasha me samjhein.</p>
-            
-            <div class="video-grid">
-                <div class="video-item">
-                    <iframe src="https://www.youtube.com/embed/5D4wK2_b9QY" title="How to file FIR" frameborder="0" allowfullscreen></iframe>
-                    <div class="video-item-info">
-                        <b>How to file FIR / Zero FIR in Police Station?</b>
-                        <span>Agar Police FIR likhne se inkar kare toh kya karein? (Section 154 CrPC / 173 BNSS)</span>
-                    </div>
-                </div>
-                <div class="video-item">
-                    <iframe src="https://www.youtube.com/embed/p9x8aCg5T28" title="Right to Arrest" frameborder="0" allowfullscreen></iframe>
-                    <div class="video-item-info">
-                        <b>Arrest Rights: Know Your Rights During Police Action</b>
-                        <span>D.K. Basu Guidelines aur 24 ghante ke andar Magistrate ke samne pesh hone ka niyam.</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- 7. SOS ALERT OVERLAY -->
     <div class="sos-overlay" id="sosOverlay">
         <div class="sos-box">
@@ -504,6 +454,6 @@
         </div>
     </nav>
 
-    <script src="js/script.js"></script>
+    <script src="js/script.js?v=2"></script>
 </body>
 </html>

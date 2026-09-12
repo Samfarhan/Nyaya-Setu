@@ -70,7 +70,12 @@ const server = http.createServer((req, res) => {
 
     fs.readFile(filePath, (error, content) => {
         if (!error) {
-            res.writeHead(200, { 'Content-Type': contentType });
+            res.writeHead(200, { 
+                'Content-Type': contentType,
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            });
             res.end(content);
         } else {
             // Try appending .html
@@ -170,11 +175,7 @@ RESPONSE FORMAT:
 1. **Summary (सारांश):** 1-2 sentence simple explanation of what happened legally.
 2. **Applicable Indian Laws (लागू कानून):** Explicitly mention Bharatiya Nyaya Sanhita (BNS, 2023) or IPC equivalents, IT Act 2000, CrPC/BNSS, or Motor Vehicles Act as relevant.
 3. **Step-by-Step Action Plan (उपाय एवं प्रक्रिया):** Clear actionable steps (e.g. cybercrime.gov.in, Dial 1930, writing FIR to SHO, approaching Legal Services Authority NALSA).
-4. **Important Precaution / Rights (सलाह):** Time limits, documents required, and citizen rights.
-
-VIDEO SEARCH RECOMMENDATION:
-- If procedural advice is given (e.g., FIR registration, RTI, Cyber fraud reporting, Challan disposal), provide a YouTube search link:
-  🎥 **Video Guide:** [Watch Step-by-Step Procedure](https://www.youtube.com/results?search_query=${encodeURIComponent(userMessage + ' procedure india')})`;
+4. **Important Precaution / Rights (सलाह):** Time limits, documents required, and citizen rights.`;
             }
 
             systemPrompt += `\n\nContext:\nCategory: ${category}\nUser Query: ${userMessage}`;

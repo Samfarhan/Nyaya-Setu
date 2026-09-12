@@ -185,13 +185,9 @@ function formatMessage(text) {
     formatted = formatted.replace(/^## (.*$)/gim, '<h2>$1</h2>');
     formatted = formatted.replace(/^# (.*$)/gim, '<h1>$1</h1>');
 
-    // Video Guide link card
+    // Standard links
     formatted = formatted.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, 
-        `<a href="$2" target="_blank" rel="noopener noreferrer" class="video-card">
-            <i class="fa-brands fa-youtube"></i>
-            <span>$1</span>
-            <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:11px; margin-left:auto;"></i>
-        </a>`
+        `<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--primary-dark); font-weight:600;">$1 <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:11px;"></i></a>`
     );
 
     // List bullets
@@ -433,12 +429,10 @@ function openTool(toolName) {
     if (window.innerWidth <= 768) toggleSidebar(false);
 
     const modalMap = {
-        'fir': 'modal-fir',
         'bns': 'modal-bns',
         'fine': 'modal-fine',
         'drafter': 'modal-drafter',
         'lawyer': 'modal-lawyer',
-        'videos': 'modal-videos',
         'settings': 'settingsModal',
         'factlaw': 'modal-factlaw',
         'firwizard': 'modal-firwizard',
@@ -528,55 +522,6 @@ function calculateFine() {
     }
 }
 
-// C. FIR Generator
-function generateFIR() {
-    const name = document.getElementById('fir-name').value.trim() || "शिकायतकर्ता / Complainant";
-    const police = document.getElementById('fir-police').value.trim() || "थाना प्रभारी (SHO)";
-    const accused = document.getElementById('fir-accused').value.trim() || "अज्ञात / Opponent";
-    const incident = document.getElementById('fir-incident').value.trim();
-    const resultDiv = document.getElementById('fir-result');
-
-    if (!incident) {
-        resultDiv.style.display = 'block';
-        resultDiv.innerHTML = '<span style="color:#ef4444;">Kripya ghatna ka vivran (incident details) darj karein.</span>';
-        return;
-    }
-
-    const today = new Date().toLocaleDateString('hi-IN', { day: 'numeric', month: 'long', year: 'numeric' });
-
-    const draft = `सेवा में,
-श्रीमान थाना प्रभारी महोदय,
-${police}।
-
-विषय: प्रथम सूचना रिपोर्ट (FIR) दर्ज कराने हेतु प्रार्थना पत्र।
-
-महोदय,
-सविनय निवेदन है कि मैं ${name}, इस प्रार्थना पत्र के माध्यम से निम्नलिखित घटना की सूचना दर्ज कराना चाहता/चाहती हूँ:
-
-1. यह कि आरोपी/विपक्षी का विवरण: ${accused}
-2. घटना का संपूर्ण विवरण:
-${incident}
-
-3. अतः श्रीमान जी से सविनय प्रार्थना है कि उक्त घटना का संज्ञान लेते हुए भारतीय न्याय संहिता (BNS) / सुसंगत धाराओं के अंतर्गत प्रथम सूचना रिपोर्ट (FIR) दर्ज कर उचित कानूनी कार्रवाई करने की कृपा करें।
-
-दिनांक: ${today}
-प्रार्थी / प्रार्थिनी: ${name}
-हस्ताक्षर: __________________`;
-
-    resultDiv.style.display = 'block';
-    resultDiv.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <b><i class="fa-solid fa-file-check"></i> Prepared FIR Application Draft:</b>
-            <button class="tool-pill" onclick="copyTextToClipboard(\`${encodeURIComponent(draft)}\`, this)">
-                <i class="fa-regular fa-copy"></i> Copy Draft
-            </button>
-        </div>
-        <pre style="white-space:pre-wrap; font-family:inherit; background:var(--sidebar-bg); padding:14px; border-radius:10px; border:1px solid var(--border); font-size:13px; line-height:1.6;">${escapeHtml(draft)}</pre>
-        <button class="modal-btn" style="margin-top:12px; font-size:13px; padding:10px;" onclick="window.print()">
-            <i class="fa-solid fa-print"></i> Print / Save PDF
-        </button>
-    `;
-}
 
 // D. Legal Notice Generator
 function generateLegalNotice() {
