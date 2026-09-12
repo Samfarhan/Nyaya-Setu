@@ -302,16 +302,20 @@ body {
     gap: 10px;
     text-decoration: none;
     cursor: pointer;
+    transition: transform 0.2s;
+}
+.brand-logo:hover {
+    transform: scale(1.02);
 }
 .brand-icon {
     font-size: 22px;
     color: var(--primary);
-    animation: brandPulse 2.5s ease-in-out infinite;
+    animation: brandPulse 3s ease-in-out infinite;
     filter: drop-shadow(0 0 6px rgba(0, 230, 118, 0.4));
 }
 @keyframes brandPulse {
     0%, 100% { transform: scale(1); filter: drop-shadow(0 0 6px rgba(0, 230, 118, 0.3)); }
-    50% { transform: scale(1.1); filter: drop-shadow(0 0 14px rgba(0, 230, 118, 0.6)); }
+    50% { transform: scale(1.15); filter: drop-shadow(0 0 12px rgba(0, 230, 118, 0.6)); }
 }
 .brand-name {
     font-size: 20px;
@@ -426,7 +430,13 @@ body {
     margin: auto 0;
     text-align: center;
     padding: 30px 15px;
+    animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 .welcome-badge-icon {
     width: 70px;
     height: 70px;
@@ -439,12 +449,17 @@ body {
     justify-content: center;
     margin-bottom: 18px;
     box-shadow: 0 8px 28px rgba(0, 230, 118, 0.25);
-    animation: heroIconFloat 3s ease-in-out infinite;
+    animation: heroIconFloat 3s ease-in-out infinite, scaleIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 @keyframes heroIconFloat {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-8px); }
 }
+@keyframes scaleIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
 .welcome-hero h1 {
     font-size: 30px;
     font-weight: 800;
@@ -477,20 +492,36 @@ body {
     font-weight: 500;
     color: var(--text-main);
     cursor: pointer;
-    transition: all 0.25s ease;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     box-shadow: var(--glass-shadow);
     display: flex;
     align-items: center;
     gap: 8px;
+    opacity: 0;
+    animation: chipFadeIn 0.5s forwards;
 }
+.chip:nth-child(1) { animation-delay: 0.1s; }
+.chip:nth-child(2) { animation-delay: 0.2s; }
+.chip:nth-child(3) { animation-delay: 0.3s; }
+.chip:nth-child(4) { animation-delay: 0.4s; }
+
+@keyframes chipFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 .chip i {
     color: var(--primary);
+    transition: transform 0.3s ease;
 }
 .chip:hover {
     border-color: var(--primary);
     background: var(--primary-light);
     transform: translateY(-3px);
-    box-shadow: 0 0 20px rgba(0, 230, 118, 0.2);
+    box-shadow: 0 6px 15px rgba(0, 230, 118, 0.2);
+}
+.chip:hover i {
+    transform: scale(1.2);
 }
 .chip:active {
     transform: scale(0.97);
@@ -506,19 +537,19 @@ body {
 .user-msg {
     align-self: flex-end;
     flex-direction: row-reverse;
-    animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .ai-msg {
     align-self: flex-start;
-    animation: slideInLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: slideInLeft 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 @keyframes slideInRight {
-    from { opacity: 0; transform: translateX(30px); }
-    to { opacity: 1; transform: translateX(0); }
+    from { opacity: 0; transform: translateX(30px) scale(0.95); }
+    to { opacity: 1; transform: translateX(0) scale(1); }
 }
 @keyframes slideInLeft {
-    from { opacity: 0; transform: translateX(-30px); }
-    to { opacity: 1; transform: translateX(0); }
+    from { opacity: 0; transform: translateX(-30px) scale(0.95); }
+    to { opacity: 1; transform: translateX(0) scale(1); }
 }
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(6px); }
@@ -725,14 +756,14 @@ input#userInput::placeholder {
     align-items: center;
     justify-content: center;
     font-size: 15px;
-    transition: all 0.25s;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     box-shadow: 0 2px 10px rgba(0, 230, 118, 0.35);
 }
 .send-btn:hover {
     background: var(--primary-dark);
     color: #ffffff;
-    transform: scale(1.08);
-    box-shadow: 0 0 24px rgba(0, 230, 118, 0.5);
+    transform: scale(1.15) rotate(-5deg);
+    box-shadow: 0 6px 20px rgba(0, 230, 118, 0.5);
 }
 
 /* --- MODAL SYSTEM --- */
@@ -846,7 +877,7 @@ input#userInput::placeholder {
     border: none;
     border-radius: 14px;
     cursor: pointer;
-    transition: all 0.25s;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -856,8 +887,8 @@ input#userInput::placeholder {
 .modal-btn:hover {
     background: var(--primary-dark);
     color: #ffffff;
-    box-shadow: 0 0 28px rgba(0, 230, 118, 0.45);
-    transform: translateY(-1px);
+    box-shadow: 0 8px 25px rgba(0, 230, 118, 0.45);
+    transform: translateY(-2px) scale(1.02);
 }
 
 .modal-result {
