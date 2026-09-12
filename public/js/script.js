@@ -698,77 +698,71 @@ function stopSOS() {
 let isVoiceMuted = false;
 
 // =========================================
-// 7. PREMIUM SPEECH SYNTHESIS ENGINE (TTS)
-//    Enhanced Pronunciation & Multi-Language
+// 7. RELIABLE SPEECH SYNTHESIS ENGINE (TTS)
 // =========================================
-function detectTextLanguage(text) {
-    const devanagari = (text.match(/[\u0900-\u097F]/g) || []).length;
-    const latin = (text.match(/[a-zA-Z]/g) || []).length;
-    if (devanagari > latin * 0.3) return 'hi-IN';
-    if (latin > devanagari) return 'en-IN';
-    return voiceLang || 'hi-IN';
-}
-
-function selectBestVoice(voices, langCode) {
-    const hindiNames = ['google hindi', 'microsoft swara', 'swara', 'aditi', 'heera', 'lekha'];
-    const englishNames = ['google uk english female', 'microsoft zira', 'zira', 'samantha', 'karen', 'veena'];
-    const searchNames = langCode.startsWith('hi') ? hindiNames : englishNames;
-    const langPrefix = langCode.startsWith('hi') ? 'hi' : 'en';
-
-    for (const name of searchNames) {
-        const found = voices.find(v => v.name.toLowerCase().includes(name));
-        if (found) return found;
-    }
-    const femaleVoice = voices.find(v => v.lang.startsWith(langPrefix) && !v.name.toLowerCase().includes('male'));
-    if (femaleVoice) return femaleVoice;
-    const langVoice = voices.find(v => v.lang.startsWith(langPrefix));
-    if (langVoice) return langVoice;
-    return voices.find(v => v.lang.includes('IN')) || null;
-}
-
 function playTTS(text, onStart, onEnd) {
-    if (isVoiceMuted) { if (onEnd) onEnd(); return; }
+    if (isVoiceMuted) return;
     const synth = window.speechSynthesis;
-    if (!synth) { if (onEnd) onEnd(); return; }
+    if (!synth) {
+        alert("Speech Synthesis is not supported in your browser.");
+        return;
+    }
 
+    // Force unlock audio queue
     synth.cancel();
     if (synth.paused) synth.resume();
 
     setTimeout(() => {
-        let cleanText = text
+        // Strip HTML, markdown formatting, URL cards
+        const cleanText = text
             .replace(/<[^>]*>/g, ' ')
             .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
-            .replace(/[\*#_`~|]/g, '')
-            .replace(/\bhttps?:\/\/\S+/g, '')
+            .replace(/[\*#_`~]/g, '')
             .replace(/\s+/g, ' ')
             .trim();
 
-        if (!cleanText) { if (onEnd) onEnd(); return; }
-        if (cleanText.length > 800) {
-            cleanText = cleanText.substring(0, 800) + '... aur adhik jaankari ke liye text padhein.';
-        }
+        if (!cleanText) return;
 
-        const detectedLang = detectTextLanguage(cleanText);
         const utterance = new SpeechSynthesisUtterance(cleanText);
-        utterance.lang = detectedLang;
-        utterance.rate = detectedLang.startsWith('hi') ? 0.92 : 0.95;
-        utterance.pitch = 1.12;
+        utterance.lang = voiceLang || 'hi-IN';
+        utterance.rate = 0.95;
+        utterance.pitch = 1.15; // Natural female pitch
 
         const speakNow = () => {
             const voices = synth.getVoices();
             if (voices.length > 0) {
-                const bestVoice = selectBestVoice(voices, detectedLang);
-                if (bestVoice) utterance.voice = bestVoice;
+                // Priority to Female Indian/Hindi voices
+                const femaleVoice = voices.find(v => (v.lang.includes('hi') || v.lang.includes('IN') || v.lang.includes('en')) && (
+                    v.name.toLowerCase().includes('female') ||
+                    v.name.toLowerCase().includes('woman') ||
+                    v.name.toLowerCase().includes('swara') ||
+                    v.name.toLowerCase().includes('aditi') ||
+                    v.name.toLowerCase().includes('google hindi') ||
+                    v.name.toLowerCase().includes('heera') ||
+                    v.name.toLowerCase().includes('zira') ||
+                    v.name.toLowerCase().includes('veena')
+                )) || voices.find(v => v.lang.includes('hi') || v.lang.includes('IN'));
+
+                if (femaleVoice) utterance.voice = femaleVoice;
             }
+
             if (onStart) utterance.onstart = onStart;
-            if (onEnd) { utterance.onend = onEnd; utterance.onerror = onEnd; }
+            if (onEnd) {
+                utterance.onend = onEnd;
+                utterance.onerror = onEnd;
+            }
+
             synth.resume();
             synth.speak(utterance);
         };
 
-        if (synth.getVoices().length > 0) { speakNow(); }
-        else { synth.onvoiceschanged = speakNow; setTimeout(speakNow, 200); }
-    }, 120);
+        if (synth.getVoices().length > 0) {
+            speakNow();
+        } else {
+            synth.onvoiceschanged = speakNow;
+            setTimeout(speakNow, 150);
+        }
+    }, 100);
 }
 
 function speakMessage(btn, text) {
