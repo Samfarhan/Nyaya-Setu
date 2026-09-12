@@ -6,6 +6,12 @@ let chats = JSON.parse(localStorage.getItem('nyayaChats')) || [];
 let activeChatId = null;
 let user = localStorage.getItem('nyayaUser') || "Citizen";
 
+// Voice Assistant state
+let voiceLang = 'hi-IN'; // default Hindi
+let isVoiceQuery = false; // flag to auto-speak response
+let autoSpeak = true; // auto-speak AI response after voice query
+let activeRecognition = null;
+
 // IPC to BNS Database (Comprehensive Official Mapping)
 const BNS_DATABASE = {
     '420': { bns: 'Section 318(4)', title: 'Cheating (धोखाधड़ी / छल)', punishment: 'Up to 7 years imprisonment + Fine', bailable: 'Non-Bailable', cognizable: 'Cognizable' },
@@ -75,10 +81,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Escape key closes modals
+    // Keyboard Shortcuts
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeAllModals();
+        if (e.key === 'Escape') {
+            closeAllModals();
+            closeVoiceAssistant();
+        }
+        // Alt+V or Ctrl+Shift+V for Voice Assistant
+        if ((e.altKey && e.key.toLowerCase() === 'v') || (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'v')) {
+            e.preventDefault();
+            openVoiceAssistant();
+        }
     });
+
+    // Swipe gesture to open/close sidebar on touch devices
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    document.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    document.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        const diff = touchEndX - touchStartX;
+        if (diff > 80 && touchStartX < 40) {
+            // Swipe right from left edge → open sidebar
+            toggleSidebar(true);
+        } else if (diff < -80) {
+            // Swipe left → close sidebar
+            toggleSidebar(false);
+        }
+    }, { passive: true });
 });
 
 // =========================================
@@ -92,7 +126,7 @@ function renderEmptyState() {
             <div class="welcome-badge-icon">
                 <i class="fa-solid fa-scale-balanced"></i>
             </div>
-            <h1>Namaste, ${escapeHtml(user)} Ji</h1>
+            <h1 class="gradient-text">Namaste, ${escapeHtml(user)} Ji</h1>
             <p>NyayaSetu (न्याय सेतु) me aapka swagat hai. Indian Penal Code, BNS 2023, Police FIR, Traffic Challan ya Consumer rights par turant vishwasniya kanooni margdarshan prapt karein.</p>
             
             <div class="suggestion-chips">
@@ -279,6 +313,9 @@ async function sendMessage() {
         appendMessage(reply, 'ai');
         currentChat.messages.push({ role: 'ai', text: reply });
         saveData();
+
+        // Auto speak response if triggered by voice assistant
+        autoSpeakResponse(reply);
 
     } catch (err) {
         console.error("Chat API error:", err);
@@ -592,7 +629,143 @@ function stopSOS() {
     if (sosOverlay) sosOverlay.classList.remove('active');
 }
 
-// F. Speech & Audio
+// =========================================
+// 7. VOICE ASSISTANT SYSTEM
+// =========================================
+function openVoiceAssistant() {
+    closeAllModals();
+    const overlay = document.getElementById('voiceOverlay');
+    if (!overlay) return;
+
+    overlay.classList.add('active');
+    document.getElementById('voiceStatus').innerText = '🎤 Listening... Speak now';
+    document.getElementById('voiceTranscript').innerText = '';
+    document.getElementById('voiceMicBtn').classList.add('listening');
+
+    // Auto start recognition
+    setTimeout(() => {
+        startVoiceRecognition();
+    }, 300);
+}
+
+function closeVoiceAssistant() {
+    const overlay = document.getElementById('voiceOverlay');
+    if (overlay) overlay.classList.remove('active');
+
+    const micBtn = document.getElementById('voiceMicBtn');
+    if (micBtn) micBtn.classList.remove('listening');
+
+    if (activeRecognition) {
+        try { activeRecognition.stop(); } catch (e) {}
+        activeRecognition = null;
+    }
+
+    if (window.speechSynthesis && window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+    }
+}
+
+function toggleVoiceRecognition() {
+    if (activeRecognition) {
+        closeVoiceAssistant();
+    } else {
+        openVoiceAssistant();
+    }
+}
+
+function startVoiceRecognition() {
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRec) {
+        document.getElementById('voiceStatus').innerText = '❌ Speech Recognition not supported in this browser.';
+        return;
+    }
+
+    if (activeRecognition) {
+        try { activeRecognition.stop(); } catch(e) {}
+    }
+
+    const recognition = new SpeechRec();
+    activeRecognition = recognition;
+    recognition.lang = voiceLang;
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    recognition.onstart = () => {
+        document.getElementById('voiceStatus').innerText = '🎤 Listening... Speak now';
+        document.getElementById('voiceMicBtn').classList.add('listening');
+    };
+
+    recognition.onresult = (e) => {
+        let transcript = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+            transcript += e.results[i][0].transcript;
+        }
+        document.getElementById('voiceTranscript').innerText = `"${transcript}"`;
+
+        if (e.results[0].isFinal) {
+            document.getElementById('voiceStatus').innerText = '⚡ Processing legal response...';
+            document.getElementById('voiceMicBtn').classList.remove('listening');
+
+            isVoiceQuery = true;
+            document.getElementById('userInput').value = transcript;
+            
+            setTimeout(() => {
+                closeVoiceAssistant();
+                sendMessage();
+            }, 600);
+        }
+    };
+
+    recognition.onerror = (err) => {
+        console.warn("Speech recognition error:", err);
+        document.getElementById('voiceStatus').innerText = 'Tap mic to try speaking again';
+        document.getElementById('voiceMicBtn').classList.remove('listening');
+        activeRecognition = null;
+    };
+
+    recognition.onend = () => {
+        document.getElementById('voiceMicBtn').classList.remove('listening');
+        activeRecognition = null;
+    };
+
+    recognition.start();
+}
+
+function toggleVoiceLang() {
+    if (voiceLang === 'hi-IN') {
+        voiceLang = 'en-IN';
+        document.getElementById('voiceLangLabel').innerText = 'English (en-IN)';
+    } else {
+        voiceLang = 'hi-IN';
+        document.getElementById('voiceLangLabel').innerText = 'हिंदी (hi-IN)';
+    }
+    // Restart recognition if active
+    if (document.getElementById('voiceOverlay').classList.contains('active')) {
+        startVoiceRecognition();
+    }
+}
+
+function autoSpeakResponse(text) {
+    if (isVoiceQuery && autoSpeak) {
+        isVoiceQuery = false;
+        const cleanForAudio = text.replace(/\[.*?\]\(.*?\)/g, '').replace(/[\*#_]/g, '');
+        
+        // Find dummy or valid speak button to pass
+        const synth = window.speechSynthesis;
+        if (!synth) return;
+
+        if (synth.speaking) synth.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(cleanForAudio);
+        const voices = synth.getVoices();
+        const preferredVoice = voices.find(v => v.lang.includes('hi') || v.lang.includes('IN'));
+        if (preferredVoice) utterance.voice = preferredVoice;
+        utterance.rate = 1.0;
+
+        synth.speak(utterance);
+    }
+}
+
 function speakMessage(btn, text) {
     const synth = window.speechSynthesis;
     if (!synth) return alert("Speech Synthesis not supported by this browser.");
@@ -623,39 +796,7 @@ function speakMessage(btn, text) {
 }
 
 function toggleMic() {
-    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRec) {
-        return alert("Speech Recognition is supported best in Google Chrome or Microsoft Edge.");
-    }
-
-    const micBtn = document.getElementById('micBtn');
-    const input = document.getElementById('userInput');
-
-    const recognition = new SpeechRec();
-    recognition.lang = 'hi-IN';
-    recognition.continuous = false;
-    recognition.interimResults = false;
-
-    recognition.onstart = () => {
-        micBtn.classList.add('active');
-    };
-
-    recognition.onend = () => {
-        micBtn.classList.remove('active');
-    };
-
-    recognition.onresult = (e) => {
-        const transcript = e.results[0][0].transcript;
-        input.value = transcript;
-        sendMessage();
-    };
-
-    recognition.onerror = (err) => {
-        console.warn("Speech recognition error:", err);
-        micBtn.classList.remove('active');
-    };
-
-    recognition.start();
+    openVoiceAssistant();
 }
 
 function copyMessageText(btn, text) {
@@ -690,7 +831,28 @@ function shareResponse(text) {
     }
 }
 
-// G. UI Helpers & Settings
+// =========================================
+// 8. BOTTOM NAV & UI HELPERS
+// =========================================
+function switchBottomNav(tab) {
+    document.querySelectorAll('.bottom-nav-item').forEach(item => item.classList.remove('active'));
+    
+    if (tab === 'home') {
+        const homeBtn = document.getElementById('bottomNavHome');
+        if (homeBtn) homeBtn.classList.add('active');
+        toggleSidebar(false);
+        closeAllModals();
+    } else if (tab === 'tools') {
+        const toolsBtn = document.getElementById('bottomNavTools');
+        if (toolsBtn) toolsBtn.classList.add('active');
+        toggleSidebar(true);
+    } else if (tab === 'history') {
+        const historyBtn = document.getElementById('bottomNavHistory');
+        if (historyBtn) historyBtn.classList.add('active');
+        toggleSidebar(true);
+    }
+}
+
 function toggleSidebar(forceState) {
     const sidebar = document.getElementById('sidebar-container');
     const backdrop = document.getElementById('overlayBackdrop');

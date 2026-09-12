@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#00E676">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="description" content="NyayaSetu - India's AI-powered Legal Assistant for citizens. Get instant legal guidance in Hindi & English.">
     <title>NyayaSetu Pro (न्याय सेतु) - Indian Legal AI Assistant</title>
     <link rel="stylesheet" href="css/style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
@@ -92,7 +96,7 @@
         <div class="input-area">
             <div class="input-wrapper">
                 <input type="text" id="userInput" placeholder="Apna kanooni sawaal yahan likhein (Ask legal question)..." onkeypress="handleEnter(event)" autocomplete="off">
-                <i class="fa-solid fa-microphone mic-btn" id="micBtn" onclick="toggleMic()" title="Voice Input (Hindi/English)"></i>
+                <i class="fa-solid fa-microphone mic-btn" id="micBtn" onclick="openVoiceAssistant()" title="Voice Assistant (Hindi/English)"></i>
                 <button class="send-btn" onclick="sendMessage()" title="Send Message">
                     <i class="fa-solid fa-paper-plane"></i>
                 </button>
@@ -190,7 +194,7 @@
             <div style="background:var(--primary-light); border:1px solid var(--primary); padding:14px; border-radius:12px; margin-bottom:18px;">
                 <b style="color:var(--primary-dark); font-size:14px;"><i class="fa-solid fa-landmark"></i> National Legal Services (NALSA):</b>
                 <p style="font-size:13px; color:var(--text-main); margin-top:4px;">Article 39A ke tehat har garib aur zarooratmand nagrik ko muft kanooni sahayata pane ka adhikar hai.</p>
-                <div style="margin-top:10px; display:flex; gap:10px;">
+                <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
                     <a href="tel:15100" class="lawyer-call-btn" style="background:#111827; color:#fff;"><i class="fa-solid fa-phone"></i> Dial 15100 (Muft Helpline)</a>
                     <a href="https://nalsa.gov.in" target="_blank" class="lawyer-call-btn"><i class="fa-solid fa-arrow-up-right-from-square"></i> NALSA Portal</a>
                 </div>
@@ -273,6 +277,50 @@
             </button>
         </div>
     </div>
+
+    <!-- VOICE ASSISTANT OVERLAY -->
+    <div class="voice-overlay" id="voiceOverlay">
+        <button class="voice-close" id="voiceCloseBtn" onclick="closeVoiceAssistant()">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <div class="voice-pulse-container">
+            <div class="voice-pulse-ring"></div>
+            <div class="voice-pulse-ring"></div>
+            <div class="voice-pulse-ring"></div>
+            <div class="voice-mic-center" id="voiceMicBtn" onclick="toggleVoiceRecognition()">
+                <i class="fa-solid fa-microphone"></i>
+            </div>
+        </div>
+        <div class="voice-status" id="voiceStatus">Tap mic to speak</div>
+        <div class="voice-transcript" id="voiceTranscript"></div>
+        <button class="voice-lang-toggle" id="voiceLangToggle" onclick="toggleVoiceLang()">
+            <i class="fa-solid fa-language"></i> Language: <span id="voiceLangLabel">हिंदी (hi-IN)</span>
+        </button>
+    </div>
+
+    <!-- MOBILE BOTTOM NAV -->
+    <nav class="bottom-nav" id="bottomNav">
+        <div class="bottom-nav-item active" id="bottomNavHome" onclick="switchBottomNav('home')">
+            <i class="fa-solid fa-house"></i>
+            <span>Home</span>
+        </div>
+        <div class="bottom-nav-item" id="bottomNavTools" onclick="switchBottomNav('tools')">
+            <i class="fa-solid fa-briefcase"></i>
+            <span>Tools</span>
+        </div>
+        <div class="bottom-nav-item" id="bottomNavVoice" onclick="openVoiceAssistant()">
+            <i class="fa-solid fa-microphone" style="color:var(--primary);"></i>
+            <span>Voice</span>
+        </div>
+        <div class="bottom-nav-item" id="bottomNavHistory" onclick="switchBottomNav('history')">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>History</span>
+        </div>
+        <div class="bottom-nav-item" id="bottomNavSos" onclick="triggerSOS()">
+            <i class="fa-solid fa-bell" style="color:#ef4444;"></i>
+            <span style="color:#ef4444;">SOS</span>
+        </div>
+    </nav>
 
     <script src="js/script.js"></script>
 </body>
