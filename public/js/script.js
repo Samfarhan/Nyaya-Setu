@@ -134,12 +134,9 @@ function renderEmptyState() {
                 <i class="fa-solid fa-scale-balanced"></i>
             </div>
             <h1 class="gradient-text">Namaste, ${escapeHtml(user)} Ji</h1>
-            <p>NyayaSetu (न्याय सेतु) me aapka swagat hai. Developed by <b>Farhan Khan (BCA Student)</b>. Indian Penal Code, BNS 2023, Police FIR, Traffic Challan ya Consumer rights par turant vishwasniya kanooni margdarshan prapt karein.</p>
+            <p>NyayaSetu (न्याय सेतु) me aapka swagat hai. Indian Penal Code, BNS 2023, Police FIR, Traffic Challan ya Consumer rights par turant vishwasniya kanooni margdarshan prapt karein.</p>
             
             <div class="suggestion-chips">
-                <button class="chip" onclick="askSuggestion('Tumhe kisine banaya hai?')">
-                    <i class="fa-solid fa-code"></i> Who created NyayaSetu?
-                </button>
                 <button class="chip" onclick="askSuggestion('Mera online cyber fraud ho gaya hai, paise wapas kaise paayein?')">
                     <i class="fa-solid fa-shield-halved"></i> Cyber Fraud Recovery (1930)
                 </button>
@@ -148,6 +145,9 @@ function renderEmptyState() {
                 </button>
                 <button class="chip" onclick="askSuggestion('IPC Section 420 aur BNS me kya antar hai?')">
                     <i class="fa-solid fa-right-left"></i> IPC 420 vs BNS 318
+                </button>
+                <button class="chip" onclick="askSuggestion('Tenant rent nahi de raha hai, legal notice kaise bhein?')">
+                    <i class="fa-solid fa-house-chimney-user"></i> Tenant & Property Dispute
                 </button>
             </div>
         </div>
