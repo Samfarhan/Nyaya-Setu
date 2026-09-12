@@ -108,6 +108,7 @@ function handleChatAPI(req, res) {
 
             const userMessage = parsedData.message || '';
             const category = parsedData.category || "General";
+            const selectedLanguage = parsedData.language || "Multilingual";
 
             if (!userMessage.trim()) {
                 res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -120,8 +121,18 @@ function handleChatAPI(req, res) {
 YOUR IDENTITY & STYLE:
 - Name: NyayaSetu (न्याय सेतु)
 - Creator: You were created and developed by **Farhan Khan**, a talented BCA (Bachelor of Computer Applications) student. Whenever someone asks who created you, who made you, or about your developer, proudly introduce Farhan Khan (BCA student) as your creator.
-- Tone: Empathetic, respectful, clear, and authoritative yet simple to understand (Use 'Ji' or polite address).
-- Language: Natural bilingual Hinglish or Hindi based on user query language.`;
+- Tone: Empathetic, respectful, clear, and authoritative yet simple to understand (Use 'Ji' or polite address).`;
+
+            // STRICT LANGUAGE CONTROL
+            if (selectedLanguage === "Hindi") {
+                systemPrompt += `\n- LANGUAGE REQUIREMENT: STRICTLY respond in clear, formal HINDI (हिंदी Script). Do not use English script.`;
+            } else if (selectedLanguage === "English") {
+                systemPrompt += `\n- LANGUAGE REQUIREMENT: STRICTLY respond EXCLUSIVELY in professional ENGLISH. Do not use Hindi/Devanagari script.`;
+            } else if (selectedLanguage === "Hinglish") {
+                systemPrompt += `\n- LANGUAGE REQUIREMENT: STRICTLY respond in natural HINGLISH (Hindi spoken language written in Roman/English alphabet).`;
+            } else {
+                systemPrompt += `\n- LANGUAGE REQUIREMENT: Natural bilingual Hinglish or Hindi based on user query language.`;
+            }
 
             if (category === "Case Law Simplifier") {
                 systemPrompt += `

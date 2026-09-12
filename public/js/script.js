@@ -7,11 +7,12 @@ let chats = JSON.parse(localStorage.getItem('nyayaChats')) || [];
 let activeChatId = null;
 let user = localStorage.getItem('nyayaUser') || "Citizen";
 
-// Voice Assistant state
+// Voice Assistant & Language state
 let voiceLang = 'hi-IN'; // default Hindi
 let isVoiceQuery = false; // flag to auto-speak response
 let autoSpeak = true; // auto-speak AI response after voice query
 let activeRecognition = null;
+let aiLanguage = localStorage.getItem('nyayaLanguage') || 'Multilingual';
 
 // IPC to BNS Database (Comprehensive Official Mapping)
 const BNS_DATABASE = {
@@ -56,6 +57,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if ('speechSynthesis' in window) {
         window.speechSynthesis.getVoices();
         window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    }
+
+    // Restore selected AI language dropdown
+    const langSelectEl = document.getElementById('langSelect');
+    if (langSelectEl) {
+        langSelectEl.value = aiLanguage;
     }
 
     // Restore dark mode
@@ -325,7 +332,7 @@ async function sendMessage() {
         const response = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: text, category: "Indian Legal Advisory" })
+            body: JSON.stringify({ message: text, category: "Indian Legal Advisory", language: aiLanguage })
         });
 
         removeTypingIndicator();
@@ -1035,6 +1042,11 @@ function updateThemeIcon(isDark) {
     if (icon) {
         icon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
     }
+}
+
+function changeAILanguage(langVal) {
+    aiLanguage = langVal;
+    localStorage.setItem('nyayaLanguage', langVal);
 }
 
 function saveSettings() {

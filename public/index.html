@@ -93,6 +93,12 @@
                 </div>
             </div>
             <div class="nav-right">
+                <select id="langSelect" class="lang-select-dropdown" onchange="changeAILanguage(this.value)" title="Select AI Response Language">
+                    <option value="Multilingual">🌐 Multilingual</option>
+                    <option value="Hindi">🇮🇳 हिंदी (Hindi)</option>
+                    <option value="English">🇬🇧 English</option>
+                    <option value="Hinglish">🗣️ Hinglish</option>
+                </select>
                 <button class="sos-btn" onclick="triggerSOS()">
                     <i class="fa-solid fa-bell"></i> SOS
                 </button>
