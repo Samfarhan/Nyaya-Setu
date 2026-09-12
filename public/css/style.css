@@ -1328,8 +1328,52 @@ input#userInput::placeholder {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
+.voice-controls-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.voice-control-btn {
+    padding: 9px 18px;
+    border-radius: 50px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: all 0.25s;
+    font-family: inherit;
+}
+.voice-control-btn:hover {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
+}
+.voice-control-btn.stop-btn {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #fecaca;
+}
+.voice-control-btn.stop-btn:hover {
+    background: rgba(239, 68, 68, 0.35);
+    border-color: #ef4444;
+}
+.voice-control-btn.muted {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: rgba(245, 158, 11, 0.5);
+    color: #fde68a;
+}
+
 .voice-lang-toggle {
-    padding: 8px 18px;
+    padding: 9px 18px;
     border-radius: 50px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     background: rgba(255, 255, 255, 0.08);

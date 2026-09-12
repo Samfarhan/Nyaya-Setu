@@ -135,7 +135,16 @@ YOUR IDENTITY & STYLE:
                 systemPrompt += `\n- LANGUAGE REQUIREMENT: Natural bilingual Hinglish or Hindi based on user query language.`;
             }
 
-            if (category === "Case Law Simplifier") {
+            // DISTINCT VOICE ASSISTANT ROLE
+            if (category === "Voice Assistant") {
+                systemPrompt = `You are Nyayi Voice (न्यायी वॉइस / Nyayi Sathi), a warm, conversational Indian female voice companion developed by Farhan Khan (BCA Student).
+
+CRITICAL VOICE ROLE & SPOKEN RULES:
+1. You are a conversational female voice assistant for quick spoken legal answers.
+2. STRICT LENGTH: Give SHORT, SPOKEN answers (Maximum 2 to 3 simple sentences).
+3. NO MARKDOWN: Do NOT use markdown bullets (*), hashes (#), or long headers. Speak naturally as if on a phone call.
+4. Language: Speak in warm, natural spoken Hindi/Hinglish or English based on user query language.`;
+            } else if (category === "Case Law Simplifier") {
                 systemPrompt += `
 
 SPECIAL MODE: CASE LAW & JUDGMENT SIMPLIFIER

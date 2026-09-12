@@ -750,10 +750,13 @@ function stopSOS() {
     if (sosOverlay) sosOverlay.classList.remove('active');
 }
 
+let isVoiceMuted = false;
+
 // =========================================
 // 7. RELIABLE SPEECH SYNTHESIS ENGINE (TTS)
 // =========================================
 function playTTS(text, onStart, onEnd) {
+    if (isVoiceMuted) return;
     const synth = window.speechSynthesis;
     if (!synth) {
         alert("Speech Synthesis is not supported in your browser.");
@@ -888,6 +891,36 @@ function closeVoiceAssistant() {
     if (window.speechSynthesis && window.speechSynthesis.speaking) {
         window.speechSynthesis.cancel();
     }
+}
+
+function toggleVoiceMute() {
+    isVoiceMuted = !isVoiceMuted;
+    const btn = document.getElementById('voiceMuteBtn');
+    const icon = document.getElementById('voiceMuteIcon');
+    const label = document.getElementById('voiceMuteLabel');
+
+    if (isVoiceMuted) {
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        if (btn) btn.classList.add('muted');
+        if (icon) icon.className = 'fa-solid fa-volume-xmark';
+        if (label) label.innerText = 'Unmute Audio';
+        document.getElementById('voiceStatus').innerText = '🔇 Audio Muted';
+    } else {
+        if (btn) btn.classList.remove('muted');
+        if (icon) icon.className = 'fa-solid fa-volume-high';
+        if (label) label.innerText = 'Mute Audio';
+        document.getElementById('voiceStatus').innerText = '🔊 Audio Unmuted';
+    }
+}
+
+function stopVoiceAssistant() {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    if (activeRecognition) {
+        try { activeRecognition.stop(); } catch (e) {}
+        activeRecognition = null;
+    }
+    document.getElementById('voiceMicBtn').classList.remove('listening');
+    document.getElementById('voiceStatus').innerText = '⏹️ Stopped. (Tap mic to speak)';
 }
 
 function toggleVoiceRecognition() {

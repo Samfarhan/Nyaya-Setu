@@ -465,9 +465,19 @@
         <div class="voice-status" id="voiceStatus">Tap mic to speak</div>
         <div class="voice-transcript" id="voiceTranscript"></div>
         <div class="voice-response-box" id="voiceResponseBox" style="display:none;"></div>
-        <button class="voice-lang-toggle" id="voiceLangToggle" onclick="toggleVoiceLang()">
-            <i class="fa-solid fa-language"></i> Language: <span id="voiceLangLabel">हिंदी (hi-IN)</span>
-        </button>
+        <div class="voice-controls-bar">
+            <button class="voice-control-btn" id="voiceMuteBtn" onclick="toggleVoiceMute()" title="Mute/Unmute Assistant Audio">
+                <i class="fa-solid fa-volume-high" id="voiceMuteIcon"></i>
+                <span id="voiceMuteLabel">Mute Audio</span>
+            </button>
+            <button class="voice-control-btn stop-btn" id="voiceStopBtn" onclick="stopVoiceAssistant()" title="Click to Stop Listening & Speaking">
+                <i class="fa-solid fa-circle-stop"></i>
+                <span>Click to Stop</span>
+            </button>
+            <button class="voice-lang-toggle" id="voiceLangToggle" onclick="toggleVoiceLang()">
+                <i class="fa-solid fa-language"></i> <span id="voiceLangLabel">हिंदी (hi-IN)</span>
+            </button>
+        </div>
     </div>
 
     <!-- MOBILE BOTTOM NAV -->
