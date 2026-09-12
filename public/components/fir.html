@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIR Writer - NyayaSetu</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <a href="index.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back to Chat</a>
+    
+    <div class="page-container">
+        <div class="page-header">
+            <i class="fa-solid fa-file-shield page-icon"></i>
+            <h1>FIR Generator</h1>
+            <p>Generate a professional Police Complaint instantly.</p>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Victim Name (पीड़ित का नाम)</label>
+            <input type="text" id="name" class="form-input" placeholder="Enter Name">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Police Station (थाना)</label>
+            <input type="text" id="station" class="form-input" placeholder="e.g. Kotwali Azamgarh">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Incident Details (घटना का विवरण)</label>
+            <textarea id="details" class="form-textarea" rows="5" placeholder="Kya hua, kab hua, kaise hua?"></textarea>
+        </div>
+
+        <button class="action-btn-large" onclick="generate()">Generate FIR PDF</button>
+        <div id="result" style="margin-top:20px; white-space: pre-wrap; display:none; background:#f9f9f9; padding:20px; border-radius:10px;"></div>
+    </div>
+
+    <script>
+        function generate() {
+            const name = document.getElementById('name').value;
+            const station = document.getElementById('station').value;
+            const details = document.getElementById('details').value;
+            
+            const text = `To,\nThe Station House Officer,\n${station}\n\nSubject: FIR Application\n\nRespected Sir,\nI, ${name}, wish to report: ${details}.\n\nPlease register my FIR.\n\nDate: ${new Date().toLocaleDateString()}\nSignature: ________`;
+            
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('result').innerText = text;
+            alert("Draft Generated below! (Copy/Print)");
+        }
+    </script>
+</body>
+</html>

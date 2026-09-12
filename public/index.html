@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NyayaSetu Pro (न्याय सेतु) - Indian Legal AI Assistant</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Mobile Drawer Backdrop -->
+    <div class="overlay-backdrop" id="overlayBackdrop" onclick="toggleSidebar()"></div>
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar-container">
+        <div class="new-chat-wrapper">
+            <button class="new-chat-btn" onclick="startNewChat()">
+                <i class="fa-solid fa-plus"></i> New Legal Consultation
+            </button>
+        </div>
+
+        <div class="sidebar-section-title">Legal Tools</div>
+        <div class="tools-grid">
+            <div class="tool-item" onclick="openTool('fir')">
+                <i class="fa-solid fa-file-shield"></i>
+                <span>FIR Writer</span>
+            </div>
+            <div class="tool-item" onclick="openTool('bns')">
+                <i class="fa-solid fa-right-left"></i>
+                <span>IPC ⇋ BNS</span>
+            </div>
+            <div class="tool-item" onclick="openTool('fine')">
+                <i class="fa-solid fa-calculator"></i>
+                <span>Fine Calc</span>
+            </div>
+            <div class="tool-item" onclick="openTool('drafter')">
+                <i class="fa-solid fa-file-signature"></i>
+                <span>Legal Drafter</span>
+            </div>
+            <div class="tool-item" onclick="openTool('lawyer')">
+                <i class="fa-solid fa-user-tie"></i>
+                <span>Legal Aid</span>
+            </div>
+            <div class="tool-item" onclick="openTool('videos')">
+                <i class="fa-brands fa-youtube" style="color:#ef4444;"></i>
+                <span>Video Guides</span>
+            </div>
+        </div>
+
+        <div class="sidebar-section-title" style="margin-top:10px;">Consultation History</div>
+        <div id="historyList"></div>
+
+        <div class="sidebar-bottom">
+            <button class="reset-app-btn" onclick="clearHistory()">
+                <i class="fa-solid fa-trash-can"></i> Clear History
+            </button>
+            <span style="font-size:11px; color:var(--text-muted);">v2.0 • BNS Ready</span>
+        </div>
+    </aside>
+
+    <!-- MAIN CHAT CONTAINER -->
+    <main id="main-container">
+        <header id="header-container">
+            <div class="header-left">
+                <div class="mobile-menu-btn" onclick="toggleSidebar()">
+                    <i class="fa-solid fa-bars"></i>
+                </div>
+                <div class="brand-logo" onclick="startNewChat()">
+                    <i class="fa-solid fa-scale-balanced brand-icon"></i>
+                    <span class="brand-name">NyayaSetu</span>
+                    <span class="brand-badge">PRO</span>
+                </div>
+            </div>
+            <div class="nav-right">
+                <button class="sos-btn" onclick="triggerSOS()">
+                    <i class="fa-solid fa-bell"></i> SOS
+                </button>
+                <button class="nav-icon-btn" onclick="toggleDarkMode()" title="Toggle Dark/Light Mode">
+                    <i class="fa-solid fa-moon" id="themeIcon"></i>
+                </button>
+                <button class="nav-icon-btn" onclick="openTool('settings')" title="User Settings">
+                    <i class="fa-solid fa-user"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Chat messages view -->
+        <div id="chat-box"></div>
+
+        <!-- Input Bar -->
+        <div class="input-area">
+            <div class="input-wrapper">
+                <input type="text" id="userInput" placeholder="Apna kanooni sawaal yahan likhein (Ask legal question)..." onkeypress="handleEnter(event)" autocomplete="off">
+                <i class="fa-solid fa-microphone mic-btn" id="micBtn" onclick="toggleMic()" title="Voice Input (Hindi/English)"></i>
+                <button class="send-btn" onclick="sendMessage()" title="Send Message">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- 1. FIR WRITER MODAL -->
+    <div class="modal-overlay" id="modal-fir">
+        <div class="modal-box">
+            <span class="modal-close" onclick="closeAllModals()">&times;</span>
+            <h3><i class="fa-solid fa-file-shield"></i> Instant FIR Generator</h3>
+            <p class="modal-desc">Police complaint draft taiyar karein aur seedhe print ya copy karein.</p>
+            <input type="text" id="fir-name" class="modal-input" placeholder="Victim Name (शिकायतकर्ता का नाम)">
+            <input type="text" id="fir-police" class="modal-input" placeholder="Police Station & City (थाना और शहर)">
+            <input type="text" id="fir-accused" class="modal-input" placeholder="Opponent / Accused Name (विपक्षी का नाम - Optional)">
+            <textarea id="fir-incident" class="modal-textarea" rows="4" placeholder="Describe Incident (Kya hua tha? Kab hua, kahan hua aur kitna nuksan hua?)"></textarea>
+            <button class="modal-btn" onclick="generateFIR()">
+                <i class="fa-solid fa-file-lines"></i> Generate Official FIR Draft
+            </button>
+            <div class="modal-result" id="fir-result"></div>
+        </div>
+    </div>
+
+    <!-- 2. IPC <-> BNS CONVERTER MODAL -->
+    <div class="modal-overlay" id="modal-bns">
+        <div class="modal-box">
+            <span class="modal-close" onclick="closeAllModals()">&times;</span>
+            <h3><i class="fa-solid fa-right-left"></i> IPC ⇋ BNS Converter</h3>
+            <p class="modal-desc">Purani Indian Penal Code (IPC) ko nayi Bharatiya Nyaya Sanhita (BNS 2023) me badlein.</p>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="ipc-input" class="modal-input" placeholder="Enter Section (e.g. 420, 302, 376, 378, 506)..." onkeypress="if(event.key==='Enter') convertSection()">
+                <button class="modal-btn" style="width:auto; padding:0 24px; margin-bottom:14px;" onclick="convertSection()">Convert</button>
+            </div>
+            <div class="modal-result" id="bns-result"></div>
+        </div>
+    </div>
+
+    <!-- 3. TRAFFIC FINE CALCULATOR MODAL -->
+    <div class="modal-overlay" id="modal-fine">
+        <div class="modal-box">
+            <span class="modal-close" onclick="closeAllModals()">&times;</span>
+            <h3><i class="fa-solid fa-calculator"></i> Traffic Fine Calculator</h3>
+            <p class="modal-desc">Motor Vehicles (Amendment) Act ke anusar apna challan check karein.</p>
+            <label style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:4px; display:block;">Select Traffic Violation (उल्लंघन चुनें):</label>
+            <select id="fine-type" class="modal-input">
+                <option value="helmet">Driving Without Helmet (हेलमेट न पहनना) — ₹1,000</option>
+                <option value="seatbelt">Driving Without Seatbelt (सीटबेल्ट न लगाना) — ₹1,000</option>
+                <option value="license">Driving Without License (बिना लाइसेंस ड्राइविंग) — ₹5,000</option>
+                <option value="drunk">Drunk Driving (शराब पीकर गाड़ी चलाना) — ₹10,000 / Jail</option>
+                <option value="speed">Over Speeding (तेज रफ्तार) — ₹1,000 to ₹2,000</option>
+                <option value="phone">Using Mobile Phone while driving (फोन पर बात करना) — ₹1,000 to ₹5,000</option>
+                <option value="insurance">Vehicle Without Insurance (बिना बीमा) — ₹2,000</option>
+                <option value="redlight">Jumping Red Light (रेड लाइट तोड़ना) — ₹1,000 to ₹5,000</option>
+                <option value="triple">Triple Riding on Two-Wheeler (तीन सवारी) — ₹1,000</option>
+                <option value="emergency">Blocking Emergency Vehicle (एम्बुलेंस को रास्ता न देना) — ₹10,000</option>
+            </select>
+            <button class="modal-btn" onclick="calculateFine()">
+                <i class="fa-solid fa-receipt"></i> Check Penalty & Legal Section
+            </button>
+            <div class="modal-result" id="fine-result"></div>
+        </div>
+    </div>
+
+    <!-- 4. LEGAL NOTICE DRAFTER MODAL -->
+    <div class="modal-overlay" id="modal-drafter">
+        <div class="modal-box">
+            <span class="modal-close" onclick="closeAllModals()">&times;</span>
+            <h3><i class="fa-solid fa-file-signature"></i> Legal Notice Drafter</h3>
+            <p class="modal-desc">Advocate standard par Legal Notice draft karein.</p>
+            <label style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:4px; display:block;">Notice Category:</label>
+            <select id="notice-type" class="modal-input">
+                <option value="cheque">Cheque Bounce Notice (Section 138 NI Act)</option>
+                <option value="tenant">Tenant Eviction & Rent Default Notice</option>
+                <option value="consumer">Consumer Grievance / Defective Product & Service Notice</option>
+                <option value="debt">Recovery of Unpaid Money / Personal Loan Notice</option>
+            </select>
+            <input type="text" id="notice-sender" class="modal-input" placeholder="Your Full Name & Address (भेजने वाले का नाम)">
+            <input type="text" id="notice-receiver" class="modal-input" placeholder="Recipient / Opponent Name & Address (पाने वाले का नाम)">
+            <input type="text" id="notice-amount" class="modal-input" placeholder="Disputed Amount or Key Claim (रुपये या दावा - e.g. ₹50,000)">
+            <button class="modal-btn" onclick="generateLegalNotice()">
+                <i class="fa-solid fa-stamp"></i> Generate Legal Notice Draft
+            </button>
+            <div class="modal-result" id="notice-result"></div>
+        </div>
+    </div>
+
+    <!-- 5. LAWYER & FREE LEGAL AID MODAL -->
+    <div class="modal-overlay" id="modal-lawyer">
+        <div class="modal-box">
+            <span class="modal-close" onclick="closeAllModals()">&times;</span>
+            <h3><i class="fa-solid fa-user-tie"></i> Legal Aid & Advocate Support</h3>
+            <p class="modal-desc">Government NALSA Free Legal Services and Verified Legal Experts.</p>
+            
+            <div style="background:var(--primary-light); border:1px solid var(--primary); padding:14px; border-radius:12px; margin-bottom:18px;">
+                <b style="color:var(--primary-dark); font-size:14px;"><i class="fa-solid fa-landmark"></i> National Legal Services (NALSA):</b>
+                <p style="font-size:13px; color:var(--text-main); margin-top:4px;">Article 39A ke tehat har garib aur zarooratmand nagrik ko muft kanooni sahayata pane ka adhikar hai.</p>
+                <div style="margin-top:10px; display:flex; gap:10px;">
+                    <a href="tel:15100" class="lawyer-call-btn" style="background:#111827; color:#fff;"><i class="fa-solid fa-phone"></i> Dial 15100 (Muft Helpline)</a>
+                    <a href="https://nalsa.gov.in" target="_blank" class="lawyer-call-btn"><i class="fa-solid fa-arrow-up-right-from-square"></i> NALSA Portal</a>
+                </div>
+            </div>
+
+            <div class="lawyer-card">
+                <img src="https://ui-avatars.com/api/?name=Amit+Sharma&background=0D8ABC&color=fff" class="lawyer-img" alt="Lawyer">
+                <div class="lawyer-info" style="flex:1;">
+                    <h4>Adv. Amit Sharma</h4>
+                    <p>Criminal Defense, Bail & Cyber Law • 12 Yrs Exp</p>
+                    <p style="color:#00E676; font-weight:600;">● Available for Consultation</p>
+                </div>
+                <a href="tel:9876543210" class="lawyer-call-btn"><i class="fa-solid fa-phone"></i> Call</a>
+            </div>
+
+            <div class="lawyer-card">
+                <img src="https://ui-avatars.com/api/?name=Priya+Verma&background=E91E63&color=fff" class="lawyer-img" alt="Lawyer">
+                <div class="lawyer-info" style="flex:1;">
+                    <h4>Adv. Priya Verma</h4>
+                    <p>Family Law, Property & Civil Disputes • 9 Yrs Exp</p>
+                    <p style="color:#00E676; font-weight:600;">● Available for Consultation</p>
+                </div>
+                <a href="tel:9876543211" class="lawyer-call-btn"><i class="fa-solid fa-phone"></i> Call</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. VIDEO GUIDES MODAL -->
+    <div class="modal-overlay" id="modal-videos">
+        <div class="modal-box" style="max-width:640px;">
+            <span class="modal-close" onclick="closeAllModals()">&times;</span>
+            <h3><i class="fa-brands fa-youtube" style="color:#ef4444;"></i> Citizen Rights & Legal Videos</h3>
+            <p class="modal-desc">Kanooni prakriya aur adhikar aasan bhasha me samjhein.</p>
+            
+            <div class="video-grid">
+                <div class="video-item">
+                    <iframe src="https://www.youtube.com/embed/5D4wK2_b9QY" title="How to file FIR" frameborder="0" allowfullscreen></iframe>
+                    <div class="video-item-info">
+                        <b>How to file FIR / Zero FIR in Police Station?</b>
+                        <span>Agar Police FIR likhne se inkar kare toh kya karein? (Section 154 CrPC / 173 BNSS)</span>
+                    </div>
+                </div>
+                <div class="video-item">
+                    <iframe src="https://www.youtube.com/embed/p9x8aCg5T28" title="Right to Arrest" frameborder="0" allowfullscreen></iframe>
+                    <div class="video-item-info">
+                        <b>Arrest Rights: Know Your Rights During Police Action</b>
+                        <span>D.K. Basu Guidelines aur 24 ghante ke andar Magistrate ke samne pesh hone ka niyam.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. SOS ALERT OVERLAY -->
+    <div class="sos-overlay" id="sosOverlay">
+        <div class="sos-box">
+            <h1><i class="fa-solid fa-triangle-exclamation"></i> SOS ACTIVATED</h1>
+            <p>Aapki Emergency Location alert contacts ko share ki ja rahi hai.</p>
+            <p>Nearest Police Station: <b>Kotwali Police Station (1.2 km away)</b></p>
+            <p style="font-size:13px; opacity:0.85;">National Emergency Hotline: <b>112</b> | Women Helpline: <b>1091</b></p>
+            <div class="sos-actions">
+                <a href="tel:112" class="sos-call-btn"><i class="fa-solid fa-phone"></i> Call 112 Police</a>
+                <button class="sos-stop-btn" onclick="stopSOS()">Stop Alert</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8. USER SETTINGS MODAL -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal-box">
+            <span class="modal-close" onclick="closeAllModals()">&times;</span>
+            <h3><i class="fa-solid fa-user-gear"></i> User Profile & Settings</h3>
+            <p class="modal-desc">Personalize your NyayaSetu consultation experience.</p>
+            <label style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:4px; display:block;">Your Name:</label>
+            <input type="text" id="userNameInput" class="modal-input" placeholder="e.g. Ashutosh Raj">
+            <label style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:4px; display:block;">Emergency Contact Phone:</label>
+            <input type="tel" id="userEmergencyContact" class="modal-input" placeholder="e.g. +91 9876543210">
+            <button class="modal-btn" onclick="saveSettings()">
+                <i class="fa-solid fa-floppy-disk"></i> Save Settings
+            </button>
+        </div>
+    </div>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

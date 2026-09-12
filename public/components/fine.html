@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fine Calculator - NyayaSetu</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <a href="index.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</a>
+
+    <div class="page-container">
+        <div class="page-header">
+            <i class="fa-solid fa-calculator page-icon"></i>
+            <h1>Traffic Fine Calculator</h1>
+            <p>Updated as per Motor Vehicles Act 2019</p>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Select Offense</label>
+            <select id="offense" class="form-select">
+                <option value="1000">Driving Without Helmet (₹1000)</option>
+                <option value="5000">Driving Without License (₹5000)</option>
+                <option value="10000">Drunk Driving (₹10000)</option>
+                <option value="2000">No Insurance (₹2000)</option>
+                <option value="5000">Over Speeding (₹5000)</option>
+            </select>
+        </div>
+
+        <button class="action-btn-large" onclick="calc()">Calculate Total</button>
+    </div>
+
+    <script>
+        function calc() {
+            const val = document.getElementById('offense').value;
+            alert(`Total Fine Amount: ₹${val}\nPay online at echallan.parivahan.gov.in`);
+        }
+    </script>
+</body>
+</html>

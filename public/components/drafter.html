@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPC to BNS - NyayaSetu</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <a href="index.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</a>
+
+    <div class="page-container">
+        <div class="page-header">
+            <i class="fa-solid fa-right-left page-icon"></i>
+            <h1>IPC ⇋ BNS Converter</h1>
+            <p>Convert Old Penal Code to Bharatiya Nyaya Sanhita</p>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Enter IPC Section (e.g. 420)</label>
+            <input type="text" id="ipc" class="form-input" placeholder="Section Number">
+        </div>
+
+        <button class="action-btn-large" onclick="convert()">Convert Now</button>
+        <div id="res" style="margin-top:20px; font-size:20px; font-weight:bold; text-align:center; color:#00E676;"></div>
+    </div>
+
+    <script>
+        function convert() {
+            const map = {'420':'BNS 318 (Cheating)', '302':'BNS 103 (Murder)', '376':'BNS 64 (Rape)', '378':'BNS 303 (Theft)'};
+            const val = document.getElementById('ipc').value;
+            document.getElementById('res').innerText = map[val] || "Section not in Demo Database";
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<div class="new-chat-wrapper">
+    <button class="new-chat-btn" onclick="startNewChat()">
+        <i class="fa-solid fa-plus"></i> New Consultation
+    </button>
+</div>
+
+<div class="tools-header">LEGAL SUPER TOOLS</div>
+<div class="tools-grid-sidebar">
+    <div class="tool-item" onclick="openTool('drafter')" title="Rent Agreement, Affidavit">
+        <i class="fa-solid fa-file-signature"></i> Drafter
+    </div>
+    <div class="tool-item" onclick="openTool('fir')" title="Write FIR Application">
+        <i class="fa-solid fa-file-shield"></i> FIR Writer
+    </div>
+    <div class="tool-item" onclick="openTool('bns')" title="IPC to BNS Converter">
+        <i class="fa-solid fa-right-left"></i> IPC⇋BNS
+    </div>
+    <div class="tool-item" onclick="openTool('fine')" title="Challan Calculator">
+        <i class="fa-solid fa-calculator"></i> Fine Calc
+    </div>
+    <div class="tool-item" onclick="findNearby()" title="Find Police/Court">
+        <i class="fa-solid fa-map-location-dot"></i> Nearby
+    </div>
+    <div class="tool-item" onclick="openTool('risk')" title="Case Risk Meter">
+        <i class="fa-solid fa-gauge-high"></i> Risk Meter
+    </div>
+</div>
+
+<div class="filters">
+    <label>DIALECT & MODE</label>
+    <select id="dialectFilter" onchange="updateDialect()">
+        <option value="Hindi">🇮🇳 Hindi (Standard)</option>
+        <option value="Hinglish">🗣️ Hinglish</option>
+        <option value="Bhojpuri">🟠 Bhojpuri</option>
+        <option value="English">🇬🇧 English</option>
+    </select>
+</div>
+
+<div class="history-header">RECENT CASES</div>
+<div class="history-list" id="historyList"></div>
+
+<div class="bottom-panel">
+    <div class="connect-lawyer" onclick="openTool('lawyer')">
+        <i class="fa-solid fa-user-tie"></i> Talk to Lawyer
+    </div>
+</div>
