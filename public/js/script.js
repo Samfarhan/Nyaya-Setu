@@ -141,7 +141,7 @@ function renderEmptyState() {
                 <i class="fa-solid fa-scale-balanced"></i>
             </div>
             <h1 class="gradient-text">Namaste, ${escapeHtml(user)} Ji</h1>
-            <p>NyayaSetu (न्याय सेतु) me aapka swagat hai. Indian Penal Code, BNS 2023, Police FIR, Traffic Challan ya Consumer rights par turant vishwasniya kanooni margdarshan prapt karein.</p>
+            <p>Nyayi (न्यायी) me aapka swagat hai. Indian Penal Code, BNS 2023, Police FIR, Traffic Challan ya Consumer rights par turant vishwasniya kanooni margdarshan prapt karein.</p>
             
             <div class="suggestion-chips">
                 <button class="chip" onclick="askSuggestion('Mera online cyber fraud ho gaya hai, paise wapas kaise paayein?')">
