@@ -432,7 +432,11 @@ function openTool(toolName) {
         'drafter': 'modal-drafter',
         'lawyer': 'modal-lawyer',
         'videos': 'modal-videos',
-        'settings': 'settingsModal'
+        'settings': 'settingsModal',
+        'factlaw': 'modal-factlaw',
+        'firwizard': 'modal-firwizard',
+        'casesimplifier': 'modal-casesimplifier',
+        'updates': 'modal-updates'
     };
 
     const targetId = modalMap[toolName];
@@ -642,7 +646,89 @@ ${sender}`;
     `;
 }
 
-// E. SOS Emergency System
+// E. NEW: Which Law Applies (Fact-to-Law Analyzer)
+async function analyzeFactsToLaw() {
+    const input = document.getElementById('factlaw-input').value.trim();
+    const resultDiv = document.getElementById('factlaw-result');
+
+    if (!input) {
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = '<span style="color:#ef4444;">Kripya apni ghatna ke mukhya tathya (facts) darj karein.</span>';
+        return;
+    }
+
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '<div style="color:var(--primary-dark);"><i class="fa-solid fa-spinner fa-spin"></i> Kanooni dharaon aur BNS ki janch ki ja rahi hai...</div>';
+
+    try {
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: input, category: "Which Law Applies" })
+        });
+        const data = await response.json();
+        resultDiv.innerHTML = formatMessage(data.reply || "Analysis complete.");
+    } catch (e) {
+        resultDiv.innerHTML = '<span style="color:#ef4444;">Analysis me samasya aayi. Kripya punah prayas karein.</span>';
+    }
+}
+
+// F. NEW: FIR 6-Step Wizard Navigation
+function goToFIRStep(stepNum) {
+    for (let i = 1; i <= 6; i++) {
+        const content = document.getElementById('firStep' + i);
+        const btn = document.getElementById('stepBtn' + i);
+        if (content) content.classList.remove('active');
+        if (btn) btn.classList.remove('active');
+    }
+    const targetContent = document.getElementById('firStep' + stepNum);
+    const targetBtn = document.getElementById('stepBtn' + stepNum);
+    if (targetContent) targetContent.classList.add('active');
+    if (targetBtn) targetBtn.classList.add('active');
+}
+
+// G. NEW: Case Law & Judgment Simplifier
+async function simplifyCaseLaw() {
+    const input = document.getElementById('casesimplifier-input').value.trim();
+    const resultDiv = document.getElementById('casesimplifier-result');
+
+    if (!input) {
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = '<span style="color:#ef4444;">Kripya kisi Case Law ka naam, citation ya judgment text paste karein.</span>';
+        return;
+    }
+
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '<div style="color:var(--primary-dark);"><i class="fa-solid fa-spinner fa-spin"></i> Judgment aur Ratio Decidendi simplify ki ja rahi hai...</div>';
+
+    try {
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: input, category: "Case Law Simplifier" })
+        });
+        const data = await response.json();
+        resultDiv.innerHTML = formatMessage(data.reply || "Simplification complete.");
+    } catch (e) {
+        resultDiv.innerHTML = '<span style="color:#ef4444;">Case Law analysis me samasya aayi. Kripya punah prayas karein.</span>';
+    }
+}
+
+// H. NEW: Filter Legal Updates
+function filterLegalUpdates(cat, btn) {
+    document.querySelectorAll('.update-tab').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    document.querySelectorAll('.update-card').forEach(card => {
+        if (cat === 'all' || card.getAttribute('data-cat') === cat) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// I. SOS Emergency System
 function triggerSOS() {
     closeAllModals();
     const sosOverlay = document.getElementById('sosOverlay');

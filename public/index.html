@@ -26,6 +26,22 @@
 
         <div class="sidebar-section-title">Legal Tools</div>
         <div class="tools-grid">
+            <div class="tool-item" onclick="openTool('factlaw')">
+                <i class="fa-solid fa-gavel"></i>
+                <span>Which Law Applies?</span>
+            </div>
+            <div class="tool-item" onclick="openTool('firwizard')">
+                <i class="fa-solid fa-list-check"></i>
+                <span>FIR 6-Step Guide</span>
+            </div>
+            <div class="tool-item" onclick="openTool('casesimplifier')">
+                <i class="fa-solid fa-book-open-reader"></i>
+                <span>Case Simplifier</span>
+            </div>
+            <div class="tool-item" onclick="openTool('updates')">
+                <i class="fa-solid fa-newspaper"></i>
+                <span>Legal Updates</span>
+            </div>
             <div class="tool-item" onclick="openTool('fir')">
                 <i class="fa-solid fa-file-shield"></i>
                 <span>FIR Writer</span>
@@ -103,6 +119,154 @@
             </div>
         </div>
     </main>
+
+    <!-- NEW TOOL 1: WHICH LAW APPLIES TO THIS? -->
+    <div class="modal-overlay" id="modal-factlaw">
+        <div class="modal-box">
+            <span class="modal-close" onclick="closeAllModals()">&times;</span>
+            <h3><i class="fa-solid fa-gavel"></i> Which Law Applies To This?</h3>
+            <p class="modal-desc">Apni ghatna / facts yahan likhein. AI turant batayega ki ispar kaunsi dhara, BNS, ya kanoon lagu hota hai.</p>
+            <textarea id="factlaw-input" class="modal-textarea" rows="5" placeholder="Ghatna ka vivran dein (e.g. Kisi ne fake account banakar threat diya, ya landlord ne security deposit wapas nahi kiya, ya online fraud hua)..."></textarea>
+            <button class="modal-btn" onclick="analyzeFactsToLaw()">
+                <i class="fa-solid fa-magnifying-glass-scale"></i> Analyze Relevant Laws & Sections
+            </button>
+            <div class="modal-result" id="factlaw-result"></div>
+        </div>
+    </div>
+
+    <!-- NEW TOOL 2: FIR & POLICE ASSISTANT 6-STEP WIZARD -->
+    <div class="modal-overlay" id="modal-firwizard">
+        <div class="modal-box" style="max-width:620px;">
+            <span class="modal-close" onclick="closeAllModals()">&times;</span>
+            <h3><i class="fa-solid fa-list-check"></i> FIR & Police Assistance (6-Step Guide)</h3>
+            <p class="modal-desc">Thana jane se pehle apna kanooni adhikar aur sahi prakriya janein.</p>
+            
+            <!-- Step Navigation Pills -->
+            <div class="wizard-steps-nav">
+                <button class="step-nav-btn active" id="stepBtn1" onclick="goToFIRStep(1)">1. FIR?</button>
+                <button class="step-nav-btn" id="stepBtn2" onclick="goToFIRStep(2)">2. Offence</button>
+                <button class="step-nav-btn" id="stepBtn3" onclick="goToFIRStep(3)">3. Where?</button>
+                <button class="step-nav-btn" id="stepBtn4" onclick="goToFIRStep(4)">4. Evidence</button>
+                <button class="step-nav-btn" id="stepBtn5" onclick="goToFIRStep(5)">5. Draft</button>
+                <button class="step-nav-btn" id="stepBtn6" onclick="goToFIRStep(6)">6. Refusal?</button>
+            </div>
+
+            <!-- STEP 1 CONTENT -->
+            <div class="wizard-step-content active" id="firStep1">
+                <h4><i class="fa-solid fa-circle-question"></i> Step 1: Should I file an FIR?</h4>
+                <p><b>FIR (First Information Report)</b> sirf <i>Cognizable (संज्ञेय/गंभीर)</i> अपराधों में दर्ज होती है जैसे चोरी, मारपीट, धोखाधड़ी, बलात्कार, या हत्या।</p>
+                <p>अगर मामला <i>Non-Cognizable (असंज्ञेय/मामूली विवाद)</i> है तो पुलिस NCR (Non-Cognizable Report) काटती है या मजिस्ट्रेट के पास जाने की सलाह देती है।</p>
+                <button class="modal-btn" style="margin-top:14px;" onclick="goToFIRStep(2)">Next: Check Offence Nature →</button>
+            </div>
+
+            <!-- STEP 2 CONTENT -->
+            <div class="wizard-step-content" id="firStep2">
+                <h4><i class="fa-solid fa-scale-unbalanced-flip"></i> Step 2: Is the offence Cognizable or Non-Cognizable?</h4>
+                <p><b>Cognizable (संज्ञेय):</b> पुलिस बिना वारंट के आरोपी को गिरफ्तार कर सकती है और FIR दर्ज करना अनिवार्य है (BNS Section 173 / CrPC 154).</p>
+                <p><b>Non-Cognizable (असंज्ञेय):</b> पुलिस बिना कोर्ट की अनुमति के जांच या गिरफ्तारी नहीं कर सकती (e.g., मामूली कहासुनी, गालियां देना).</p>
+                <button class="modal-btn" style="margin-top:14px;" onclick="goToFIRStep(3)">Next: Where to Report? →</button>
+            </div>
+
+            <!-- STEP 3 CONTENT -->
+            <div class="wizard-step-content" id="firStep3">
+                <h4><i class="fa-solid fa-location-dot"></i> Step 3: Where should I report it?</h4>
+                <p>1. <b>Local Police Station:</b> जहां घटना हुई है उस क्षेत्र के थाने में।</p>
+                <p>2. <b>Zero FIR (जीरो एफआईआर):</b> अगर घटना किसी अन्य शहर/क्षेत्र में हुई है, तो भी आप नजदीकी थाने में Zero FIR दर्ज करा सकते हैं। बाद में केस ट्रांसफर हो जाता है।</p>
+                <p>3. <b>Online Cyber Crime:</b> साइबर फ्रॉड के लिए <a href="https://cybercrime.gov.in" target="_blank" style="color:var(--primary-dark);">cybercrime.gov.in</a> या Helpline <b>1930</b> पर रिपोर्ट करें।</p>
+                <button class="modal-btn" style="margin-top:14px;" onclick="goToFIRStep(4)">Next: Evidence Checklist →</button>
+            </div>
+
+            <!-- STEP 4 CONTENT -->
+            <div class="wizard-step-content" id="firStep4">
+                <h4><i class="fa-solid fa-folder-open"></i> Step 4: What information/evidence to keep ready?</h4>
+                <ul style="margin-left:20px; font-size:13.5px; line-height:1.7;">
+                    <li>✓ घटना की सटीक तारीख, समय और स्थान।</li>
+                    <li>✓ आरोपी/विपक्षी का नाम, हुलिया या गाड़ी का नंबर।</li>
+                    <li>✓ गवाहों (Witnesses) के नाम और फोन नंबर।</li>
+                    <li>✓ फोटो, व्हाट्सएप चैट, बैंक स्टेटमेंट या सीसीटीवी फुटेज।</li>
+                    <li>✓ मेडिकल रिपोर्ट (अगर शारीरिक चोट लगी है तो अस्पताल से MLR बनवाएं)।</li>
+                </ul>
+                <button class="modal-btn" style="margin-top:14px;" onclick="goToFIRStep(5)">Next: Generate FIR Draft →</button>
+            </div>
+
+            <!-- STEP 5 CONTENT -->
+            <div class="wizard-step-content" id="firStep5">
+                <h4><i class="fa-solid fa-file-signature"></i> Step 5: Generate FIR / Complaint Draft</h4>
+                <p>थाना प्रभारी के नाम ऑफिशियल FIR एप्लीकेशन ड्राफ्ट तैयार करें:</p>
+                <button class="modal-btn" style="margin-top:10px;" onclick="closeAllModals(); openTool('fir');">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i> Open FIR Generator Tool
+                </button>
+                <button class="modal-btn" style="margin-top:10px; background:var(--bg-body); color:var(--text-main); border:1px solid var(--border);" onclick="goToFIRStep(6)">Next: Police Refusal Remedy →</button>
+            </div>
+
+            <!-- STEP 6 CONTENT -->
+            <div class="wizard-step-content" id="firStep6">
+                <h4><i class="fa-solid fa-shield-cat"></i> Step 6: What if Police refuses to register FIR?</h4>
+                <div style="background:var(--primary-light); padding:12px; border-radius:10px; font-size:13px; line-height:1.6; margin-bottom:12px;">
+                    <b>आपके पास 3 मजबूत कानूनी अधिकार हैं:</b><br>
+                    1. <b>SP / SSP को शिकायत:</b> धारा 154(3) CrPC / 173(4) BNSS के तहत जिले के पुलिस अधीक्षक (SP/SSP) को रजिस्टर्ड डाक द्वारा लिखित शिकायत भेजें।<br>
+                    2. <b>मजिस्ट्रेट के पास 156(3) / 175(3):</b> वकील के माध्यम से इलाके के मजिस्ट्रेट (Judicial Magistrate) के पास 156(3) की अर्जी लगाएं। कोर्ट पुलिस को FIR दर्ज करने का आदेश देगा।<br>
+                    3. <b>Lalita Kumari vs Govt of UP (Supreme Court):</b> सुप्रीम कोर्ट का आदेश है कि संज्ञेय अपराध में FIR न लिखना पुलिस अधिकारी के खिलाफ विभागीय कार्रवाई व अवमानना है।
+                </div>
+                <button class="modal-btn" onclick="askSuggestion('Agar police FIR na likhe toh SP ko bhejane wala complaint letter aur 156(3) ka format samjho.')">
+                    <i class="fa-solid fa-robot"></i> Get Police Escalation Draft from AI
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW TOOL 3: CASE LAW & JUDGMENT SIMPLIFIER -->
+    <div class="modal-overlay" id="modal-casesimplifier">
+        <div class="modal-box">
+            <span class="modal-close" onclick="closeAllModals()">&times;</span>
+            <h3><i class="fa-solid fa-book-open-reader"></i> Case Law & Judgment Simplifier</h3>
+            <p class="modal-desc">Kisi bhi Supreme Court / High Court ke faisle ya case law ka vivran paste karein. AI use aasan bhasha me samjhayega.</p>
+            <textarea id="casesimplifier-input" class="modal-textarea" rows="5" placeholder="Case Name / Citation ya Judgment Text yahan paste karein (e.g. D.K. Basu v. State of West Bengal, AIR 1997 SC 610, ya koi bhi court order text)..."></textarea>
+            <button class="modal-btn" onclick="simplifyCaseLaw()">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Simplify Judgment & Ratio Decidendi
+            </button>
+            <div class="modal-result" id="casesimplifier-result"></div>
+        </div>
+    </div>
+
+    <!-- NEW TOOL 4: LEGAL UPDATES & SECTIONS -->
+    <div class="modal-overlay" id="modal-updates">
+        <div class="modal-box" style="max-width:640px;">
+            <span class="modal-close" onclick="closeAllModals()">&times;</span>
+            <h3><i class="fa-solid fa-newspaper"></i> Latest Legal Updates & Section Amendments</h3>
+            <p class="modal-desc">BNS 2023, IT Act, Consumer Protection aur Naye Kanooni Sanshodhan (Amendments).</p>
+            
+            <div class="updates-category-bar">
+                <button class="update-tab active" onclick="filterLegalUpdates('all', this)">All</button>
+                <button class="update-tab" onclick="filterLegalUpdates('criminal', this)">Criminal (BNS)</button>
+                <button class="update-tab" onclick="filterLegalUpdates('cyber', this)">Cyber & IT</button>
+                <button class="update-tab" onclick="filterLegalUpdates('civil', this)">Property & Family</button>
+            </div>
+
+            <div class="updates-list" id="updatesList">
+                <div class="update-card" data-cat="criminal">
+                    <span class="update-badge badge-red">Criminal Law (BNS 2023)</span>
+                    <h4>IPC Complete Replacement by Bharatiya Nyaya Sanhita (BNS 2023)</h4>
+                    <p>Purane 511 IPC sections ke sthan par ab 358 BNS sections lagu hain. Section 420 (Cheating) ab BNS 318(4) hai, Section 302 (Murder) ab BNS 103(1) hai.</p>
+                </div>
+                <div class="update-card" data-cat="criminal">
+                    <span class="update-badge badge-green">Procedure (BNSS 2023)</span>
+                    <h4>Zero FIR & Electronic Summons Made Mandatory</h4>
+                    <p>BNSS 2023 ke tehat kisi bhi thane me Zero FIR darj karayi ja sakti hai. Ab WhatsApp aur Email dwara bheja gaya summons legally valid hai.</p>
+                </div>
+                <div class="update-card" data-cat="cyber">
+                    <span class="update-badge badge-blue">Cyber Law & IT Act</span>
+                    <h4>Digital Personal Data Protection (DPDP) Act 2023</h4>
+                    <p>Bina consent kisi ki personal details share karne ya leak karne par ₹250 Crore tak ka fine ho sakta hai. Online fraud hone par turant Helpline 1930 par call karein.</p>
+                </div>
+                <div class="update-card" data-cat="civil">
+                    <span class="update-badge badge-orange">Property & Tenant Law</span>
+                    <h4>Model Tenancy Act Rules for Renters & Landlords</h4>
+                    <p>Landlord bina 24 ghante pehle notice diye ghar me nahi ghus sakta. Security deposit maximum 2 months rent (Residential) tak hi liya ja sakta hai.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- 1. FIR WRITER MODAL -->
     <div class="modal-overlay" id="modal-fir">
