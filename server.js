@@ -186,13 +186,13 @@ VIDEO SEARCH RECOMMENDATION:
 function callGroqAI(systemPrompt, userMessage) {
     return new Promise((resolve) => {
         const postData = JSON.stringify({
-            model: "qwen/qwen3.8-27b",
+            model: "groq/compound-mini",
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: userMessage }
             ],
             temperature: 0.3,
-            max_tokens: 1000
+            max_tokens: 800
         });
 
         const options = {
@@ -240,7 +240,7 @@ function callGroqAI(systemPrompt, userMessage) {
 function fallbackGroqAI(systemPrompt, userMessage) {
     return new Promise((resolve) => {
         const postData = JSON.stringify({
-            model: "groq/compound-mini",
+            model: "openai/gpt-oss-20b",
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: userMessage }
