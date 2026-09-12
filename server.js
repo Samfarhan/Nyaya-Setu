@@ -33,7 +33,9 @@ const MIME_TYPES = {
     '.ico': 'image/x-icon',
     '.woff2': 'font/woff2',
     '.woff': 'font/woff',
-    '.ttf': 'font/ttf'
+    '.ttf': 'font/ttf',
+    '.txt': 'text/plain; charset=utf-8',
+    '.xml': 'application/xml; charset=utf-8'
 };
 
 const server = http.createServer((req, res) => {
