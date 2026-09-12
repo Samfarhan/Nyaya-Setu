@@ -213,7 +213,7 @@ function smoothScrollToBottom() {
     });
 }
 
-function appendMessage(text, role) {
+function appendMessage(text, role, skipScroll = false) {
     const box = document.getElementById('chat-box');
     
     // Remove welcome hero if present
@@ -258,8 +258,16 @@ function appendMessage(text, role) {
     msgDiv.appendChild(bodyWrapper);
     box.appendChild(msgDiv);
     
-    // Smooth scroll down naturally
-    smoothScrollToBottom();
+    if (!skipScroll) {
+        if (role === 'ai') {
+            // Align the START of the AI message with top of screen so user reads from beginning!
+            setTimeout(() => {
+                msgDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 60);
+        } else {
+            msgDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+    }
 }
 
 function showTypingIndicator() {
@@ -371,7 +379,7 @@ function openChat(chatId) {
 
     const chat = chats.find(c => c.id === chatId);
     if (chat && chat.messages.length > 0) {
-        chat.messages.forEach(m => appendMessage(m.text, m.role));
+        chat.messages.forEach(m => appendMessage(m.text, m.role, true));
         box.scrollTop = 0; // Start viewing from top when opening chat history
     } else {
         renderEmptyState();
