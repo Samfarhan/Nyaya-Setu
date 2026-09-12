@@ -295,5 +295,5 @@ function fallbackGroqAI(systemPrompt, userMessage) {
 }
 
 server.listen(PORT, () => {
-    console.log(`NyayaSetu Server running on http://localhost:${PORT}`);
+    console.log(`Nyayi Server running on http://localhost:${PORT}`);
 });

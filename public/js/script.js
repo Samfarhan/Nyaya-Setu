@@ -1,5 +1,5 @@
 // ===================================================
-// NyayaSetu Pro (न्याय सेतु) - Core Client Script
+// Nyayi Pro (न्याय सेतु) - Core Client Script
 // Developed by Farhan Khan (BCA Student)
 // ===================================================
 
@@ -485,14 +485,14 @@ function convertSection() {
                 <div>🚨 <b>Nature:</b> ${hit.cognizable}</div>
             </div>
             <button class="modal-btn" style="margin-top:14px; font-size:13px; padding:10px;" onclick="askSuggestion('Mujhe IPC ${query} aur BNS ${hit.bns} ke baare me vistrit legal advice chahiye.')">
-                <i class="fa-solid fa-robot"></i> Ask NyayaSetu AI for Detailed Analysis
+                <i class="fa-solid fa-robot"></i> Ask Nyayi AI for Detailed Analysis
             </button>
         `;
     } else {
         resultDiv.innerHTML = `
             <p style="color:var(--text-muted); margin-bottom:10px;">Section ${escapeHtml(query)} fast-database me nahi mili.</p>
             <button class="modal-btn" onclick="askSuggestion('IPC Section ${query} ko Bharatiya Nyaya Sanhita (BNS) me kya kahte hain aur iski poori jankari dein.')">
-                <i class="fa-solid fa-magnifying-glass"></i> Search in NyayaSetu AI Law Engine
+                <i class="fa-solid fa-magnifying-glass"></i> Search in Nyayi AI Law Engine
             </button>
         `;
     }
@@ -1014,7 +1014,7 @@ function copyTextToClipboard(encodedText, btn) {
 function shareResponse(text) {
     if (navigator.share) {
         navigator.share({
-            title: 'NyayaSetu Legal Guidance',
+            title: 'Nyayi Legal Guidance',
             text: text,
             url: window.location.href
         }).catch(() => {});
