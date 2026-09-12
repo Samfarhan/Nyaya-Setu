@@ -1,5 +1,6 @@
 // ===================================================
 // NyayaSetu Pro (न्याय सेतु) - Core Client Script
+// Developed by Farhan Khan (BCA Student)
 // ===================================================
 
 let chats = JSON.parse(localStorage.getItem('nyayaChats')) || [];
@@ -51,6 +52,12 @@ const TRAFFIC_FINES = {
 // 1. INITIALIZATION
 // =========================================
 document.addEventListener('DOMContentLoaded', () => {
+    // Pre-warm SpeechSynthesis voices
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.getVoices();
+        window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    }
+
     // Restore dark mode
     if (localStorage.getItem('nyayaTheme') === 'dark') {
         document.body.classList.add('dark-mode');
@@ -127,9 +134,12 @@ function renderEmptyState() {
                 <i class="fa-solid fa-scale-balanced"></i>
             </div>
             <h1 class="gradient-text">Namaste, ${escapeHtml(user)} Ji</h1>
-            <p>NyayaSetu (न्याय सेतु) me aapka swagat hai. Indian Penal Code, BNS 2023, Police FIR, Traffic Challan ya Consumer rights par turant vishwasniya kanooni margdarshan prapt karein.</p>
+            <p>NyayaSetu (न्याय सेतु) me aapka swagat hai. Developed by <b>Farhan Khan (BCA Student)</b>. Indian Penal Code, BNS 2023, Police FIR, Traffic Challan ya Consumer rights par turant vishwasniya kanooni margdarshan prapt karein.</p>
             
             <div class="suggestion-chips">
+                <button class="chip" onclick="askSuggestion('Tumhe kisine banaya hai?')">
+                    <i class="fa-solid fa-code"></i> Who created NyayaSetu?
+                </button>
                 <button class="chip" onclick="askSuggestion('Mera online cyber fraud ho gaya hai, paise wapas kaise paayein?')">
                     <i class="fa-solid fa-shield-halved"></i> Cyber Fraud Recovery (1930)
                 </button>
@@ -139,12 +149,10 @@ function renderEmptyState() {
                 <button class="chip" onclick="askSuggestion('IPC Section 420 aur BNS me kya antar hai?')">
                     <i class="fa-solid fa-right-left"></i> IPC 420 vs BNS 318
                 </button>
-                <button class="chip" onclick="askSuggestion('Tenant rent nahi de raha hai, legal notice kaise bhein?')">
-                    <i class="fa-solid fa-house-chimney-user"></i> Tenant & Property Dispute
-                </button>
             </div>
         </div>
     `;
+    box.scrollTop = 0;
 }
 
 function askSuggestion(text) {
@@ -196,6 +204,15 @@ function formatMessage(text) {
     return formatted;
 }
 
+function smoothScrollToBottom() {
+    const box = document.getElementById('chat-box');
+    if (!box) return;
+    box.scrollTo({
+        top: box.scrollHeight,
+        behavior: 'smooth'
+    });
+}
+
 function appendMessage(text, role) {
     const box = document.getElementById('chat-box');
     
@@ -240,7 +257,9 @@ function appendMessage(text, role) {
     msgDiv.appendChild(avatar);
     msgDiv.appendChild(bodyWrapper);
     box.appendChild(msgDiv);
-    box.scrollTop = box.scrollHeight;
+    
+    // Smooth scroll down naturally
+    smoothScrollToBottom();
 }
 
 function showTypingIndicator() {
@@ -258,7 +277,7 @@ function showTypingIndicator() {
         </div>
     `;
     box.appendChild(indicator);
-    box.scrollTop = box.scrollHeight;
+    smoothScrollToBottom();
 }
 
 function removeTypingIndicator() {
@@ -353,6 +372,7 @@ function openChat(chatId) {
     const chat = chats.find(c => c.id === chatId);
     if (chat && chat.messages.length > 0) {
         chat.messages.forEach(m => appendMessage(m.text, m.role));
+        box.scrollTop = 0; // Start viewing from top when opening chat history
     } else {
         renderEmptyState();
     }
@@ -630,7 +650,95 @@ function stopSOS() {
 }
 
 // =========================================
-// 7. VOICE ASSISTANT SYSTEM
+// 7. RELIABLE SPEECH SYNTHESIS ENGINE (TTS)
+// =========================================
+function playTTS(text, onStart, onEnd) {
+    const synth = window.speechSynthesis;
+    if (!synth) {
+        alert("Speech Synthesis is not supported in your browser.");
+        return;
+    }
+
+    // Force unlock audio queue
+    synth.cancel();
+    if (synth.paused) synth.resume();
+
+    setTimeout(() => {
+        // Strip HTML, markdown formatting, URL cards
+        const cleanText = text
+            .replace(/<[^>]*>/g, ' ')
+            .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
+            .replace(/[\*#_`~]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        if (!cleanText) return;
+
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.lang = voiceLang || 'hi-IN';
+        utterance.rate = 0.95;
+        utterance.pitch = 1.0;
+
+        const speakNow = () => {
+            const voices = synth.getVoices();
+            if (voices.length > 0) {
+                const targetVoice = voices.find(v => v.lang === 'hi-IN' || v.lang.startsWith('hi')) ||
+                                  voices.find(v => v.lang.includes('IN')) ||
+                                  voices.find(v => v.lang.startsWith('en'));
+                if (targetVoice) utterance.voice = targetVoice;
+            }
+
+            if (onStart) utterance.onstart = onStart;
+            if (onEnd) {
+                utterance.onend = onEnd;
+                utterance.onerror = onEnd;
+            }
+
+            synth.resume();
+            synth.speak(utterance);
+        };
+
+        if (synth.getVoices().length > 0) {
+            speakNow();
+        } else {
+            synth.onvoiceschanged = speakNow;
+            setTimeout(speakNow, 150);
+        }
+    }, 100);
+}
+
+function speakMessage(btn, text) {
+    const synth = window.speechSynthesis;
+    if (!synth) return alert("Speech Synthesis not supported by this browser.");
+
+    if (synth.speaking) {
+        synth.cancel();
+        btn.innerHTML = '<i class="fa-solid fa-volume-high"></i> Listen';
+        return;
+    }
+
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Playing...';
+
+    playTTS(
+        text,
+        () => {
+            btn.innerHTML = '<i class="fa-solid fa-stop"></i> Stop';
+        },
+        () => {
+            btn.innerHTML = '<i class="fa-solid fa-volume-high"></i> Listen';
+        }
+    );
+}
+
+function autoSpeakResponse(text) {
+    if (isVoiceQuery && autoSpeak) {
+        isVoiceQuery = false;
+        playTTS(text);
+    }
+}
+
+// =========================================
+// 8. VOICE ASSISTANT SYSTEM
 // =========================================
 function openVoiceAssistant() {
     closeAllModals();
@@ -745,56 +853,6 @@ function toggleVoiceLang() {
     }
 }
 
-function autoSpeakResponse(text) {
-    if (isVoiceQuery && autoSpeak) {
-        isVoiceQuery = false;
-        const cleanForAudio = text.replace(/\[.*?\]\(.*?\)/g, '').replace(/[\*#_]/g, '');
-        
-        // Find dummy or valid speak button to pass
-        const synth = window.speechSynthesis;
-        if (!synth) return;
-
-        if (synth.speaking) synth.cancel();
-
-        const utterance = new SpeechSynthesisUtterance(cleanForAudio);
-        const voices = synth.getVoices();
-        const preferredVoice = voices.find(v => v.lang.includes('hi') || v.lang.includes('IN'));
-        if (preferredVoice) utterance.voice = preferredVoice;
-        utterance.rate = 1.0;
-
-        synth.speak(utterance);
-    }
-}
-
-function speakMessage(btn, text) {
-    const synth = window.speechSynthesis;
-    if (!synth) return alert("Speech Synthesis not supported by this browser.");
-
-    if (synth.speaking) {
-        synth.cancel();
-        btn.innerHTML = '<i class="fa-solid fa-volume-high"></i> Listen';
-        return;
-    }
-
-    btn.innerHTML = '<i class="fa-solid fa-stop"></i> Stop';
-    const utterance = new SpeechSynthesisUtterance(text);
-    
-    // Choose Hindi or Indian English voice if available
-    const voices = synth.getVoices();
-    const hindiVoice = voices.find(v => v.lang.includes('hi') || v.lang.includes('IN'));
-    if (hindiVoice) utterance.voice = hindiVoice;
-    utterance.rate = 1.0;
-
-    utterance.onend = () => {
-        btn.innerHTML = '<i class="fa-solid fa-volume-high"></i> Listen';
-    };
-    utterance.onerror = () => {
-        btn.innerHTML = '<i class="fa-solid fa-volume-high"></i> Listen';
-    };
-
-    synth.speak(utterance);
-}
-
 function toggleMic() {
     openVoiceAssistant();
 }
@@ -832,7 +890,7 @@ function shareResponse(text) {
 }
 
 // =========================================
-// 8. BOTTOM NAV & UI HELPERS
+// 9. BOTTOM NAV & UI HELPERS
 // =========================================
 function switchBottomNav(tab) {
     document.querySelectorAll('.bottom-nav-item').forEach(item => item.classList.remove('active'));
