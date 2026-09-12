@@ -778,15 +778,24 @@ function playTTS(text, onStart, onEnd) {
         const utterance = new SpeechSynthesisUtterance(cleanText);
         utterance.lang = voiceLang || 'hi-IN';
         utterance.rate = 0.95;
-        utterance.pitch = 1.0;
+        utterance.pitch = 1.15; // Natural female pitch
 
         const speakNow = () => {
             const voices = synth.getVoices();
             if (voices.length > 0) {
-                const targetVoice = voices.find(v => v.lang === 'hi-IN' || v.lang.startsWith('hi')) ||
-                                  voices.find(v => v.lang.includes('IN')) ||
-                                  voices.find(v => v.lang.startsWith('en'));
-                if (targetVoice) utterance.voice = targetVoice;
+                // Priority to Female Indian/Hindi voices
+                const femaleVoice = voices.find(v => (v.lang.includes('hi') || v.lang.includes('IN') || v.lang.includes('en')) && (
+                    v.name.toLowerCase().includes('female') ||
+                    v.name.toLowerCase().includes('woman') ||
+                    v.name.toLowerCase().includes('swara') ||
+                    v.name.toLowerCase().includes('aditi') ||
+                    v.name.toLowerCase().includes('google hindi') ||
+                    v.name.toLowerCase().includes('heera') ||
+                    v.name.toLowerCase().includes('zira') ||
+                    v.name.toLowerCase().includes('veena')
+                )) || voices.find(v => v.lang.includes('hi') || v.lang.includes('IN'));
+
+                if (femaleVoice) utterance.voice = femaleVoice;
             }
 
             if (onStart) utterance.onstart = onStart;
@@ -849,6 +858,13 @@ function openVoiceAssistant() {
     overlay.classList.add('active');
     document.getElementById('voiceStatus').innerText = '🎤 Listening... Speak now';
     document.getElementById('voiceTranscript').innerText = '';
+    
+    const respBox = document.getElementById('voiceResponseBox');
+    if (respBox) {
+        respBox.style.display = 'none';
+        respBox.innerHTML = '';
+    }
+
     document.getElementById('voiceMicBtn').classList.add('listening');
 
     // Auto start recognition
@@ -876,10 +892,11 @@ function closeVoiceAssistant() {
 
 function toggleVoiceRecognition() {
     if (activeRecognition) {
-        closeVoiceAssistant();
-    } else {
-        openVoiceAssistant();
+        try { activeRecognition.stop(); } catch(e) {}
+        activeRecognition = null;
+        document.getElementById('voiceMicBtn').classList.remove('listening');
     }
+    openVoiceAssistant();
 }
 
 function startVoiceRecognition() {
@@ -904,24 +921,57 @@ function startVoiceRecognition() {
         document.getElementById('voiceMicBtn').classList.add('listening');
     };
 
-    recognition.onresult = (e) => {
+    recognition.onresult = async (e) => {
         let transcript = '';
         for (let i = e.resultIndex; i < e.results.length; i++) {
             transcript += e.results[i][0].transcript;
         }
         document.getElementById('voiceTranscript').innerText = `"${transcript}"`;
 
-        if (e.results[0].isFinal) {
-            document.getElementById('voiceStatus').innerText = '⚡ Processing legal response...';
+        const isFinalResult = e.results[e.results.length - 1].isFinal;
+
+        if (isFinalResult) {
+            document.getElementById('voiceStatus').innerText = '⚡ Processing legal guidance...';
             document.getElementById('voiceMicBtn').classList.remove('listening');
 
-            isVoiceQuery = true;
-            document.getElementById('userInput').value = transcript;
-            
-            setTimeout(() => {
-                closeVoiceAssistant();
-                sendMessage();
-            }, 600);
+            const respBox = document.getElementById('voiceResponseBox');
+            if (respBox) {
+                respBox.style.display = 'block';
+                respBox.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing...';
+            }
+
+            // Append to chat background
+            appendMessage(transcript, 'user');
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: transcript, category: "Voice Assistant", language: aiLanguage })
+                });
+
+                const data = await response.json();
+                const reply = data.reply || "Maaf karein, AI se response lene me samasya aayi.";
+
+                if (respBox) {
+                    respBox.innerHTML = formatMessage(reply);
+                }
+
+                // Append to chat background
+                appendMessage(reply, 'ai');
+
+                document.getElementById('voiceStatus').innerText = '🔊 Assistant Speaking... (Tap mic to speak again)';
+
+                // Play female voice TTS
+                playTTS(reply, null, () => {
+                    document.getElementById('voiceStatus').innerText = 'Tap mic to speak again';
+                });
+
+            } catch (err) {
+                console.error("Voice Assistant Fetch Error:", err);
+                if (respBox) respBox.innerHTML = '<span style="color:#ef4444;">Network issue connecting to assistant.</span>';
+                document.getElementById('voiceStatus').innerText = 'Tap mic to try again';
+            }
         }
     };
 
