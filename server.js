@@ -56,7 +56,7 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    if (req.url.startsWith('/api/auth/')) {
+    if (req.url.startsWith('/api/auth/') || req.url.startsWith('/api/admin/')) {
         handleAuthAPI(req, res);
         return;
     }
@@ -888,6 +888,38 @@ function handleAuthAPI(req, res) {
                 console.error('[GITHUB AUTH EXCEPTION]', err);
                 return sendJSON(500, { error: 'Failed to process GitHub authentication' });
             }
+        }
+
+        // 6. Admin Live users.json inspector & downloader
+        if (url === '/api/admin/users' && req.method === 'GET') {
+            const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+            const key = parsedUrl.searchParams.get('key');
+            const ADMIN_SECRET = process.env.ADMIN_SECRET || 'nyayi_farhan_2026';
+
+            if (key !== ADMIN_SECRET) {
+                return sendJSON(403, { 
+                    error: 'Access Denied. Please provide valid admin key, e.g. ?key=nyayi_farhan_2026' 
+                });
+            }
+
+            const users = getUsers();
+
+            // Download raw file if ?download=true
+            if (parsedUrl.searchParams.get('download') === 'true') {
+                res.writeHead(200, {
+                    'Content-Type': 'application/json',
+                    'Content-Disposition': 'attachment; filename="users.json"'
+                });
+                return res.end(JSON.stringify(users, null, 2));
+            }
+
+            // Return live formatted JSON
+            return sendJSON(200, {
+                totalRegisteredUsers: users.length,
+                serverTime: new Date().toISOString(),
+                downloadLink: `https://ai.nyayi.in/api/admin/users?key=${encodeURIComponent(ADMIN_SECRET)}&download=true`,
+                users: users
+            });
         }
 
         sendJSON(404, { error: 'Not found' });
