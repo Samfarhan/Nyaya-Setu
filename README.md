@@ -1,15 +1,15 @@
 <div align="center">
 
-# âš–ï¸ Nyayi (à¤¨à¥à¤¯à¤¾à¤¯à¥€) â€” India's AI Legal Intelligence Platform
+# ⚖️ Nyayi (न्यायी) — India's AI Legal Intelligence Platform
 
 <p align="center">
-  <strong>Democratizing Indian Legal Literacy â€¢ BNS & BNSS 2023 Compliant â€¢ Citizen-First Justice Assistant</strong>
+  <strong>Democratizing Indian Legal Literacy | BNS & BNSS 2023 Compliant | Citizen-First Justice Assistant</strong>
 </p>
 
 <p align="center">
-  <a href="https://ai.nyayi.in"><img src="https://img.shields.io/badge/ðŸš€_Launch_App-ai.nyayi.in-10b981?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Launch Nyayi App" /></a>
-  <a href="https://nyayi.in"><img src="https://img.shields.io/badge/ðŸŒ_Web_Portal-nyayi.in-0ea5e9?style=for-the-badge&logo=safari&logoColor=white" alt="Official Portal" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/ðŸ›¡ï¸_License-Proprietary-red?style=for-the-badge" alt="License" /></a>
+  <a href="https://ai.nyayi.in"><img src="https://img.shields.io/badge/Launch_App-ai.nyayi.in-10b981?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Launch App" /></a>
+  <a href="https://nyayi.in"><img src="https://img.shields.io/badge/Web_Portal-nyayi.in-0ea5e9?style=for-the-badge&logo=safari&logoColor=white" alt="Web Portal" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge" alt="License" /></a>
 </p>
 
 <p align="center">
@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Cloud-Render-46E3B7?style=flat-square&logo=render&logoColor=white" alt="Render" />
   <img src="https://img.shields.io/badge/CDN-Cloudflare-F38020?style=flat-square&logo=cloudflare&logoColor=white" alt="Cloudflare" />
   <img src="https://img.shields.io/badge/PWA-Installable-purple?style=flat-square&logo=pwa&logoColor=white" alt="PWA" />
-  <img src="https://img.shields.io/badge/BNS_2023-Active-blue?style=flat-square&logo=scale&logoColor=white" alt="BNS" />
+  <img src="https://img.shields.io/badge/BNS_2023-Active-blue?style=flat-square" alt="BNS" />
   <img src="https://img.shields.io/badge/Auth-Google_%7C_Email_OTP-orange?style=flat-square&logo=google&logoColor=white" alt="Auth" />
   <img src="https://img.shields.io/badge/SSL-A+_Secured-success?style=flat-square&logo=letsencrypt&logoColor=white" alt="SSL" />
 </p>
@@ -26,17 +26,17 @@
 
 ---
 
-## ðŸ“Œ Executive Overview
+## 📌 Executive Overview
 
-**Nyayi (à¤¨à¥à¤¯à¤¾à¤¯à¥€)** â€” derived from the Sanskrit word for *righteous justice* â€” is India's next-generation AI legal guidance platform. Built from the ground up for Indian citizens, Nyayi bridges the vast communication gap between complex statutory legal codes and ordinary people.
+**Nyayi (न्यायी)** — derived from the Sanskrit word for *righteous justice* — is India's next-generation AI legal guidance platform. Built from the ground up for Indian citizens, Nyayi bridges the vast communication gap between complex statutory legal codes and ordinary people.
 
 Whether facing a police FIR dispute, property inheritance conflict, cyber fraud loss, or consumer issue, Nyayi equips citizens with instant, empathetic, and actionable procedural understanding grounded in **Indian Penal jurisprudence (BNS, BNSS, BSA, CPC, and Consumer Protection Act)**.
 
-> ðŸ’¡ **Core Philosophy:** Legal literacy is a fundamental right. Law must be explained in the language citizens understand â€” without intimidating jargon or prohibitive advocate fees.
+> 💡 **Core Philosophy:** Legal literacy is a fundamental right. Law must be explained in the language citizens understand — without intimidating jargon or prohibitive advocate fees.
 
 ---
 
-## ðŸ§  AI Neural Engine & Technical Architecture
+## 🧠 AI Neural Engine & Technical Architecture
 
 ```mermaid
 graph TD
@@ -49,7 +49,7 @@ graph TD
     E --> G
     F --> G
     G --> H[Empathetic Citizen Language Synthesizer]
-    H --> I[Output: Relevant Sections â€¢ Immediate Rights â€¢ Action Steps]
+    H --> I[Output: Relevant Sections | Immediate Rights | Action Steps]
 ```
 
 ### 1. Statutory Grounding Engine
@@ -62,9 +62,9 @@ Unlike generic chat models prone to legal hallucination, Nyayi's inference engin
 
 ### 2. Document & Media Analysis Pipeline
 Integrated into the chat composer via the **`+` Upload Drawer**, citizens can attach:
-- ðŸ“„ **FIR Copies & Police Notices** (PDF, DOCX, TXT)
-- ðŸ–¼ï¸ **Legal Notices & Affidavits** (Scans & Screenshots)
-- ðŸ“¸ **Live Evidence Capture** (Direct camera capture on mobile)
+- 📄 **FIR Copies & Police Notices** (PDF, DOCX, TXT)
+- 🖼️ **Legal Notices & Affidavits** (Scans & Screenshots)
+- 📸 **Live Evidence Capture** (Direct camera capture on mobile)
 
 The engine extracts key facts, identifies statutory exposure, and formats a structured action plan.
 
@@ -75,21 +75,21 @@ The engine extracts key facts, identifies statutory exposure, and formats a stru
 
 ---
 
-## âœ¨ Core Platform Capabilities
+## ✨ Core Platform Capabilities
 
 | Capability | Description | Statutory / Procedural Anchor |
 | :--- | :--- | :--- |
-| **âš–ï¸ Fact-to-Law Engine** | Describe any real-world incident in plain words; AI diagnoses exact applicable sections and legal rights. | BNS 2023 / IPC Cross-Walk |
-| **ðŸ“‹ Step-by-Step FIR Wizard** | Complete guide to filing an FIR, jurisdiction selection, Zero FIR rules, and remedies if police refuse. | BNSS Section 173(1), 175(3) |
-| **ðŸ“– Case Law Simplifier** | Breaks down landmark Supreme Court and High Court judgments into 3-point citizen summaries. | SC / HC Jurisprudence |
-| **ðŸ“‘ Legal Notice Drafter** | Generates formal, ready-to-print legal notices for money recovery, tenancy, cheque bounce, or consumer complaints. | Section 138 NI Act, CPC 1908 |
-| **ðŸš— Traffic Fine Calculator** | Instant fine calculation, compounding rules, and virtual court resolution methods. | Motor Vehicles Act 2019 |
-| **ðŸŽ™ï¸ Multilingual Voice AI** | Full voice conversation supporting **Pure Hindi (Devanagari)**, **English**, and conversational **Hinglish**. | Native Indian Voice Synthesis |
-| **ðŸš¨ Emergency SOS System** | One-tap access to 112 (Police), 1091 (Women), 1930 (Cyber Crime), and 15100 (Free Legal Aid). | NALSA / MHA Helplines |
+| **⚖️ Fact-to-Law Engine** | Describe any real-world incident in plain words; AI diagnoses exact applicable sections and legal rights. | BNS 2023 / IPC Cross-Walk |
+| **📋 Step-by-Step FIR Wizard** | Complete guide to filing an FIR, jurisdiction selection, Zero FIR rules, and remedies if police refuse. | BNSS Section 173(1), 175(3) |
+| **📖 Case Law Simplifier** | Breaks down landmark Supreme Court and High Court judgments into 3-point citizen summaries. | SC / HC Jurisprudence |
+| **📑 Legal Notice Drafter** | Generates formal, ready-to-print legal notices for money recovery, tenancy, cheque bounce, or consumer complaints. | Section 138 NI Act, CPC 1908 |
+| **🚗 Traffic Fine Calculator** | Instant fine calculation, compounding rules, and virtual court resolution methods. | Motor Vehicles Act 2019 |
+| **🎙️ Multilingual Voice AI** | Full voice conversation supporting **Pure Hindi (Devanagari)**, **English**, and conversational **Hinglish**. | Native Indian Voice Synthesis |
+| **🚨 Emergency SOS System** | One-tap access to 112 (Police), 1091 (Women), 1930 (Cyber Crime), and 15100 (Free Legal Aid). | NALSA / MHA Helplines |
 
 ---
 
-## ðŸ’» Tech Stack & Infrastructure
+## 💻 Tech Stack & Infrastructure
 
 <div align="center">
 
@@ -116,30 +116,30 @@ The engine extracts key facts, identifies statutory exposure, and formats a stru
 
 ---
 
-## ðŸ“‚ Repository Directory Structure
+## 📂 Repository Directory Structure
 
 ```plaintext
 Nyaya-Setu/
-â”œâ”€â”€ public/
-â”‚   â”œâ”€â”€ css/
-â”‚   â”‚   â””â”€â”€ style.css            # 100dvh Glassmorphic Responsive Design System
-â”‚   â”œâ”€â”€ js/
-â”‚   â”‚   â””â”€â”€ script.js            # Chat controller, media upload tray, speech synth
-â”‚   â”œâ”€â”€ images/
-â”‚   â”‚   â””â”€â”€ logo.png             # Official Nyayi brand logo (192px / 512px)
-â”‚   â”œâ”€â”€ auth.html                # Unified Auth: Google OAuth, GitHub, Email OTP
-â”‚   â”œâ”€â”€ index.html               # Main PWA application shell & composer
-â”‚   â”œâ”€â”€ manifest.json            # PWA standalone manifest configuration
-â”‚   â””â”€â”€ sw.js                    # Service Worker caching engine
-â”œâ”€â”€ server.js                    # Production Node.js server (Auth, AI API, Resend, Admin)
-â”œâ”€â”€ users.json                   # Encrypted user records & authentication timestamps
-â”œâ”€â”€ LICENSE                      # Proprietary Software License & BCI Legal Disclaimer
-â””â”€â”€ README.md                    # Project documentation
+├── public/
+│   ├── css/
+│   │   └── style.css            # 100dvh Glassmorphic Responsive Design System
+│   ├── js/
+│   │   └── script.js            # Chat controller, media upload tray, speech synth
+│   ├── images/
+│   │   └── logo.png             # Official Nyayi brand logo (192px / 512px)
+│   ├── auth.html                # Unified Auth: Google OAuth, GitHub, Email OTP
+│   ├── index.html               # Main PWA application shell & composer
+│   ├── manifest.json            # PWA standalone manifest configuration
+│   └── sw.js                    # Service Worker caching engine
+├── server.js                    # Production Node.js server (Auth, AI API, Resend, Admin)
+├── users.json                   # User records & authentication timestamps
+├── LICENSE                      # Proprietary Software License & BCI Legal Disclaimer
+└── README.md                    # Project documentation
 ```
 
 ---
 
-## ðŸš€ Quick Start & Local Setup
+## 🚀 Quick Start & Local Setup
 
 ### Prerequisites
 - [Node.js](https://nodejs.org/) (v18.0.0 or higher recommended)
@@ -169,15 +169,15 @@ Navigate to `http://localhost:3000` to launch the platform locally.
 
 ---
 
-## ðŸ‘¨â€ðŸ’» Founder & Lead Architect
+## 👨‍💻 Founder & Lead Architect
 
 <div align="center">
 
 <img src="https://github.com/Samfarhan.png" width="110px" style="border-radius:50%; border: 3px solid #10b981;" alt="Farhan Khan" /><br/>
 
 ### **Farhan Khan**
-*Founder & Lead Architect â€” Nyayi AI*  
-BCA (Bachelor of Computer Applications) â€¢ Full-Stack AI Developer
+*Founder & Lead Architect — Nyayi AI*  
+BCA (Bachelor of Computer Applications) • Full-Stack AI Developer
 
 [![Instagram](https://img.shields.io/badge/Instagram-%23E4405F.svg?style=for-the-badge&logo=Instagram&logoColor=white)](https://instagram.com/@he_yappz)
 [![Email](https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:samexists4real@gmail.com)
@@ -189,7 +189,7 @@ BCA (Bachelor of Computer Applications) â€¢ Full-Stack AI Developer
 
 ---
 
-## ðŸ›¡ï¸ License & Statutory Legal Disclaimer
+## 🛡️ License & Statutory Legal Disclaimer
 
 Copyright (c) 2026 **Farhan Khan**. All Rights Reserved.  
 This software is protected under a **Proprietary Commercial & IP Software License**. Unauthorized reproduction, resale, mirroring, white-labeling, or commercial distribution is strictly prohibited. See [LICENSE](LICENSE) for full legal terms.
@@ -197,5 +197,5 @@ This software is protected under a **Proprietary Commercial & IP Software Licens
 > **Statutory Notice under Advocates Act, 1961:** Nyayi is an AI-powered legal literacy and guidance tool. It does not provide formal legal advice, advocate representation, or court pleading services under the Advocates Act, 1961 or Bar Council of India (BCI) rules. For active litigation, users are advised to consult certified advocates or government legal aid (NALSA).
 
 <div align="center">
-  <sub>Built with â¤ï¸ in India by Farhan Khan for every citizen seeking justice.</sub>
+  <sub>Built with ❤️ in India by Farhan Khan for every citizen seeking justice.</sub>
 </div>
