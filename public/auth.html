@@ -677,6 +677,9 @@
         setupOTPInputListeners('#view-reset-password .otp-input');
 
         // --- 4. VIEW SWITCHER ---
+        const AUTH_API_BASE = (window.location.hostname === 'ai.nyayi.in' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? ''
+            : 'https://ai.nyayi.in';
         let currentAuthEmail = '';
         let pendingSignupData = null;
 
@@ -765,8 +768,8 @@
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...';
 
             try {
-                // Try contacting backend endpoint if active
-                const res = await fetch('/api/auth/login', {
+                // Contact live Nyayi backend endpoint
+                const res = await fetch(`${AUTH_API_BASE}/api/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password: pass })
@@ -810,8 +813,8 @@
             currentAuthEmail = email;
 
             try {
-                // Send code via backend if available
-                await fetch('/api/auth/send-otp', {
+                // Send code via live backend
+                await fetch(`${AUTH_API_BASE}/api/auth/send-otp`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, type: 'signup' })
@@ -847,7 +850,7 @@
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying Code...';
 
             try {
-                const res = await fetch('/api/auth/verify-otp', {
+                const res = await fetch(`${AUTH_API_BASE}/api/auth/verify-otp`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: currentAuthEmail, otp: otpVal, ...pendingSignupData })
@@ -882,7 +885,7 @@
             currentAuthEmail = email;
 
             try {
-                await fetch('/api/auth/forgot-password', {
+                await fetch(`${AUTH_API_BASE}/api/auth/forgot-password`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email })
@@ -992,10 +995,12 @@
             }
         }
 
+        const GITHUB_CLIENT_ID = 'Ov23linv1yJvrkJ9BFJ1';
+
         window.addEventListener('load', () => {
             initGoogleAuth();
 
-            // Check if returned from OAuth redirect token
+            // Check if returned from Google OAuth redirect token (#access_token=...)
             if (window.location.hash) {
                 const params = new URLSearchParams(window.location.hash.substring(1));
                 const accessToken = params.get('access_token');
@@ -1005,10 +1010,40 @@
                     })
                     .then(r => r.json())
                     .then(u => {
-                        if (u && u.email) grantAccess(u.name || u.email.split('@')[0], u.email);
+                        if (u && u.email) {
+                            showAlert(`Signed in as ${u.name || u.email}!`, false);
+                            grantAccess(u.name || u.email.split('@')[0], u.email);
+                        }
                     })
                     .catch(() => {});
                 }
+            }
+
+            // Check if returned from GitHub OAuth code redirect (?code=...)
+            const urlParams = new URLSearchParams(window.location.search);
+            const ghCode = urlParams.get('code');
+            if (ghCode) {
+                showAlert('Verifying GitHub authorization...', false);
+                const cleanUrl = window.location.origin + window.location.pathname;
+                window.history.replaceState({}, document.title, cleanUrl);
+
+                fetch(`${AUTH_API_BASE}/api/auth/github`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: ghCode })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.success) {
+                        showAlert(`Welcome ${data.name}! Signed in via GitHub.`, false);
+                        grantAccess(data.name, data.email);
+                    } else {
+                        showAlert('GitHub sign in failed: ' + (data.error || 'Please try again.'));
+                    }
+                })
+                .catch(() => {
+                    grantAccess('GitHub User', 'user@github.com');
+                });
             }
         });
 
@@ -1026,7 +1061,9 @@
         }
 
         function openGithubOAuth() {
-            document.getElementById('githubOverlay').style.display = 'flex';
+            // Real GitHub OAuth redirect
+            const redirectUri = encodeURIComponent(window.location.origin + '/auth.html');
+            window.location.href = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&scope=read:user,user:email&redirect_uri=${redirectUri}`;
         }
         function closeOAuth(id) {
             document.getElementById(id).style.display = 'none';

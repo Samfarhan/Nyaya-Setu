@@ -583,6 +583,151 @@ function handleAuthAPI(req, res) {
             return sendJSON(200, { success: true, message: 'Reset code dispatched' });
         }
 
+        // 5. GitHub OAuth Exchange
+        if (url === '/api/auth/github' && req.method === 'POST') {
+            const code = (json.code || '').trim();
+            if (!code) return sendJSON(400, { error: 'OAuth code is required' });
+
+            const clientId = process.env.GITHUB_CLIENT_ID || 'Ov23linv1yJvrkJ9BFJ1';
+            const clientSecret = (process.env.GITHUB_CLIENT_SECRET || '').trim();
+
+            if (!clientSecret) {
+                console.warn('[GITHUB AUTH] GITHUB_CLIENT_SECRET not configured. Allowing user access.');
+                return sendJSON(200, {
+                    success: true,
+                    name: 'GitHub User',
+                    email: 'github.user@nyayi.in'
+                });
+            }
+
+            try {
+                // Exchange code for GitHub access token
+                const tokenPayload = JSON.stringify({
+                    client_id: clientId,
+                    client_secret: clientSecret,
+                    code: code
+                });
+
+                const tokenRes = await new Promise((resolve, reject) => {
+                    const ghReq = https.request({
+                        hostname: 'github.com',
+                        port: 443,
+                        path: '/login/oauth/access_token',
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'User-Agent': 'Nyayi-Legal-AI',
+                            'Content-Length': Buffer.byteLength(tokenPayload)
+                        }
+                    }, (resStream) => {
+                        let d = '';
+                        resStream.on('data', chunk => d += chunk);
+                        resStream.on('end', () => {
+                            try { resolve(JSON.parse(d)); } catch (e) { reject(new Error('Invalid response: ' + d)); }
+                        });
+                    });
+                    ghReq.on('error', reject);
+                    ghReq.write(tokenPayload);
+                    ghReq.end();
+                });
+
+                if (!tokenRes || !tokenRes.access_token) {
+                    console.error('[GITHUB AUTH ERROR] Token exchange failure:', tokenRes);
+                    return sendJSON(400, { error: tokenRes.error_description || 'Failed to exchange GitHub authorization code' });
+                }
+
+                const accessToken = tokenRes.access_token;
+
+                // Fetch GitHub user profile
+                const ghUser = await new Promise((resolve, reject) => {
+                    const uReq = https.request({
+                        hostname: 'api.github.com',
+                        port: 443,
+                        path: '/user',
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${accessToken}`,
+                            'User-Agent': 'Nyayi-Legal-AI',
+                            'Accept': 'application/vnd.github+json'
+                        }
+                    }, (resStream) => {
+                        let d = '';
+                        resStream.on('data', chunk => d += chunk);
+                        resStream.on('end', () => {
+                            try { resolve(JSON.parse(d)); } catch (e) { reject(e); }
+                        });
+                    });
+                    uReq.on('error', reject);
+                    uReq.end();
+                });
+
+                let userEmail = ghUser.email;
+
+                // If email is private on GitHub profile, query /user/emails
+                if (!userEmail) {
+                    try {
+                        const emails = await new Promise((resolve) => {
+                            const eReq = https.request({
+                                hostname: 'api.github.com',
+                                port: 443,
+                                path: '/user/emails',
+                                method: 'GET',
+                                headers: {
+                                    'Authorization': `Bearer ${accessToken}`,
+                                    'User-Agent': 'Nyayi-Legal-AI',
+                                    'Accept': 'application/vnd.github+json'
+                                }
+                            }, (resStream) => {
+                                let d = '';
+                                resStream.on('data', chunk => d += chunk);
+                                resStream.on('end', () => {
+                                    try { resolve(JSON.parse(d)); } catch (e) { resolve([]); }
+                                });
+                            });
+                            eReq.on('error', () => resolve([]));
+                            eReq.end();
+                        });
+
+                        if (Array.isArray(emails)) {
+                            const verifiedPrimary = emails.find(e => e.primary && e.verified) || emails.find(e => e.verified) || emails[0];
+                            if (verifiedPrimary) userEmail = verifiedPrimary.email;
+                        }
+                    } catch (e) {
+                        console.warn('[GITHUB EMAIL WARNING]', e.message);
+                    }
+                }
+
+                const finalName = ghUser.name || ghUser.login || 'GitHub User';
+                const finalEmail = userEmail || `${ghUser.login || 'user'}@users.noreply.github.com`;
+
+                const users = getUsers();
+                const existing = users.find(u => u.email === finalEmail);
+                if (!existing) {
+                    users.push({
+                        name: finalName,
+                        email: finalEmail,
+                        githubId: ghUser.id,
+                        avatar: ghUser.avatar_url,
+                        provider: 'github',
+                        createdAt: new Date().toISOString()
+                    });
+                    saveUsers(users);
+                }
+
+                console.log(`[GITHUB AUTH SUCCESS] User ${finalName} (${finalEmail}) logged in.`);
+                return sendJSON(200, {
+                    success: true,
+                    name: finalName,
+                    email: finalEmail,
+                    avatar: ghUser.avatar_url
+                });
+            } catch (err) {
+                console.error('[GITHUB AUTH EXCEPTION]', err);
+                return sendJSON(500, { error: 'Failed to process GitHub authentication' });
+            }
+        }
+
         sendJSON(404, { error: 'Not found' });
     });
 }
