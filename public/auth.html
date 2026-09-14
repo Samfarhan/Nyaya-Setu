@@ -218,8 +218,18 @@
 
         .password-hint {
             font-size: 11px; color: var(--text-muted);
-            position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+            position: absolute; right: 44px; top: 50%; transform: translateY(-50%);
             pointer-events: none; opacity: 0.7;
+        }
+
+        .toggle-pass {
+            position: absolute; right: 15px; top: 50%; transform: translateY(-50%);
+            color: var(--text-muted); cursor: pointer; transition: all 0.2s ease;
+            font-size: 15px; z-index: 5; padding: 4px;
+        }
+        .toggle-pass:hover {
+            color: var(--primary);
+            transform: translateY(-50%) scale(1.15);
         }
 
         /* Action Buttons */
@@ -410,8 +420,9 @@
                         </div>
                         
                         <div class="input-group">
-                            <input type="password" id="loginPass" placeholder="Password" required>
+                            <input type="password" id="loginPass" placeholder="Password" style="padding-right:45px;" required>
                             <i class="fa-solid fa-lock"></i>
+                            <i class="fa-regular fa-eye-slash toggle-pass" onclick="togglePassVisibility('loginPass', this)" title="Show/Hide password"></i>
                         </div>
                         
                         <div style="text-align:right; margin-bottom:14px; margin-top:-4px;">
@@ -438,9 +449,10 @@
                         </div>
                         
                         <div class="input-group">
-                            <input type="password" id="signupPass" placeholder="Create Password" minlength="8" required>
+                            <input type="password" id="signupPass" placeholder="Create Password" minlength="8" style="padding-right:110px;" required>
                             <i class="fa-solid fa-lock"></i>
                             <span class="password-hint">Min. 8 chars</span>
+                            <i class="fa-regular fa-eye-slash toggle-pass" onclick="togglePassVisibility('signupPass', this)" title="Show/Hide password"></i>
                         </div>
 
                         <button type="submit" class="auth-btn" id="signupBtn">
@@ -526,9 +538,10 @@
                     </div>
 
                     <div class="input-group">
-                        <input type="password" id="newPass" placeholder="Enter New Password" minlength="8" required>
+                        <input type="password" id="newPass" placeholder="Enter New Password" minlength="8" style="padding-right:110px;" required>
                         <i class="fa-solid fa-lock"></i>
                         <span class="password-hint">Min. 8 chars</span>
+                        <i class="fa-regular fa-eye-slash toggle-pass" onclick="togglePassVisibility('newPass', this)" title="Show/Hide password"></i>
                     </div>
 
                     <button type="submit" class="auth-btn" id="resetPassBtn">
@@ -626,7 +639,24 @@
             particleBox.appendChild(p);
         }
 
-        // --- 2. AUTO FOCUS OTP INPUTS ---
+        // --- 2. SHOW / HIDE PASSWORD TOGGLE ---
+        function togglePassVisibility(inputId, iconEl) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                iconEl.classList.remove('fa-eye-slash');
+                iconEl.classList.add('fa-eye');
+                iconEl.style.color = 'var(--primary)';
+            } else {
+                input.type = 'password';
+                iconEl.classList.remove('fa-eye');
+                iconEl.classList.add('fa-eye-slash');
+                iconEl.style.color = 'var(--text-muted)';
+            }
+        }
+
+        // --- 3. AUTO FOCUS OTP INPUTS ---
         function setupOTPInputListeners(containerSelector) {
             const inputs = document.querySelectorAll(containerSelector);
             inputs.forEach((input, index) => {
