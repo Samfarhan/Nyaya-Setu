@@ -1,7 +1,7 @@
 // =========================================================
 // NYAYI PRO (न्यायी) — CORE CLIENT APPLICATION SCRIPT
-// Architecture: IndexedDB Store • Multi-Turn Memory Manager
-// Structured Legal Presentation • Voice & Procedural Engines
+// Architecture: IndexedDB Store • Multi-Turn Context Memory
+// Date-Grouped History • Structured Legal Parser • Voice Engine
 // Developed by Farhan Khan (BCA Student)
 // =========================================================
 
@@ -86,7 +86,7 @@ const CPC_DATABASE = {
     'SEC9': { cpc: 'Section 9 CPC', title: 'Courts to Try All Civil Suits Unless Barred (दीवानी क्षेत्राधिकार)', category: 'Civil Jurisdiction', details: 'Civil courts have jurisdiction to try all suits of a civil nature unless expressly or impliedly barred by statute.', significance: 'Fundamental Civil Court Power' }
 };
 
-// E. Traffic Penalties Database
+// E. Traffic Violations Detail
 const TRAFFIC_FINES = {
     'helmet': { title: 'Driving Without Helmet', fine: '₹1,000', section: 'Section 194D MVA', penalty: 'License Disqualification for 3 months' },
     'seatbelt': { title: 'Driving Without Seatbelt', fine: '₹1,000', section: 'Section 194B MVA', penalty: 'Applicable to driver and front/rear passengers' },
@@ -109,7 +109,6 @@ const ConversationStore = {
     async init() {
         return new Promise((resolve) => {
             if (!('indexedDB' in window)) {
-                console.warn('IndexedDB not supported, falling back to localStorage');
                 resolve(false);
                 return;
             }
@@ -124,15 +123,10 @@ const ConversationStore = {
                 };
                 request.onsuccess = (e) => {
                     this.db = e.target.result;
-                    // Migrate legacy localStorage if IndexedDB is empty
                     this.migrateLegacyStorage().then(() => resolve(true));
                 };
-                request.onerror = () => {
-                    console.warn('IndexedDB open error, using localStorage');
-                    resolve(false);
-                };
+                request.onerror = () => resolve(false);
             } catch (err) {
-                console.warn('IndexedDB init failed:', err);
                 resolve(false);
             }
         });
@@ -149,7 +143,7 @@ const ConversationStore = {
                         for (const chat of parsed) {
                             await this.save({
                                 id: chat.id || Date.now().toString(),
-                                title: chat.title || 'Consultation',
+                                title: chat.title || 'Legal Consultation',
                                 messages: chat.messages || [],
                                 createdAt: chat.id ? parseInt(chat.id) || Date.now() : Date.now(),
                                 updatedAt: Date.now()
@@ -158,9 +152,7 @@ const ConversationStore = {
                     }
                 }
             }
-        } catch (e) {
-            console.error('Migration error:', e);
-        }
+        } catch (e) {}
     },
 
     async getAll() {
@@ -207,7 +199,6 @@ const ConversationStore = {
         chat.updatedAt = Date.now();
         if (!chat.createdAt) chat.createdAt = Date.now();
 
-        // Dual-write to localStorage for instant reliability & cross-tab resilience
         try {
             const all = await this.getAll();
             const idx = all.findIndex(c => c.id === chat.id);
@@ -268,27 +259,62 @@ const ConversationStore = {
     }
 };
 
-// --- 4. CONTEXT MEMORY MANAGER ---
+// --- 4. CONTEXT MEMORY & TITLE GENERATOR ---
 const MemoryManager = {
-    // Builds sliding context window for Groq API
+    // Generates meaningful, non-generic title from first user query
+    generateMeaningfulTitle(query) {
+        if (!query) return 'Legal Consultation';
+        const q = query.trim();
+
+        // Check common legal keywords
+        const lower = q.toLowerCase();
+        if (lower.includes('cyber') || lower.includes('fraud') || lower.includes('1930') || lower.includes('scam')) {
+            return 'Cyber Fraud Recovery';
+        }
+        if (lower.includes('fir') || lower.includes('police') || lower.includes('thana')) {
+            return 'Police FIR Guidance';
+        }
+        if (lower.includes('tenant') || lower.includes('rent') || lower.includes('landlord') || lower.includes('deposit')) {
+            return 'Tenancy & Rent Dispute';
+        }
+        if (lower.includes('property') || lower.includes('stay') || lower.includes('order 39')) {
+            return 'Property Dispute & Injunction';
+        }
+        if (lower.includes('bail') || lower.includes('arrest') || lower.includes('438')) {
+            return 'Bail & Arrest Safeguards';
+        }
+        if (lower.includes('cheque') || lower.includes('138') || lower.includes('bounce')) {
+            return 'Section 138 Cheque Notice';
+        }
+        if (lower.includes('challan') || lower.includes('traffic') || lower.includes('fine')) {
+            return 'Traffic Fine & Challan';
+        }
+        if (lower.includes('divorce') || lower.includes('maintenance') || lower.includes('125') || lower.includes('144')) {
+            return 'Family Law & Maintenance';
+        }
+
+        // Clean first sentence / clause
+        let clean = q.replace(/^[\s,?.!]+|[\s,?.!]+$/g, '');
+        const firstClause = clean.split(/[,?.;\n]/)[0].trim();
+        if (firstClause.length > 5 && firstClause.length <= 36) {
+            return firstClause.charAt(0).toUpperCase() + firstClause.slice(1);
+        }
+        return clean.slice(0, 32).trim() + (clean.length > 32 ? '...' : '');
+    },
+
+    // Extracts sliding window of previous turns for /api/chat
     getContextPayload(messages, maxTurns = 8) {
         if (!Array.isArray(messages) || messages.length === 0) return [];
-        
-        // Take the last maxTurns messages (excluding the currently pending one)
         const relevant = messages.slice(-maxTurns);
         return relevant.map(m => ({
             role: m.role === 'ai' ? 'assistant' : 'user',
-            content: this.cleanContentForContext(m.text || '')
+            content: this.cleanContent(m.text || '')
         })).filter(m => m.content.length > 0);
     },
 
-    cleanContentForContext(text) {
+    cleanContent(text) {
         if (!text) return '';
-        return text
-            .replace(/<[^>]*>/g, ' ')
-            .replace(/s+/g, ' ')
-            .trim()
-            .slice(0, 800);
+        return text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 800);
     }
 };
 
@@ -305,13 +331,13 @@ const MessageRenderer = {
         if (!rawText) return '';
         let text = rawText;
 
-        // 1. Basic formatting: bold, headings, links
+        // Bold & Headings
         text = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
         text = text.replace(/^### (.*$)/gim, '<h3>$1</h3>');
         text = text.replace(/^## (.*$)/gim, '<h2>$1</h2>');
         text = text.replace(/^# (.*$)/gim, '<h1>$1</h1>');
 
-        // External URLs with security rel
+        // External links with security rel
         text = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, 
             '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--primary); font-weight:600;">$1 <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:10px;"></i></a>'
         );
@@ -326,8 +352,27 @@ const MessageRenderer = {
         text = text.replace(/<br><\/li>/g, '</li>');
         text = text.replace(/<br><li>/g, '<li>');
 
-        // 2. High-precision statutory pill detection
-        // Highlight BNS, BNSS, BSA, CPC, and IPC mentions as interactive pills
+        // Dynamic Sectioning: Short Answer
+        text = text.replace(/<b>(Short Answer|संक्षिप्त उत्तर):<\/b>(.*?)(?=(<b>|<br><br>|$))/i,
+            '<div class="legal-summary-box"><b><i class="fa-solid fa-bolt" style="color:var(--primary); margin-right:6px;"></i> Short Answer:</b>$2</div>'
+        );
+
+        // Dynamic Sectioning: What the Law Says
+        text = text.replace(/<b>(What the Law Says|कानूनी प्रावधान|Applicable Indian Laws):<\/b>/gi,
+            '<div style="margin-top:10px; font-weight:700; color:var(--primary);"><i class="fa-solid fa-book-bookmark"></i> What the Law Says:</div>'
+        );
+
+        // Dynamic Sectioning: What You Should Do / Action Steps
+        text = text.replace(/<b>(What You Should Do|कार्रवाई योजना|Step-by-Step Action Plan):<\/b>/gi,
+            '<div style="margin-top:10px; font-weight:700; color:var(--primary);"><i class="fa-solid fa-list-check"></i> What You Should Do:</div>'
+        );
+
+        // Dynamic Sectioning: Important Points / Cautions
+        text = text.replace(/<b>(Important Points|Important Precaution|महत्वपूर्ण बातें):<\/b>/gi,
+            '<div style="margin-top:10px; font-weight:700; color:var(--accent-amber);"><i class="fa-solid fa-triangle-exclamation"></i> Important Points:</div>'
+        );
+
+        // Statute Pill Replacement (using backticks)
         text = text.replace(/\b(BNS Section [0-9]+(\([0-9]+\))?|BNS [0-9]+|Section [0-9]+(\([0-9]+\))? BNS)/gi, 
             `<span class="statute-pill" onclick="quickConvert('$1')"><i class="fa-solid fa-scale-balanced"></i> $1</span>`
         );
@@ -341,11 +386,6 @@ const MessageRenderer = {
             `<span class="statute-pill" onclick="quickConvert('$1')"><i class="fa-solid fa-building-shield"></i> $1</span>`
         );
 
-        // 3. Highlight summary section if present
-        text = text.replace(/<b>(Summary|सारांश):<\/b>(.*?)(?=(<b>|<br><br>|$))/i, 
-            '<div class="legal-summary-box"><b><i class="fa-solid fa-feather-pointed" style="color:var(--primary); margin-right:6px;"></i> Summary:</b>$2</div>'
-        );
-
         return text;
     },
 
@@ -355,11 +395,11 @@ const MessageRenderer = {
 
         if (lower.includes('cheating') || lower.includes('fraud') || lower.includes('420') || lower.includes('318') || lower.includes('1930')) {
             questions.push('Bank me transaction chargeback request kaise karein?');
-            questions.push('Cyber Crime Helpline 1930 par complaint likhwane ke baad kya hota hai?');
-        } else if (lower.includes('fir') || lower.includes('police') || lower.includes('thana') || lower.includes('154') || lower.includes('173')) {
-            questions.push('Zero FIR darj karwane ka step-by-step procedure batao.');
+            questions.push('Cyber Crime Helpline 1930 complaint follow-up process kya hai?');
+        } else if (lower.includes('fir') || lower.includes('police') || lower.includes('154') || lower.includes('173')) {
+            questions.push('Zero FIR darj karwane ka exact step-by-step procedure batao.');
             questions.push('Agar police FIR na likhe toh SP ko letter kaise bhein?');
-        } else if (lower.includes('tenant') || lower.includes('rent') || lower.includes('property') || lower.includes('order 39') || lower.includes('stay')) {
+        } else if (lower.includes('tenant') || lower.includes('rent') || lower.includes('order 39') || lower.includes('stay')) {
             questions.push('Civil court me Stay Order (Order 39) lene ki zaroori shartein kya hain?');
             questions.push('Tenant ko Legal Eviction Notice bhejne ka format samjhao.');
         } else if (lower.includes('bail') || lower.includes('arrest') || lower.includes('438') || lower.includes('482')) {
@@ -367,7 +407,7 @@ const MessageRenderer = {
             questions.push('Police arrest karte waqt citizen ke 5 zaroori adhikar kya hain?');
         } else {
             questions.push('Is mamle me kaunse zaroori saboot (evidence) ikattha karne chahiye?');
-            questions.push('Kya is apradh me seedhe court me private complaint file kar sakte hain?');
+            questions.push('Kya is mamle me bina thane gaye seedhe magistrate ke paas ja sakte hain?');
         }
 
         return questions.slice(0, 2);
@@ -390,25 +430,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (langSelectEl) langSelectEl.value = aiLanguage;
 
     // Restore dark mode
-    if (localStorage.getItem('nyayaTheme') === 'dark' || !localStorage.getItem('nyayaTheme')) {
-        document.body.classList.remove('light-mode');
-        updateThemeIcon(true);
-    } else {
+    if (localStorage.getItem('nyayaTheme') === 'light') {
         document.body.classList.add('light-mode');
         updateThemeIcon(false);
+    } else {
+        document.body.classList.remove('light-mode');
+        updateThemeIcon(true);
     }
 
-    // Restore settings inputs
+    // Restore user settings
     const savedName = localStorage.getItem('nyayaUser');
-    if (savedName && document.getElementById('userNameInput')) {
-        document.getElementById('userNameInput').value = savedName;
+    if (savedName) {
+        user = savedName;
+        const nameInput = document.getElementById('userNameInput');
+        if (nameInput) nameInput.value = user;
+        updateWelcomeUserName();
     }
     const savedContact = localStorage.getItem('nyayaEmergencyContact');
     if (savedContact && document.getElementById('userEmergencyContact')) {
         document.getElementById('userEmergencyContact').value = savedContact;
     }
 
-    // Load consultations from Store
+    // Load active conversation
     const allChats = await ConversationStore.getAll();
     if (allChats.length === 0) {
         await startNewChat();
@@ -416,11 +459,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         await openChat(allChats[0].id);
     }
 
-    // Modal background click to close
+    // Modal click backdrop to close
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) closeAllModals();
         });
+    });
+
+    // Close composer tools on outside click
+    document.addEventListener('click', (e) => {
+        const popup = document.getElementById('composerToolsPopup');
+        const btn = document.getElementById('composerToolBtn');
+        if (popup && popup.classList.contains('active')) {
+            if (!popup.contains(e.target) && !btn.contains(e.target)) {
+                popup.classList.remove('active');
+            }
+        }
     });
 
     // Keyboard Shortcuts
@@ -428,6 +482,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (e.key === 'Escape') {
             closeAllModals();
             closeVoiceAssistant();
+            const popup = document.getElementById('composerToolsPopup');
+            if (popup) popup.classList.remove('active');
         }
         if ((e.altKey && e.key.toLowerCase() === 'v') || (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'v')) {
             e.preventDefault();
@@ -449,6 +505,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, { passive: true });
 });
 
+function updateWelcomeUserName() {
+    const el = document.getElementById('welcomeUserName');
+    if (el) el.innerText = user;
+}
+
 // --- 7. EMPTY / WELCOME STATE ---
 function renderEmptyState() {
     const box = document.getElementById('chat-box');
@@ -456,48 +517,47 @@ function renderEmptyState() {
 
     box.innerHTML = `
         <div class="welcome-hero">
-            <div class="welcome-badge-icon">
+            <div class="welcome-ai-emblem">
                 <i class="fa-solid fa-scale-balanced"></i>
             </div>
-            <h1 class="gradient-text">Namaste, ${MessageRenderer.escapeHtml(user)} Ji</h1>
-            <p>Nyayi (न्यायी) me aapka swagat hai. Indian Penal Code, BNS 2023, Police FIR, Traffic Challan ya Consumer rights par turant vishwasniya kanooni margdarshan prapt karein.</p>
+            <h1 class="welcome-title">Namaste, <span id="welcomeUserName">${MessageRenderer.escapeHtml(user)}</span> 👋</h1>
+            <h2 class="welcome-subtitle">How can Nyayi help you today?</h2>
+            <p class="welcome-tagline">Understand Indian law, rights and legal procedures in simple language.</p>
             
-            <!-- 4 Categorized Legal Domain Quick Action Cards -->
             <div class="domain-cards-grid">
-                <div class="domain-card" onclick="askSuggestion('IPC Section 420 aur nayi BNS me kya antar hai? Cheating par kya saza hai?')">
+                <div class="domain-card" onclick="askSuggestion('Mera online financial cyber fraud ho gaya hai, paise wapas kaise paayein? 1930 helpline kaise kaam karti hai?')">
                     <div class="domain-card-header">
-                        <span class="domain-card-title"><i class="fa-solid fa-gavel"></i> Criminal Law & BNS</span>
-                        <span class="domain-badge">BNS 2023</span>
+                        <span class="domain-card-title"><i class="fa-solid fa-shield-halved"></i> Cyber Fraud</span>
+                        <span class="domain-badge cyan">1930 Helpline</span>
                     </div>
-                    <p class="domain-card-desc">BNS vs IPC dharaen, bailable apradh, punishment, aur police adhikar.</p>
+                    <p class="domain-card-desc">Money lost online? Know what to do next.</p>
                 </div>
 
-                <div class="domain-card" onclick="askSuggestion('Mera online cyber fraud ho gaya hai, paise wapas kaise paayein? 1930 helpline kaise kaam karti hai?')">
+                <div class="domain-card" onclick="askSuggestion('Police station me FIR darj karwane ka process kya hai aur agar police FIR likhne se mana kare toh kya adhikar hain?')">
                     <div class="domain-card-header">
-                        <span class="domain-card-title"><i class="fa-solid fa-shield-halved"></i> Cyber Crime & Scams</span>
-                        <span class="domain-badge cyan">Golden Hour</span>
-                    </div>
-                    <p class="domain-card-desc">UPI fraud, frozen accounts, cybercrime.gov.in aur Helpline 1930 steps.</p>
-                </div>
-
-                <div class="domain-card" onclick="askSuggestion('Agar police station me FIR darj karne se mana karein toh kya kanooni adhikar hain?')">
-                    <div class="domain-card-header">
-                        <span class="domain-card-title"><i class="fa-solid fa-file-circle-check"></i> Police FIR & Remedies</span>
+                        <span class="domain-card-title"><i class="fa-solid fa-file-circle-check"></i> Police FIR</span>
                         <span class="domain-badge amber">Zero FIR</span>
                     </div>
-                    <p class="domain-card-desc">Mandatory Zero FIR Section 173(1) BNSS aur Magistrate 175(3) remedies.</p>
+                    <p class="domain-card-desc">Need help understanding the FIR process?</p>
                 </div>
 
-                <div class="domain-card" onclick="askSuggestion('Tenant rent nahi de raha hai, legal eviction notice kaise bhein? Stay order kaise lein?')">
+                <div class="domain-card" onclick="askSuggestion('Property ya tenancy dispute me legal rights aur civil stay order (Order 39) ke niyam samjhao.')">
                     <div class="domain-card-header">
-                        <span class="domain-card-title"><i class="fa-solid fa-house-chimney-user"></i> Property & Civil Suits</span>
-                        <span class="domain-badge purple">Order 39</span>
+                        <span class="domain-card-title"><i class="fa-solid fa-house-chimney-user"></i> Property Dispute</span>
+                        <span class="domain-badge purple">Civil Rights</span>
                     </div>
-                    <p class="domain-card-desc">Order 39 stay orders, property possession, aur legal notice drafting.</p>
+                    <p class="domain-card-desc">Understand your rights in a property dispute.</p>
+                </div>
+
+                <div class="domain-card" onclick="askSuggestion('IPC Section 420, 302, 376 aur nayi BNS provisions me kya antar hai? Kaunsi dhara lagu hogi?')">
+                    <div class="domain-card-header">
+                        <span class="domain-card-title"><i class="fa-solid fa-gavel"></i> BNS / IPC</span>
+                        <span class="domain-badge">BNS 2023</span>
+                    </div>
+                    <p class="domain-card-desc">Compare old and new criminal law provisions.</p>
                 </div>
             </div>
 
-            <!-- Quick Action Suggestion Chips -->
             <div class="suggestion-chips">
                 <button class="chip" onclick="askSuggestion('Anticipatory bail lene ki prakriya aur Section 482 BNSS samjhao.')">
                     <i class="fa-solid fa-handcuffs"></i> Anticipatory Bail Guide
@@ -523,12 +583,11 @@ function askSuggestion(text) {
     }
 }
 
-// --- 8. MESSAGE RENDERING & APP CHAT THREAD ---
-function appendMessage(text, role, skipScroll = false, isStreaming = false) {
+// --- 8. MESSAGE THREAD & RENDERING ---
+function appendMessage(text, role, skipScroll = false) {
     const box = document.getElementById('chat-box');
     if (!box) return null;
 
-    // Remove welcome hero if present
     const hero = box.querySelector('.welcome-hero');
     if (hero) hero.remove();
 
@@ -550,7 +609,7 @@ function appendMessage(text, role, skipScroll = false, isStreaming = false) {
     } else {
         contentDiv.innerHTML = MessageRenderer.formatLegalResponse(text);
         
-        // Advocate consultation callout
+        // Legal Trust & Advocate Guidance Callout
         const calloutDiv = document.createElement('div');
         calloutDiv.className = 'advocate-callout';
         calloutDiv.innerHTML = '<i class="fa-solid fa-circle-info"></i> <span><b>Kanooni Salah:</b> Nyayi AI kanooni jaankari pradan karta hai. Adalat me vakalatnama aur mudde ke liye verified advocate se paramarsh karein.</span>';
@@ -605,7 +664,7 @@ function appendMessage(text, role, skipScroll = false, isStreaming = false) {
         if (role === 'ai') {
             setTimeout(() => {
                 msgDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 60);
+            }, 50);
         } else {
             msgDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
         }
@@ -648,7 +707,7 @@ function showThinkingIndicator() {
         stageIdx = (stageIdx + 1) % stages.length;
         const textEl = document.getElementById('thinkingStatusText');
         if (textEl) textEl.innerText = stages[stageIdx];
-    }, 2200);
+    }, 2000);
 }
 
 function removeThinkingIndicator() {
@@ -678,11 +737,8 @@ function setGeneratingState(generating) {
 }
 
 function handleSendOrStop() {
-    if (isGenerating) {
-        stopGeneration();
-    } else {
-        sendMessage();
-    }
+    if (isGenerating) stopGeneration();
+    else sendMessage();
 }
 
 function stopGeneration() {
@@ -694,11 +750,16 @@ function stopGeneration() {
     setGeneratingState(false);
 }
 
-// --- 10. COMPOSER & AUTO-GROW TEXTAREA ---
+// --- 10. COMPOSER & QUICK TOOLS POPUP ---
+function toggleComposerTools() {
+    const popup = document.getElementById('composerToolsPopup');
+    if (popup) popup.classList.toggle('active');
+}
+
 function autoGrowTextarea(textarea) {
     if (!textarea) return;
     textarea.style.height = 'auto';
-    textarea.style.height = Math.min(textarea.scrollHeight, 140) + 'px';
+    textarea.style.height = Math.min(textarea.scrollHeight, 130) + 'px';
 }
 
 function handleInputKey(e) {
@@ -723,27 +784,34 @@ async function sendMessage() {
     input.value = '';
     autoGrowTextarea(input);
 
+    const popup = document.getElementById('composerToolsPopup');
+    if (popup) popup.classList.remove('active');
+
     // Append user message
     appendMessage(text, 'user');
 
-    // Retrieve or initialize active conversation
+    // Retrieve or initialize conversation in store
     let currentChat = await ConversationStore.get(activeChatId);
     if (!currentChat) {
-        const newId = Date.now().toString();
+        const newId = 'conv_' + Date.now();
         currentChat = {
             id: newId,
-            title: text.slice(0, 34),
+            title: MemoryManager.generateMeaningfulTitle(text),
             messages: [],
             createdAt: Date.now(),
             updatedAt: Date.now()
         };
         activeChatId = newId;
-    } else if (currentChat.messages.length === 0) {
-        currentChat.title = text.slice(0, 34);
+    } else if (currentChat.messages.length === 0 || currentChat.title === 'Legal Consultation' || currentChat.title === 'New Consultation') {
+        currentChat.title = MemoryManager.generateMeaningfulTitle(text);
     }
 
-    // Push user message to store
-    currentChat.messages.push({ role: 'user', text: text, timestamp: Date.now() });
+    currentChat.messages.push({
+        id: 'msg_' + Date.now(),
+        role: 'user',
+        text: text,
+        timestamp: Date.now()
+    });
     currentChatMessages = currentChat.messages;
     await ConversationStore.save(currentChat);
     await loadHistory();
@@ -780,11 +848,16 @@ async function sendMessage() {
         const reply = data.reply || "Maaf karein, AI se uttar lene me samasya aayi.";
 
         appendMessage(reply, 'ai');
-        currentChat.messages.push({ role: 'ai', text: reply, timestamp: Date.now() });
+        currentChat.messages.push({
+            id: 'msg_' + Date.now(),
+            role: 'ai',
+            text: reply,
+            timestamp: Date.now()
+        });
         currentChatMessages = currentChat.messages;
         await ConversationStore.save(currentChat);
 
-        // Auto-speak response if triggered by voice query
+        // Auto-speak response if triggered by voice assistant
         autoSpeakResponse(reply);
 
     } catch (err) {
@@ -795,7 +868,7 @@ async function sendMessage() {
             appendMessage("Response generation was stopped.", 'ai');
         } else {
             console.error("Chat API error:", err);
-            appendMessage("Network issue: Server se sampark nahi ho pa raha hai. Kripya check karein ki server chal raha hai.", 'ai');
+            appendMessage("Network issue: Server se sampark nahi ho pa raha hai. Kripya check karein ki internet chal raha hai.", 'ai');
         }
     } finally {
         activeAbortController = null;
@@ -807,7 +880,6 @@ async function regenerateLastResponse() {
     const currentChat = await ConversationStore.get(activeChatId);
     if (!currentChat || currentChat.messages.length === 0) return;
 
-    // Find the last user query
     let lastUserQuery = '';
     for (let i = currentChat.messages.length - 1; i >= 0; i--) {
         if (currentChat.messages[i].role === 'user') {
@@ -817,7 +889,6 @@ async function regenerateLastResponse() {
     }
     if (!lastUserQuery) return;
 
-    // Remove the last AI message if present
     if (currentChat.messages[currentChat.messages.length - 1].role === 'ai') {
         currentChat.messages.pop();
     }
@@ -829,12 +900,12 @@ async function regenerateLastResponse() {
     }
 }
 
-// --- 12. CHAT SESSIONS & HISTORY MANAGEMENT ---
+// --- 12. CHAT SESSIONS & DATE-GROUPED HISTORY ---
 async function startNewChat() {
-    const newId = Date.now().toString();
+    const newId = 'conv_' + Date.now();
     const newChat = {
         id: newId,
-        title: "New Consultation",
+        title: "Legal Consultation",
         messages: [],
         createdAt: Date.now(),
         updatedAt: Date.now()
@@ -863,6 +934,19 @@ async function openChat(chatId) {
     await loadHistory();
 }
 
+async function renameChat(chatId, event) {
+    if (event) event.stopPropagation();
+    const chat = await ConversationStore.get(chatId);
+    if (!chat) return;
+
+    const newTitle = prompt("Enter new consultation title:", chat.title || "Consultation");
+    if (newTitle && newTitle.trim()) {
+        chat.title = newTitle.trim();
+        await ConversationStore.save(chat);
+        await loadHistory();
+    }
+}
+
 async function deleteChat(chatId, event) {
     if (event) event.stopPropagation();
     await ConversationStore.delete(chatId);
@@ -875,10 +959,36 @@ async function deleteChat(chatId, event) {
 }
 
 async function clearHistory() {
-    if (confirm("Kya aap apni consultation history clear karna chahte hain?")) {
+    if (confirm("Kya aap apni saari consultation history clear karna chahte hain?")) {
         await ConversationStore.clearAll();
         await startNewChat();
     }
+}
+
+async function clearLocalData() {
+    if (confirm("WARNING: This will delete ALL saved conversations and reset local settings. Proceed?")) {
+        await ConversationStore.clearAll();
+        localStorage.clear();
+        closeAllModals();
+        alert("All local data cleared successfully.");
+        window.location.reload();
+    }
+}
+
+// Date Grouping Helper
+function categorizeByDate(timestamp) {
+    const now = new Date();
+    const date = new Date(timestamp || Date.now());
+    
+    // Reset hours to compare calendar days
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const target = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+    const diffDays = Math.round((today - target) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays <= 7) return 'Previous 7 Days';
+    return 'Older';
 }
 
 async function loadHistory(filterText = '') {
@@ -890,23 +1000,49 @@ async function loadHistory(filterText = '') {
     const filtered = filterText ? chats.filter(c => (c.title || '').toLowerCase().includes(filterText.toLowerCase())) : chats;
 
     if (filtered.length === 0) {
-        list.innerHTML = '<div style="padding:10px 12px; font-size:12px; color:var(--text-muted);">No consultations found</div>';
+        list.innerHTML = '<div style="padding:10px 12px; font-size:11.5px; color:var(--text-muted);">No consultations found</div>';
         return;
     }
 
+    // Group chats into Today, Yesterday, Previous 7 Days, Older
+    const groups = {
+        'Today': [],
+        'Yesterday': [],
+        'Previous 7 Days': [],
+        'Older': []
+    };
+
     filtered.forEach(chat => {
-        const item = document.createElement('div');
-        item.className = `history-item ${chat.id === activeChatId ? 'active' : ''}`;
-        item.innerHTML = `
-            <i class="fa-regular fa-message"></i>
-            <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${MessageRenderer.escapeHtml(chat.title || "Consultation")}</span>
-            <i class="fa-solid fa-trash-can history-item-delete" title="Delete consultation" onclick="deleteChat('${chat.id}', event)"></i>
-        `;
-        item.onclick = () => {
-            openChat(chat.id);
-            if (window.innerWidth <= 768) toggleSidebar(false);
-        };
-        list.appendChild(item);
+        const cat = categorizeByDate(chat.updatedAt || chat.createdAt);
+        groups[cat].push(chat);
+    });
+
+    ['Today', 'Yesterday', 'Previous 7 Days', 'Older'].forEach(groupName => {
+        const items = groups[groupName];
+        if (items.length === 0) return;
+
+        const header = document.createElement('div');
+        header.className = 'history-group-header';
+        header.innerText = groupName;
+        list.appendChild(header);
+
+        items.forEach(chat => {
+            const item = document.createElement('div');
+            item.className = `history-item ${chat.id === activeChatId ? 'active' : ''}`;
+            item.innerHTML = `
+                <i class="fa-regular fa-message" style="font-size:11.5px; color:var(--text-muted);"></i>
+                <span class="history-item-title">${MessageRenderer.escapeHtml(chat.title || "Consultation")}</span>
+                <div class="history-item-actions">
+                    <i class="fa-solid fa-pen history-action-btn" title="Rename" onclick="renameChat('${chat.id}', event)"></i>
+                    <i class="fa-solid fa-trash-can history-action-btn delete-btn" title="Delete" onclick="deleteChat('${chat.id}', event)"></i>
+                </div>
+            `;
+            item.onclick = () => {
+                openChat(chat.id);
+                if (window.innerWidth <= 768) toggleSidebar(false);
+            };
+            list.appendChild(item);
+        });
     });
 }
 
@@ -942,10 +1078,11 @@ function closeAllModals() {
     document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
     const sos = document.getElementById('sosOverlay');
     if (sos) sos.classList.remove('active');
+    const popup = document.getElementById('composerToolsPopup');
+    if (popup) popup.classList.remove('active');
 }
 
 // --- 14. STATUTORY TOOLS & SEARCH ENGINES (PRESERVED) ---
-
 function setStatuteFilter(statute, btn) {
     activeStatuteFilter = statute;
     document.querySelectorAll('.conv-tab').forEach(b => b.classList.remove('active'));
@@ -986,18 +1123,18 @@ function convertSection() {
         if (bnsHit) {
             matchesCount++;
             resultsHtml += `
-                <div style="background:var(--card-bg); border:1px solid var(--border); border-left:4px solid #dc2626; padding:14px; border-radius:12px; margin-bottom:12px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:11px; font-weight:800; background:#fee2e2; color:#dc2626; padding:3px 8px; border-radius:6px;">PENAL LAW (BNS 2023)</span>
-                        <span style="font-size:12px; color:var(--text-muted);">IPC Dhara: <b>${query}</b></span>
+                <div style="background:var(--card-bg); border:1px solid var(--border); border-left:3px solid #dc2626; padding:12px 14px; border-radius:10px; margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <span style="font-size:10px; font-weight:800; background:#fee2e2; color:#dc2626; padding:2px 7px; border-radius:4px;">PENAL LAW (BNS 2023)</span>
+                        <span style="font-size:11.5px; color:var(--text-muted);">IPC: <b>${query}</b></span>
                     </div>
-                    <div style="font-size:17px; font-weight:800; color:var(--text-main); margin-bottom:4px;">Nayi BNS: ${bnsHit.bns}</div>
-                    <div style="font-weight:700; font-size:14px; color:var(--primary); margin-bottom:8px;">${bnsHit.title}</div>
-                    <div style="font-size:13px; line-height:1.6; color:var(--text-main);">
-                        <div>⚖️ <b>Saza (Punishment):</b> ${bnsHit.punishment}</div>
+                    <div style="font-size:15px; font-weight:800; color:var(--text-main); margin-bottom:2px;">Nayi BNS: ${bnsHit.bns}</div>
+                    <div style="font-weight:700; font-size:13px; color:var(--primary); margin-bottom:6px;">${bnsHit.title}</div>
+                    <div style="font-size:12.5px; line-height:1.55; color:var(--text-main);">
+                        <div>⚖️ <b>Saza:</b> ${bnsHit.punishment}</div>
                         <div>🔒 <b>Bailability:</b> ${bnsHit.bailable} • 🚨 <b>Nature:</b> ${bnsHit.cognizable}</div>
                     </div>
-                    <button class="modal-btn" style="margin-top:10px; font-size:12.5px; padding:9px 16px;" onclick="closeAllModals(); askSuggestion('Mujhe BNS ${bnsHit.bns} (purani IPC ${query}) ke baare me vistrit kanooni jankari dein.')">
+                    <button class="modal-btn" style="margin-top:8px; font-size:12px; padding:7px 12px;" onclick="closeAllModals(); askSuggestion('Mujhe BNS ${bnsHit.bns} (purani IPC ${query}) ke baare me vistrit kanooni jankari dein.')">
                         <i class="fa-solid fa-robot"></i> Research BNS ${bnsHit.bns} with AI
                     </button>
                 </div>
@@ -1011,16 +1148,16 @@ function convertSection() {
         if (bnssHit) {
             matchesCount++;
             resultsHtml += `
-                <div style="background:var(--card-bg); border:1px solid var(--border); border-left:4px solid #16a34a; padding:14px; border-radius:12px; margin-bottom:12px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:11px; font-weight:800; background:#dcfce7; color:#16a34a; padding:3px 8px; border-radius:6px;">PROCEDURE (BNSS 2023)</span>
-                        <span style="font-size:12px; color:var(--text-muted);">Purani CrPC: <b>${bnssHit.old || query}</b></span>
+                <div style="background:var(--card-bg); border:1px solid var(--border); border-left:3px solid #16a34a; padding:12px 14px; border-radius:10px; margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <span style="font-size:10px; font-weight:800; background:#dcfce7; color:#16a34a; padding:2px 7px; border-radius:4px;">PROCEDURE (BNSS 2023)</span>
+                        <span style="font-size:11.5px; color:var(--text-muted);">CrPC: <b>${bnssHit.old || query}</b></span>
                     </div>
-                    <div style="font-size:17px; font-weight:800; color:var(--text-main); margin-bottom:4px;">Nayi BNSS: ${bnssHit.bnss}</div>
-                    <div style="font-weight:700; font-size:14px; color:var(--primary); margin-bottom:8px;">${bnssHit.title}</div>
-                    <p style="font-size:13px; line-height:1.6; color:var(--text-main); margin-bottom:8px;">${bnssHit.details}</p>
-                    <div style="font-size:12px; color:var(--text-muted);">📂 <b>Category:</b> ${bnssHit.category} • 📌 ${bnssHit.nature}</div>
-                    <button class="modal-btn" style="margin-top:10px; font-size:12.5px; padding:9px 16px;" onclick="closeAllModals(); askSuggestion('BNSS Section ${bnssHit.bnss} (CrPC ${bnssHit.old}) ke tehat kanooni prakriya aur adhikar samjhein.')">
+                    <div style="font-size:15px; font-weight:800; color:var(--text-main); margin-bottom:2px;">Nayi BNSS: ${bnssHit.bnss}</div>
+                    <div style="font-weight:700; font-size:13px; color:var(--primary); margin-bottom:6px;">${bnssHit.title}</div>
+                    <p style="font-size:12.5px; line-height:1.55; color:var(--text-main); margin-bottom:6px;">${bnssHit.details}</p>
+                    <div style="font-size:11.5px; color:var(--text-muted);">📂 <b>Category:</b> ${bnssHit.category} • 📌 ${bnssHit.nature}</div>
+                    <button class="modal-btn" style="margin-top:8px; font-size:12px; padding:7px 12px;" onclick="closeAllModals(); askSuggestion('BNSS Section ${bnssHit.bnss} (CrPC ${bnssHit.old}) ke tehat kanooni prakriya aur adhikar samjhein.')">
                         <i class="fa-solid fa-robot"></i> Research BNSS Procedure with AI
                     </button>
                 </div>
@@ -1034,16 +1171,16 @@ function convertSection() {
         if (bsaHit) {
             matchesCount++;
             resultsHtml += `
-                <div style="background:var(--card-bg); border:1px solid var(--border); border-left:4px solid #0f766e; padding:14px; border-radius:12px; margin-bottom:12px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:11px; font-weight:800; background:#ccfbf1; color:#0f766e; padding:3px 8px; border-radius:6px;">EVIDENCE LAW (BSA 2023)</span>
-                        <span style="font-size:12px; color:var(--text-muted);">Purani IEA: <b>${bsaHit.old || query}</b></span>
+                <div style="background:var(--card-bg); border:1px solid var(--border); border-left:3px solid #0f766e; padding:12px 14px; border-radius:10px; margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <span style="font-size:10px; font-weight:800; background:#ccfbf1; color:#0f766e; padding:2px 7px; border-radius:4px;">EVIDENCE (BSA 2023)</span>
+                        <span style="font-size:11.5px; color:var(--text-muted);">IEA: <b>${bsaHit.old || query}</b></span>
                     </div>
-                    <div style="font-size:17px; font-weight:800; color:var(--text-main); margin-bottom:4px;">Nayi BSA: ${bsaHit.bsa}</div>
-                    <div style="font-weight:700; font-size:14px; color:var(--primary); margin-bottom:8px;">${bsaHit.title}</div>
-                    <p style="font-size:13px; line-height:1.6; color:var(--text-main); margin-bottom:8px;">${bsaHit.details}</p>
-                    <div style="font-size:12px; color:var(--text-muted);">💡 <b>Key Rule:</b> ${bsaHit.significance}</div>
-                    <button class="modal-btn" style="margin-top:10px; font-size:12.5px; padding:9px 16px;" onclick="closeAllModals(); askSuggestion('Bharatiya Sakshya Adhiniyam me ${bsaHit.bsa} ke tehat saboot pramanit karne ke niyam samjhao.')">
+                    <div style="font-size:15px; font-weight:800; color:var(--text-main); margin-bottom:2px;">Nayi BSA: ${bsaHit.bsa}</div>
+                    <div style="font-weight:700; font-size:13px; color:var(--primary); margin-bottom:6px;">${bsaHit.title}</div>
+                    <p style="font-size:12.5px; line-height:1.55; color:var(--text-main); margin-bottom:6px;">${bsaHit.details}</p>
+                    <div style="font-size:11.5px; color:var(--text-muted);">💡 <b>Key Rule:</b> ${bsaHit.significance}</div>
+                    <button class="modal-btn" style="margin-top:8px; font-size:12px; padding:7px 12px;" onclick="closeAllModals(); askSuggestion('Bharatiya Sakshya Adhiniyam me ${bsaHit.bsa} ke tehat saboot pramanit karne ke niyam samjhao.')">
                         <i class="fa-solid fa-robot"></i> Research BSA Evidence Rules with AI
                     </button>
                 </div>
@@ -1057,16 +1194,16 @@ function convertSection() {
         if (cpcHit) {
             matchesCount++;
             resultsHtml += `
-                <div style="background:var(--card-bg); border:1px solid var(--border); border-left:4px solid #7e22ce; padding:14px; border-radius:12px; margin-bottom:12px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:11px; font-weight:800; background:#f3e8ff; color:#7e22ce; padding:3px 8px; border-radius:6px;">CIVIL PROCEDURE (CPC 1908)</span>
-                        <span style="font-size:12px; color:var(--text-muted);">Civil Code of India</span>
+                <div style="background:var(--card-bg); border:1px solid var(--border); border-left:3px solid #7e22ce; padding:12px 14px; border-radius:10px; margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <span style="font-size:10px; font-weight:800; background:#f3e8ff; color:#7e22ce; padding:2px 7px; border-radius:4px;">CIVIL (CPC 1908)</span>
+                        <span style="font-size:11.5px; color:var(--text-muted);">Civil Code</span>
                     </div>
-                    <div style="font-size:17px; font-weight:800; color:var(--text-main); margin-bottom:4px;">${cpcHit.cpc}</div>
-                    <div style="font-weight:700; font-size:14px; color:var(--primary); margin-bottom:8px;">${cpcHit.title}</div>
-                    <p style="font-size:13px; line-height:1.6; color:var(--text-main); margin-bottom:8px;">${cpcHit.details}</p>
-                    <div style="font-size:12px; color:var(--text-muted);">⚖️ <b>Litigation Standard:</b> ${cpcHit.significance}</div>
-                    <button class="modal-btn" style="margin-top:10px; font-size:12.5px; padding:9px 16px;" onclick="closeAllModals(); askSuggestion('Civil Procedure Code (CPC) me ${cpcHit.cpc} ke tehat case jeetne ki strategy samjhao.')">
+                    <div style="font-size:15px; font-weight:800; color:var(--text-main); margin-bottom:2px;">${cpcHit.cpc}</div>
+                    <div style="font-weight:700; font-size:13px; color:var(--primary); margin-bottom:6px;">${cpcHit.title}</div>
+                    <p style="font-size:12.5px; line-height:1.55; color:var(--text-main); margin-bottom:6px;">${cpcHit.details}</p>
+                    <div style="font-size:11.5px; color:var(--text-muted);">⚖️ <b>Litigation Standard:</b> ${cpcHit.significance}</div>
+                    <button class="modal-btn" style="margin-top:8px; font-size:12px; padding:7px 12px;" onclick="closeAllModals(); askSuggestion('Civil Procedure Code (CPC) me ${cpcHit.cpc} ke tehat case jeetne ki strategy samjhao.')">
                         <i class="fa-solid fa-robot"></i> Research CPC Civil Procedure with AI
                     </button>
                 </div>
@@ -1079,7 +1216,7 @@ function convertSection() {
     } else {
         resultDiv.innerHTML = `
             <div style="padding:14px; background:var(--bg-body); border-radius:10px; text-align:center;">
-                <p style="color:var(--text-muted); font-size:13px; margin-bottom:10px;">"${MessageRenderer.escapeHtml(raw)}" hamare quick local index me nahi mila.</p>
+                <p style="color:var(--text-muted); font-size:12.5px; margin-bottom:8px;">"${MessageRenderer.escapeHtml(raw)}" quick index me nahi mila.</p>
                 <button class="modal-btn" onclick="closeAllModals(); askSuggestion('${MessageRenderer.escapeHtml(raw)} ke bare me BNS, BNSS, BSA aur CPC ke tehat complete legal analysis provide karein.')">
                     <i class="fa-solid fa-magnifying-glass"></i> Deep Search in Nyayi AI Law Engine
                 </button>
@@ -1097,13 +1234,13 @@ function calculateFine() {
     if (fineInfo) {
         resultDiv.style.display = 'block';
         resultDiv.innerHTML = `
-            <div style="background:var(--primary-light); padding:14px; border-radius:12px; border-left:4px solid var(--primary);">
-                <div style="font-size:13px; color:var(--text-muted);">${fineInfo.section}</div>
-                <div style="font-size:22px; font-weight:800; color:#ef4444; margin:4px 0;">Challan: ${fineInfo.fine}</div>
-                <div style="font-weight:700; font-size:14px; margin-bottom:6px;">${fineInfo.title}</div>
-                <div style="font-size:13px; color:var(--text-main);">${fineInfo.penalty}</div>
+            <div style="background:var(--primary-light); padding:12px 14px; border-radius:10px; border-left:3px solid var(--primary);">
+                <div style="font-size:12px; color:var(--text-muted);">${fineInfo.section}</div>
+                <div style="font-size:20px; font-weight:800; color:#ef4444; margin:3px 0;">Challan: ${fineInfo.fine}</div>
+                <div style="font-weight:700; font-size:13.5px; margin-bottom:4px;">${fineInfo.title}</div>
+                <div style="font-size:12.5px; color:var(--text-main);">${fineInfo.penalty}</div>
             </div>
-            <div style="margin-top:14px; display:flex; gap:10px;">
+            <div style="margin-top:12px; display:flex; gap:8px;">
                 <a href="https://echallan.parivahan.gov.in" target="_blank" class="lawyer-call-btn" style="background:#111827; color:#fff; flex:1; justify-content:center;">
                     <i class="fa-solid fa-arrow-up-right-from-square"></i> Pay on eChallan Parivahan
                 </a>
@@ -1174,14 +1311,14 @@ ${sender}`;
 
     resultDiv.style.display = 'block';
     resultDiv.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
             <b><i class="fa-solid fa-scale-balanced"></i> Advocate Standard Legal Notice:</b>
             <button class="tool-pill" onclick="copyTextToClipboard(\`${encodeURIComponent(noticeText)}\`, this)">
                 <i class="fa-regular fa-copy"></i> Copy Notice
             </button>
         </div>
-        <pre style="white-space:pre-wrap; font-family:inherit; background:var(--sidebar-bg); padding:14px; border-radius:10px; border:1px solid var(--border); font-size:13px; line-height:1.6;">${MessageRenderer.escapeHtml(noticeText)}</pre>
-        <button class="modal-btn" style="margin-top:12px; font-size:13px; padding:10px;" onclick="window.print()">
+        <pre style="white-space:pre-wrap; font-family:inherit; background:var(--sidebar-bg); padding:12px; border-radius:8px; border:1px solid var(--border); font-size:12.5px; line-height:1.55;">${MessageRenderer.escapeHtml(noticeText)}</pre>
+        <button class="modal-btn" style="margin-top:10px; font-size:12.5px; padding:8px;" onclick="window.print()">
             <i class="fa-solid fa-print"></i> Print Notice
         </button>
     `;
@@ -1269,7 +1406,7 @@ function filterLegalUpdates(cat, btn) {
     });
 }
 
-// SOS Emergency System
+// SOS Emergency Alert
 function triggerSOS() {
     closeAllModals();
     const sosOverlay = document.getElementById('sosOverlay');
@@ -1501,7 +1638,6 @@ function startVoiceRecognition() {
                 respBox.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing...';
             }
 
-            // Append to main chat background
             appendMessage(transcript, 'user');
 
             try {
@@ -1518,12 +1654,10 @@ function startVoiceRecognition() {
                     respBox.innerHTML = MessageRenderer.formatLegalResponse(reply);
                 }
 
-                // Append to chat background
                 appendMessage(reply, 'ai');
 
                 document.getElementById('voiceStatus').innerText = '🔊 Assistant Speaking... (Tap mic to speak again)';
 
-                // Play female voice TTS
                 playTTS(reply, null, () => {
                     document.getElementById('voiceStatus').innerText = 'Tap mic to speak again';
                 });
@@ -1665,6 +1799,7 @@ function saveSettings() {
     if (nameVal) {
         user = nameVal;
         localStorage.setItem('nyayaUser', user);
+        updateWelcomeUserName();
     }
     if (contactVal) {
         localStorage.setItem('nyayaEmergencyContact', contactVal);

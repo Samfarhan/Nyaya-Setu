@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <!-- SEO Meta Tags -->
-    <title>Nyayi Pro (न्यायी) — India's AI Legal Assistant & Law Engine</title>
-    <meta name="description" content="Nyayi (न्यायी) is India's premier AI legal guidance platform. Get instant, reliable procedural guidance on BNS 2023, BNSS, BSA, CPC, FIRs, cyber fraud, and constitutional rights.">
+    <title>Nyayi (न्यायी) — India's AI Legal Guidance Assistant</title>
+    <meta name="description" content="Nyayi (न्यायी) is an AI-powered Indian legal guidance assistant focused on helping ordinary citizens understand Indian law, rights, and legal procedures in simple language.">
     <meta name="keywords" content="Nyayi, Nyaya-Setu, Indian Legal AI, AI lawyer India, free legal advice India, BNS 2023, BNSS 2023, BSA 2023, CPC 1908, IPC sections, cyber crime help, legal notice generator, AI law chatbot">
     <meta name="author" content="Farhan Khan">
     <meta name="robots" content="index, follow">
@@ -16,26 +16,26 @@
     <!-- Open Graph / Facebook / WhatsApp -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://nyayi.in/">
-    <meta property="og:title" content="Nyayi Pro (न्यायी) — Indian Legal AI Assistant">
+    <meta property="og:title" content="Nyayi (न्यायी) — Indian Legal AI Assistant">
     <meta property="og:description" content="Get instant legal guidance on Indian laws, FIRs, BNS, and Cyber Fraud. Free AI legal advisor for every citizen.">
     <meta property="og:image" content="https://nyayi.in/images/logo.png">
     
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://nyayi.in/">
-    <meta property="twitter:title" content="Nyayi Pro (न्यायी) — Indian Legal AI Assistant">
+    <meta property="twitter:title" content="Nyayi (न्यायी) — Indian Legal AI Assistant">
     <meta property="twitter:description" content="Get instant legal guidance on Indian laws, FIRs, BNS, and Cyber Fraud. Free AI legal advisor for every citizen.">
     <meta property="twitter:image" content="https://nyayi.in/images/logo.png">
 
     <!-- Theme & App Settings -->
-    <meta name="theme-color" content="#0b101b">
+    <meta name="theme-color" content="#090d15">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="icon" type="image/png" href="images/logo.png">
     <link rel="apple-touch-icon" href="images/logo.png">
 
     <!-- CSS & Fonts -->
-    <link rel="stylesheet" href="css/style.css?v=12">
+    <link rel="stylesheet" href="css/style.css?v=20">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     
     <!-- Schema.org JSON-LD -->
@@ -82,6 +82,10 @@
             </button>
         </div>
 
+        <div class="sidebar-search-wrap">
+            <input type="text" id="historySearch" class="sidebar-search-input" placeholder="Search conversations..." oninput="filterHistory(this.value)">
+        </div>
+
         <div class="sidebar-section-title">Legal Tools</div>
         <div class="tools-grid">
             <div class="tool-item" onclick="openTool('factlaw')" title="Analyze facts and find applicable laws">
@@ -118,20 +122,14 @@
             </div>
         </div>
 
-        <div class="sidebar-section-title" style="margin-top: 6px;">Consultations</div>
-        
-        <!-- Search filter for history -->
-        <div class="sidebar-search-wrap">
-            <input type="text" id="historySearch" class="sidebar-search-input" placeholder="Search consultations..." oninput="filterHistory(this.value)">
-        </div>
-
+        <div class="sidebar-section-title" style="margin-top: 6px;">History</div>
         <div id="historyList"></div>
 
         <div class="sidebar-bottom">
-            <button class="reset-app-btn" onclick="clearHistory()" title="Clear all chat history">
-                <i class="fa-solid fa-trash-can"></i> Clear
+            <button class="reset-app-btn" onclick="clearHistory()" title="Clear all conversation history">
+                <i class="fa-solid fa-trash-can"></i> Clear History
             </button>
-            <span style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">v2.2 • BNS Ready</span>
+            <span style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">v2.3 • BNS Ready</span>
         </div>
     </aside>
 
@@ -167,7 +165,7 @@
                 <button class="nav-icon-btn" onclick="toggleDarkMode()" title="Toggle Dark/Light Mode">
                     <i class="fa-solid fa-moon" id="themeIcon"></i>
                 </button>
-                <button class="nav-icon-btn" onclick="openTool('settings')" title="User Settings">
+                <button class="nav-icon-btn" onclick="openTool('settings')" title="User Profile & Settings">
                     <i class="fa-solid fa-gear"></i>
                 </button>
             </div>
@@ -176,44 +174,45 @@
         <!-- Chat messages view -->
         <div id="chat-box">
             <div class="welcome-hero">
-                <div class="welcome-badge-icon">
+                <div class="welcome-ai-emblem">
                     <i class="fa-solid fa-scale-balanced"></i>
                 </div>
-                <h1 class="gradient-text">Namaste, Citizen Ji</h1>
-                <p>Nyayi (न्यायी) me aapka swagat hai. Indian Penal Code, BNS 2023, Police FIR, Traffic Challan ya Consumer rights par turant vishwasniya kanooni margdarshan prapt karein.</p>
+                <h1 class="welcome-title">Namaste, <span id="welcomeUserName">Citizen</span> 👋</h1>
+                <h2 class="welcome-subtitle">How can Nyayi help you today?</h2>
+                <p class="welcome-tagline">Understand Indian law, rights and legal procedures in simple language.</p>
                 
                 <!-- 4 Categorized Legal Domain Quick Action Cards -->
                 <div class="domain-cards-grid">
-                    <div class="domain-card" onclick="askSuggestion('IPC Section 420 aur nayi BNS me kya antar hai? Cheating par kya saza hai?')">
+                    <div class="domain-card" onclick="askSuggestion('Mera online financial cyber fraud ho gaya hai, paise wapas kaise paayein? 1930 helpline kaise kaam karti hai?')">
                         <div class="domain-card-header">
-                            <span class="domain-card-title"><i class="fa-solid fa-gavel"></i> Criminal Law & BNS</span>
-                            <span class="domain-badge">BNS 2023</span>
+                            <span class="domain-card-title"><i class="fa-solid fa-shield-halved"></i> Cyber Fraud</span>
+                            <span class="domain-badge cyan">1930 Helpline</span>
                         </div>
-                        <p class="domain-card-desc">BNS vs IPC dharaen, bailable apradh, punishment, aur police adhikar.</p>
+                        <p class="domain-card-desc">Money lost online? Know what to do next.</p>
                     </div>
 
-                    <div class="domain-card" onclick="askSuggestion('Mera online cyber fraud ho gaya hai, paise wapas kaise paayein? 1930 helpline kaise kaam karti hai?')">
+                    <div class="domain-card" onclick="askSuggestion('Police station me FIR darj karwane ka process kya hai aur agar police FIR likhne se mana kare toh kya adhikar hain?')">
                         <div class="domain-card-header">
-                            <span class="domain-card-title"><i class="fa-solid fa-shield-halved"></i> Cyber Crime & Scams</span>
-                            <span class="domain-badge cyan">Golden Hour</span>
-                        </div>
-                        <p class="domain-card-desc">UPI fraud, frozen accounts, cybercrime.gov.in aur Helpline 1930 steps.</p>
-                    </div>
-
-                    <div class="domain-card" onclick="askSuggestion('Agar police station me FIR darj karne se mana karein toh kya kanooni adhikar hain?')">
-                        <div class="domain-card-header">
-                            <span class="domain-card-title"><i class="fa-solid fa-file-circle-check"></i> Police FIR & Remedies</span>
+                            <span class="domain-card-title"><i class="fa-solid fa-file-circle-check"></i> Police FIR</span>
                             <span class="domain-badge amber">Zero FIR</span>
                         </div>
-                        <p class="domain-card-desc">Mandatory Zero FIR Section 173(1) BNSS aur Magistrate 175(3) remedies.</p>
+                        <p class="domain-card-desc">Need help understanding the FIR process?</p>
                     </div>
 
-                    <div class="domain-card" onclick="askSuggestion('Tenant rent nahi de raha hai, legal eviction notice kaise bhein? Stay order kaise lein?')">
+                    <div class="domain-card" onclick="askSuggestion('Property ya tenancy dispute me legal rights aur civil stay order (Order 39) ke niyam samjhao.')">
                         <div class="domain-card-header">
-                            <span class="domain-card-title"><i class="fa-solid fa-house-chimney-user"></i> Property & Civil Suits</span>
-                            <span class="domain-badge purple">Order 39</span>
+                            <span class="domain-card-title"><i class="fa-solid fa-house-chimney-user"></i> Property Dispute</span>
+                            <span class="domain-badge purple">Civil Rights</span>
                         </div>
-                        <p class="domain-card-desc">Order 39 stay orders, property possession, aur legal notice drafting.</p>
+                        <p class="domain-card-desc">Understand your rights in a property dispute.</p>
+                    </div>
+
+                    <div class="domain-card" onclick="askSuggestion('IPC Section 420, 302, 376 aur nayi BNS provisions me kya antar hai? Kaunsi dhara lagu hogi?')">
+                        <div class="domain-card-header">
+                            <span class="domain-card-title"><i class="fa-solid fa-gavel"></i> BNS / IPC</span>
+                            <span class="domain-badge">BNS 2023</span>
+                        </div>
+                        <p class="domain-card-desc">Compare old and new criminal law provisions.</p>
                     </div>
                 </div>
 
@@ -234,8 +233,33 @@
 
         <!-- Modern Floating Adaptive Composer -->
         <div class="input-area">
+            <!-- [+] Quick Tools Popup Menu -->
+            <div class="composer-tools-popup" id="composerToolsPopup">
+                <div class="composer-popup-item" onclick="toggleComposerTools(); openTool('factlaw');">
+                    <i class="fa-solid fa-gavel"></i> Which Law Applies?
+                </div>
+                <div class="composer-popup-item" onclick="toggleComposerTools(); openTool('firwizard');">
+                    <i class="fa-solid fa-list-check"></i> FIR 6-Step Guide
+                </div>
+                <div class="composer-popup-item" onclick="toggleComposerTools(); openTool('casesimplifier');">
+                    <i class="fa-solid fa-book-open-reader"></i> Case Law Simplifier
+                </div>
+                <div class="composer-popup-item" onclick="toggleComposerTools(); openTool('bns');">
+                    <i class="fa-solid fa-scale-balanced"></i> Statutory Navigator
+                </div>
+                <div class="composer-popup-item" onclick="toggleComposerTools(); openTool('drafter');">
+                    <i class="fa-solid fa-file-signature"></i> Legal Notice Drafter
+                </div>
+                <div class="composer-popup-item" onclick="toggleComposerTools(); openTool('fine');">
+                    <i class="fa-solid fa-calculator"></i> Traffic Fine Calculator
+                </div>
+            </div>
+
             <div class="input-wrapper">
-                <textarea id="userInput" rows="1" placeholder="Apna kanooni sawaal yahan likhein (Ask legal question)..." onkeydown="handleInputKey(event)" oninput="autoGrowTextarea(this)"></textarea>
+                <button type="button" class="composer-tool-btn" id="composerToolBtn" onclick="toggleComposerTools()" title="Legal Tools Menu (+)">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+                <textarea id="userInput" rows="1" placeholder="Ask Nyayi anything about Indian law, FIRs, or rights..." onkeydown="handleInputKey(event)" oninput="autoGrowTextarea(this)"></textarea>
                 <button type="button" class="mic-btn" id="micBtn" onclick="openVoiceAssistant()" title="Voice Assistant (Hindi / English)">
                     <i class="fa-solid fa-microphone"></i>
                 </button>
@@ -270,7 +294,6 @@
             <h3><i class="fa-solid fa-list-check"></i> FIR & Police Assistance (6-Step Guide)</h3>
             <p class="modal-desc">Thana jane se pehle apna kanooni adhikar aur sahi prakriya janein.</p>
             
-            <!-- Step Navigation Pills -->
             <div class="wizard-steps-nav">
                 <button class="step-nav-btn active" id="stepBtn1" onclick="goToFIRStep(1)">1. FIR?</button>
                 <button class="step-nav-btn" id="stepBtn2" onclick="goToFIRStep(2)">2. Offence</button>
@@ -280,7 +303,6 @@
                 <button class="step-nav-btn" id="stepBtn6" onclick="goToFIRStep(6)">6. Refusal?</button>
             </div>
 
-            <!-- STEP 1 CONTENT -->
             <div class="wizard-step-content active" id="firStep1">
                 <h4><i class="fa-solid fa-circle-question"></i> Step 1: Should I file an FIR?</h4>
                 <p><b>FIR (First Information Report)</b> sirf <i>Cognizable (संज्ञेय/गंभीर)</i> अपराधों में दर्ज होती है जैसे चोरी, मारपीट, धोखाधड़ी, बलात्कार, या हत्या।</p>
@@ -288,7 +310,6 @@
                 <button class="modal-btn" style="margin-top:14px;" onclick="goToFIRStep(2)">Next: Check Offence Nature →</button>
             </div>
 
-            <!-- STEP 2 CONTENT -->
             <div class="wizard-step-content" id="firStep2">
                 <h4><i class="fa-solid fa-scale-unbalanced-flip"></i> Step 2: Is the offence Cognizable or Non-Cognizable?</h4>
                 <p><b>Cognizable (संज्ञेय):</b> पुलिस बिना वारंट के आरोपी को गिरफ्तार कर सकती है और FIR दर्ज करना अनिवार्य है (BNS Section 173 / CrPC 154).</p>
@@ -296,7 +317,6 @@
                 <button class="modal-btn" style="margin-top:14px;" onclick="goToFIRStep(3)">Next: Where to Report? →</button>
             </div>
 
-            <!-- STEP 3 CONTENT -->
             <div class="wizard-step-content" id="firStep3">
                 <h4><i class="fa-solid fa-location-dot"></i> Step 3: Where should I report it?</h4>
                 <p>1. <b>Local Police Station:</b> जहां घटना हुई है उस क्षेत्र के थाने में।</p>
@@ -305,7 +325,6 @@
                 <button class="modal-btn" style="margin-top:14px;" onclick="goToFIRStep(4)">Next: Evidence Checklist →</button>
             </div>
 
-            <!-- STEP 4 CONTENT -->
             <div class="wizard-step-content" id="firStep4">
                 <h4><i class="fa-solid fa-folder-open"></i> Step 4: What information/evidence to keep ready?</h4>
                 <ul style="margin-left:20px; font-size:13.5px; line-height:1.7;">
@@ -318,7 +337,6 @@
                 <button class="modal-btn" style="margin-top:14px;" onclick="goToFIRStep(5)">Next: Generate FIR Draft →</button>
             </div>
 
-            <!-- STEP 5 CONTENT -->
             <div class="wizard-step-content" id="firStep5">
                 <h4><i class="fa-solid fa-file-signature"></i> Step 5: Generate FIR / Complaint Draft</h4>
                 <p>थाना प्रभारी के नाम ऑफिशियल FIR एप्लीकेशन ड्राफ्ट तैयार करें:</p>
@@ -328,7 +346,6 @@
                 <button class="modal-btn" style="margin-top:10px; background:var(--bg-body); color:var(--text-main); border:1px solid var(--border);" onclick="goToFIRStep(6)">Next: Police Refusal Remedy →</button>
             </div>
 
-            <!-- STEP 6 CONTENT -->
             <div class="wizard-step-content" id="firStep6">
                 <h4><i class="fa-solid fa-shield-cat"></i> Step 6: What if Police refuses to register FIR?</h4>
                 <div style="background:var(--primary-light); padding:12px; border-radius:10px; font-size:13px; line-height:1.6; margin-bottom:12px;">
@@ -376,7 +393,6 @@
             </div>
 
             <div class="updates-list" id="updatesList">
-                <!-- BNS UPDATES -->
                 <div class="update-card" data-cat="bns">
                     <span class="update-badge badge-red">Penal Code (BNS 2023)</span>
                     <h4>IPC Complete Overhaul: 511 Sections Consolidated into 358 Sections</h4>
@@ -392,8 +408,6 @@
                     <h4>Organized Crime (BNS 111) & Mob Lynching (BNS 103(2))</h4>
                     <p>Mafia syndicate, extortion aur contract killing ke liye Section 111 me kade niyam banaye gaye hain. 5 ya usse zyada logon dwara jati/dharm ke aadhar par lynching karne par Death penalty ya Life Imprisonment ka kanoon lagu hai.</p>
                 </div>
-
-                <!-- BNSS UPDATES -->
                 <div class="update-card" data-cat="bnss">
                     <span class="update-badge badge-green">Criminal Procedure (BNSS 2023)</span>
                     <h4>Zero FIR & Electronic Summons Made Mandatory Nationwide (Section 173 & 64)</h4>
@@ -409,8 +423,6 @@
                     <h4>Flexible Police Custody (Section 187) & Trial in Absentia (Section 356)</h4>
                     <p>Police remand 15 din ka initial 40 se 60 din ke dauran hisson me liya ja sakta hai. Bhage hue apradhiyon (Proclaimed Offenders) ke khilaf unki anupasthiti me bhi trial chalakar saza sunayi ja sakti hai (Section 356).</p>
                 </div>
-
-                <!-- BSA UPDATES -->
                 <div class="update-card" data-cat="bsa">
                     <span class="update-badge badge-teal">Law of Evidence (BSA 2023)</span>
                     <h4>Digital & Electronic Records Recognized as Primary Evidence (Section 61-63)</h4>
@@ -421,8 +433,6 @@
                     <h4>Cyber Forensics & Cryptographic Hash Value Integrity (Section 39)</h4>
                     <p>Digital evidence ki authenticity verify karne ke liye Cryptographic Hash Values aur certified digital forensics examiner ki report ko statutory recognition diya gaya hai.</p>
                 </div>
-
-                <!-- CPC UPDATES -->
                 <div class="update-card" data-cat="cpc">
                     <span class="update-badge badge-purple">Civil Procedure (CPC 1908)</span>
                     <h4>Order 39 Rules 1 & 2: Temporary Injunctions & Property Stay Orders</h4>
@@ -433,8 +443,6 @@
                     <h4>Mandatory Mediation (Section 89) & Strict 120-Day Limit on Written Statements</h4>
                     <p>Commercial disputes me suit daalane se pehle Pre-Institution Mediation anivarya hai (Mediation Act 2023). Order 8 Rule 1 ke tehat Defendant ko 30 din (maximum 120 din) me apna Written Statement dakhil karna hota hai, anyatha haq samapt ho jata hai.</p>
                 </div>
-
-                <!-- CYBER & PROPERTY UPDATES -->
                 <div class="update-card" data-cat="cyber">
                     <span class="update-badge badge-blue">Cyber Law & IT Act</span>
                     <h4>Digital Personal Data Protection (DPDP) Act 2023</h4>
@@ -466,7 +474,7 @@
 
             <div style="display:flex; gap:8px;">
                 <input type="text" id="ipc-input" class="modal-input" placeholder="Enter Section or Keyword (e.g. 302, 420, 154, 438, 65B, Order 39, Zero FIR)..." onkeypress="if(event.key==='Enter') convertSection()">
-                <button class="modal-btn" style="width:auto; padding:0 20px; white-space:nowrap; margin-bottom:12px;" onclick="convertSection()">
+                <button class="modal-btn" style="width:auto; padding:0 20px; white-space:nowrap; margin-bottom:10px;" onclick="convertSection()">
                     <i class="fa-solid fa-magnifying-glass"></i> Search
                 </button>
             </div>
@@ -586,19 +594,29 @@
         </div>
     </div>
 
-    <!-- USER SETTINGS MODAL -->
+    <!-- USER PROFILE & SETTINGS MODAL -->
     <div class="modal-overlay" id="settingsModal">
         <div class="modal-box">
             <span class="modal-close" onclick="closeAllModals()">&times;</span>
             <h3><i class="fa-solid fa-user-gear"></i> User Profile & Settings</h3>
-            <p class="modal-desc">Personalize your Nyayi consultation experience.</p>
-            <label style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:4px; display:block;">Your Name:</label>
-            <input type="text" id="userNameInput" class="modal-input" placeholder="e.g. Ashutosh Raj">
+            <p class="modal-desc">Personalize your Nyayi consultation experience and device preferences.</p>
+            
+            <label style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:4px; display:block;">Your Name (Aapka Naam):</label>
+            <input type="text" id="userNameInput" class="modal-input" placeholder="e.g. Vaishnavi / Farhan">
+            
             <label style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:4px; display:block;">Emergency Contact Phone:</label>
             <input type="tel" id="userEmergencyContact" class="modal-input" placeholder="e.g. +91 9876543210">
+            
             <button class="modal-btn" onclick="saveSettings()">
-                <i class="fa-solid fa-floppy-disk"></i> Save Settings
+                <i class="fa-solid fa-floppy-disk"></i> Save Preferences
             </button>
+
+            <div style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border-subtle);">
+                <span style="font-size:11.5px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:6px;">Privacy & Device Storage:</span>
+                <button class="reset-app-btn" style="color:var(--accent-red); padding:6px 0;" onclick="clearLocalData()">
+                    <i class="fa-solid fa-trash-can"></i> Clear All Local Data (IndexedDB & Preferences)
+                </button>
+            </div>
         </div>
     </div>
 
@@ -657,6 +675,6 @@
         </div>
     </nav>
 
-    <script src="js/script.js?v=12"></script>
+    <script src="js/script.js?v=20"></script>
 </body>
 </html>
