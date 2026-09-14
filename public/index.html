@@ -5,141 +5,155 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <!-- SEO Meta Tags -->
-    <title>Nyayi Pro (न्यायी) - India's AI Legal Assistant & Law Chatbot</title>
-    <meta name="description" content="Nyayi (न्यायी) is India's most advanced AI legal assistant. Get instant, reliable legal advice on BNS, IPC, FIRs, cyber fraud, and traffic challans in Hindi and English.">
-    <meta name="keywords" content="Nyayi, Nyayi, Indian Legal AI, AI lawyer India, free legal advice India, BNS 2023, IPC sections, cyber crime help, legal notice generator, AI law chatbot">
+    <title>Nyayi Pro (न्यायी) — India's AI Legal Assistant & Law Engine</title>
+    <meta name="description" content="Nyayi (न्यायी) is India's premier AI legal guidance platform. Get instant, reliable procedural guidance on BNS 2023, BNSS, BSA, CPC, FIRs, cyber fraud, and constitutional rights.">
+    <meta name="keywords" content="Nyayi, Nyaya-Setu, Indian Legal AI, AI lawyer India, free legal advice India, BNS 2023, BNSS 2023, BSA 2023, CPC 1908, IPC sections, cyber crime help, legal notice generator, AI law chatbot">
     <meta name="author" content="Farhan Khan">
     <meta name="robots" content="index, follow">
     <meta name="language" content="English, Hindi">
-    <link rel="canonical" href="https://Nyayi.com/">
+    <link rel="canonical" href="https://nyayi.in/">
 
     <!-- Open Graph / Facebook / WhatsApp -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://Nyayi.com/">
-    <meta property="og:title" content="Nyayi Pro (न्यायी) - Indian Legal AI Assistant">
+    <meta property="og:url" content="https://nyayi.in/">
+    <meta property="og:title" content="Nyayi Pro (न्यायी) — Indian Legal AI Assistant">
     <meta property="og:description" content="Get instant legal guidance on Indian laws, FIRs, BNS, and Cyber Fraud. Free AI legal advisor for every citizen.">
-    <meta property="og:image" content="https://Nyayi.com/images/logo.png">
+    <meta property="og:image" content="https://nyayi.in/images/logo.png">
     
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://Nyayi.com/">
-    <meta property="twitter:title" content="Nyayi Pro (न्यायी) - Indian Legal AI Assistant">
+    <meta property="twitter:url" content="https://nyayi.in/">
+    <meta property="twitter:title" content="Nyayi Pro (न्यायी) — Indian Legal AI Assistant">
     <meta property="twitter:description" content="Get instant legal guidance on Indian laws, FIRs, BNS, and Cyber Fraud. Free AI legal advisor for every citizen.">
-    <meta property="twitter:image" content="https://Nyayi.com/images/logo.png">
+    <meta property="twitter:image" content="https://nyayi.in/images/logo.png">
 
     <!-- Theme & App Settings -->
-    <meta name="theme-color" content="#00E676">
+    <meta name="theme-color" content="#0b101b">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="icon" type="image/png" href="images/logo.png">
     <link rel="apple-touch-icon" href="images/logo.png">
 
     <!-- CSS & Fonts -->
-    <link rel="stylesheet" href="css/style.css?v=6">
+    <link rel="stylesheet" href="css/style.css?v=12">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    
+    <!-- Schema.org JSON-LD -->
     <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "Nyayi Legal AI",
-  "url": "https://nyayi.in/",
-  "logo": "https://nyayi.in/images/logo.png",
-  "founder": {
-    "@type": "Person",
-    "name": "Farhan Khan"
-  },
-  "description": "India's most advanced AI legal assistant providing reliable legal advice on BNS, IPC, FIRs, cyber fraud, and constitutional rights."
-}
-</script>
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Nyayi Legal AI",
+      "url": "https://nyayi.in/",
+      "logo": "https://nyayi.in/images/logo.png",
+      "founder": {
+        "@type": "Person",
+        "name": "Farhan Khan"
+      },
+      "description": "India's most advanced AI legal assistant providing reliable legal advice on BNS, IPC, FIRs, cyber fraud, and constitutional rights."
+    }
+    </script>
     <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebApplication",
-  "name": "Nyayi Neural Engine",
-  "url": "https://ai.nyayi.in/",
-  "applicationCategory": "LegalApplication",
-  "operatingSystem": "All",
-  "offers": {
-    "@type": "Offer",
-    "price": "0",
-    "priceCurrency": "INR"
-  }
-}
-</script>
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Nyayi Neural Engine",
+      "url": "https://ai.nyayi.in/",
+      "applicationCategory": "LegalApplication",
+      "operatingSystem": "All",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "INR"
+      }
+    }
+    </script>
 </head>
 <body>
 
     <!-- Mobile Drawer Backdrop -->
-    <div class="overlay-backdrop" id="overlayBackdrop" onclick="toggleSidebar()"></div>
+    <div class="overlay-backdrop" id="overlayBackdrop" onclick="toggleSidebar(false)"></div>
 
     <!-- SIDEBAR -->
     <aside id="sidebar-container">
         <div class="new-chat-wrapper">
             <button class="new-chat-btn" onclick="startNewChat()">
-                <i class="fa-solid fa-plus"></i> New Legal Consultation
+                <i class="fa-solid fa-plus"></i> New Consultation
             </button>
         </div>
 
         <div class="sidebar-section-title">Legal Tools</div>
         <div class="tools-grid">
-            <div class="tool-item" onclick="openTool('factlaw')">
+            <div class="tool-item" onclick="openTool('factlaw')" title="Analyze facts and find applicable laws">
                 <i class="fa-solid fa-gavel"></i>
-                <span>Which Law Applies?</span>
+                <span>Which Law?</span>
             </div>
-            <div class="tool-item" onclick="openTool('firwizard')">
+            <div class="tool-item" onclick="openTool('firwizard')" title="Step-by-step FIR and police assistance">
                 <i class="fa-solid fa-list-check"></i>
-                <span>FIR 6-Step Guide</span>
+                <span>FIR Wizard</span>
             </div>
-            <div class="tool-item" onclick="openTool('casesimplifier')">
+            <div class="tool-item" onclick="openTool('casesimplifier')" title="Simplify High Court and Supreme Court rulings">
                 <i class="fa-solid fa-book-open-reader"></i>
                 <span>Case Simplifier</span>
             </div>
-            <div class="tool-item" onclick="openTool('updates')">
+            <div class="tool-item" onclick="openTool('updates')" title="Latest BNS, BNSS, BSA and CPC updates">
                 <i class="fa-solid fa-newspaper"></i>
                 <span>Legal Updates</span>
             </div>
-            <div class="tool-item" onclick="openTool('bns')">
+            <div class="tool-item" onclick="openTool('bns')" title="Statutory Code Navigator">
                 <i class="fa-solid fa-scale-balanced"></i>
-                <span>BNS • BNSS • BSA • CPC</span>
+                <span>BNS • BNSS • BSA</span>
             </div>
-            <div class="tool-item" onclick="openTool('fine')">
+            <div class="tool-item" onclick="openTool('fine')" title="Traffic Fine and MVA Calculator">
                 <i class="fa-solid fa-calculator"></i>
                 <span>Fine Calc</span>
             </div>
-            <div class="tool-item" onclick="openTool('drafter')">
+            <div class="tool-item" onclick="openTool('drafter')" title="Draft 138 Notice and Complaints">
                 <i class="fa-solid fa-file-signature"></i>
                 <span>Legal Drafter</span>
             </div>
-            <div class="tool-item" onclick="openTool('lawyer')">
+            <div class="tool-item" onclick="openTool('lawyer')" title="Government Legal Aid NALSA">
                 <i class="fa-solid fa-user-tie"></i>
                 <span>Legal Aid</span>
             </div>
         </div>
 
-        <div class="sidebar-section-title" style="margin-top:10px;">Consultation History</div>
+        <div class="sidebar-section-title" style="margin-top: 6px;">Consultations</div>
+        
+        <!-- Search filter for history -->
+        <div class="sidebar-search-wrap">
+            <input type="text" id="historySearch" class="sidebar-search-input" placeholder="Search consultations..." oninput="filterHistory(this.value)">
+        </div>
+
         <div id="historyList"></div>
 
         <div class="sidebar-bottom">
-            <button class="reset-app-btn" onclick="clearHistory()">
-                <i class="fa-solid fa-trash-can"></i> Clear History
+            <button class="reset-app-btn" onclick="clearHistory()" title="Clear all chat history">
+                <i class="fa-solid fa-trash-can"></i> Clear
             </button>
-            <span style="font-size:11px; color:var(--text-muted);">v2.0 • BNS Ready</span>
+            <span style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">v2.2 • BNS Ready</span>
         </div>
     </aside>
 
     <!-- MAIN CHAT CONTAINER -->
     <main id="main-container">
+        <!-- Top Navigation Header -->
         <header id="header-container">
             <div class="header-left">
-                <div class="mobile-menu-btn" onclick="toggleSidebar()">
+                <div class="mobile-menu-btn" onclick="toggleSidebar()" title="Toggle Navigation">
                     <i class="fa-solid fa-bars"></i>
                 </div>
-                <div class="brand-logo" onclick="startNewChat()">
+                <div class="brand-logo" onclick="startNewChat()" title="Start New Consultation">
                     <i class="fa-solid fa-scale-balanced brand-icon"></i>
                     <span class="brand-name">Nyayi</span>
                     <span class="brand-badge">PRO</span>
                 </div>
+                <div class="brand-status-badge">
+                    <span class="status-dot"></span>
+                    <span>AI Online • BNS 2023</span>
+                </div>
             </div>
+            
             <div class="nav-right">
                 <select id="langSelect" class="lang-select-dropdown" onchange="changeAILanguage(this.value)" title="Select AI Response Language">
                     <option value="Multilingual">🌐 Multilingual</option>
@@ -147,34 +161,95 @@
                     <option value="English">🇬🇧 English</option>
                     <option value="Hinglish">🗣️ Hinglish</option>
                 </select>
-                <button class="sos-btn" onclick="triggerSOS()">
-                    <i class="fa-solid fa-bell"></i> SOS
+                <button class="sos-btn" onclick="triggerSOS()" title="Emergency SOS Alert">
+                    <i class="fa-solid fa-bell"></i> <span>SOS</span>
                 </button>
                 <button class="nav-icon-btn" onclick="toggleDarkMode()" title="Toggle Dark/Light Mode">
                     <i class="fa-solid fa-moon" id="themeIcon"></i>
                 </button>
                 <button class="nav-icon-btn" onclick="openTool('settings')" title="User Settings">
-                    <i class="fa-solid fa-user"></i>
+                    <i class="fa-solid fa-gear"></i>
                 </button>
             </div>
         </header>
 
         <!-- Chat messages view -->
-        <div id="chat-box"></div>
+        <div id="chat-box">
+            <div class="welcome-hero">
+                <div class="welcome-badge-icon">
+                    <i class="fa-solid fa-scale-balanced"></i>
+                </div>
+                <h1 class="gradient-text">Namaste, Citizen Ji</h1>
+                <p>Nyayi (न्यायी) me aapka swagat hai. Indian Penal Code, BNS 2023, Police FIR, Traffic Challan ya Consumer rights par turant vishwasniya kanooni margdarshan prapt karein.</p>
+                
+                <!-- 4 Categorized Legal Domain Quick Action Cards -->
+                <div class="domain-cards-grid">
+                    <div class="domain-card" onclick="askSuggestion('IPC Section 420 aur nayi BNS me kya antar hai? Cheating par kya saza hai?')">
+                        <div class="domain-card-header">
+                            <span class="domain-card-title"><i class="fa-solid fa-gavel"></i> Criminal Law & BNS</span>
+                            <span class="domain-badge">BNS 2023</span>
+                        </div>
+                        <p class="domain-card-desc">BNS vs IPC dharaen, bailable apradh, punishment, aur police adhikar.</p>
+                    </div>
 
-        <!-- Input Bar -->
+                    <div class="domain-card" onclick="askSuggestion('Mera online cyber fraud ho gaya hai, paise wapas kaise paayein? 1930 helpline kaise kaam karti hai?')">
+                        <div class="domain-card-header">
+                            <span class="domain-card-title"><i class="fa-solid fa-shield-halved"></i> Cyber Crime & Scams</span>
+                            <span class="domain-badge cyan">Golden Hour</span>
+                        </div>
+                        <p class="domain-card-desc">UPI fraud, frozen accounts, cybercrime.gov.in aur Helpline 1930 steps.</p>
+                    </div>
+
+                    <div class="domain-card" onclick="askSuggestion('Agar police station me FIR darj karne se mana karein toh kya kanooni adhikar hain?')">
+                        <div class="domain-card-header">
+                            <span class="domain-card-title"><i class="fa-solid fa-file-circle-check"></i> Police FIR & Remedies</span>
+                            <span class="domain-badge amber">Zero FIR</span>
+                        </div>
+                        <p class="domain-card-desc">Mandatory Zero FIR Section 173(1) BNSS aur Magistrate 175(3) remedies.</p>
+                    </div>
+
+                    <div class="domain-card" onclick="askSuggestion('Tenant rent nahi de raha hai, legal eviction notice kaise bhein? Stay order kaise lein?')">
+                        <div class="domain-card-header">
+                            <span class="domain-card-title"><i class="fa-solid fa-house-chimney-user"></i> Property & Civil Suits</span>
+                            <span class="domain-badge purple">Order 39</span>
+                        </div>
+                        <p class="domain-card-desc">Order 39 stay orders, property possession, aur legal notice drafting.</p>
+                    </div>
+                </div>
+
+                <!-- Quick Action Suggestion Chips -->
+                <div class="suggestion-chips">
+                    <button class="chip" onclick="askSuggestion('Anticipatory bail lene ki prakriya aur Section 482 BNSS samjhao.')">
+                        <i class="fa-solid fa-handcuffs"></i> Anticipatory Bail Guide
+                    </button>
+                    <button class="chip" onclick="askSuggestion('Motor Vehicle Act ke tehat bina helmet aur bina insurance challan fine kitna hai?')">
+                        <i class="fa-solid fa-calculator"></i> Traffic Challan Fines
+                    </button>
+                    <button class="chip" onclick="askSuggestion('Cheque bounce hone par Section 138 NI Act ka legal notice kaise bhein?')">
+                        <i class="fa-solid fa-file-signature"></i> Cheque Bounce Notice
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modern Floating Adaptive Composer -->
         <div class="input-area">
             <div class="input-wrapper">
-                <input type="text" id="userInput" placeholder="Apna kanooni sawaal yahan likhein (Ask legal question)..." onkeypress="handleEnter(event)" autocomplete="off">
-                <i class="fa-solid fa-microphone mic-btn" id="micBtn" onclick="openVoiceAssistant()" title="Voice Assistant (Hindi/English)"></i>
-                <button class="send-btn" onclick="sendMessage()" title="Send Message">
-                    <i class="fa-solid fa-paper-plane"></i>
+                <textarea id="userInput" rows="1" placeholder="Apna kanooni sawaal yahan likhein (Ask legal question)..." onkeydown="handleInputKey(event)" oninput="autoGrowTextarea(this)"></textarea>
+                <button type="button" class="mic-btn" id="micBtn" onclick="openVoiceAssistant()" title="Voice Assistant (Hindi / English)">
+                    <i class="fa-solid fa-microphone"></i>
                 </button>
+                <button type="button" class="send-btn" id="sendBtn" onclick="handleSendOrStop()" title="Send Message">
+                    <i class="fa-solid fa-paper-plane" id="sendBtnIcon"></i>
+                </button>
+            </div>
+            <div class="composer-hint">
+                <span>Press <b>Enter ↵</b> to send • <b>Shift + Enter</b> for new line</span>
             </div>
         </div>
     </main>
 
-    <!-- NEW TOOL 1: WHICH LAW APPLIES TO THIS? -->
+    <!-- TOOL 1: WHICH LAW APPLIES TO THIS? -->
     <div class="modal-overlay" id="modal-factlaw">
         <div class="modal-box">
             <span class="modal-close" onclick="closeAllModals()">&times;</span>
@@ -188,7 +263,7 @@
         </div>
     </div>
 
-    <!-- NEW TOOL 2: FIR & POLICE ASSISTANT 6-STEP WIZARD -->
+    <!-- TOOL 2: FIR & POLICE ASSISTANT 6-STEP WIZARD -->
     <div class="modal-overlay" id="modal-firwizard">
         <div class="modal-box" style="max-width:620px;">
             <span class="modal-close" onclick="closeAllModals()">&times;</span>
@@ -217,7 +292,7 @@
             <div class="wizard-step-content" id="firStep2">
                 <h4><i class="fa-solid fa-scale-unbalanced-flip"></i> Step 2: Is the offence Cognizable or Non-Cognizable?</h4>
                 <p><b>Cognizable (संज्ञेय):</b> पुलिस बिना वारंट के आरोपी को गिरफ्तार कर सकती है और FIR दर्ज करना अनिवार्य है (BNS Section 173 / CrPC 154).</p>
-                <p><b>Non-Cognizable (असंज्ञेय):</b> पुलिस बिना कोर्ट की अनुमति के जांच या गिरफ्तारी नहीं कर सकती (e.g., मामूली कहासुनी, गालियां देना).</p>
+                <p><b>Non-Cognizable (असंज्ञेय):</b> पुलिस बिना कोर्ट की अनुमति के जांच या गिरफ्तारी नहीं कर सकती (e.g., मामूली कहासुनी, गालियां देना)।</p>
                 <button class="modal-btn" style="margin-top:14px;" onclick="goToFIRStep(3)">Next: Where to Report? →</button>
             </div>
 
@@ -226,7 +301,7 @@
                 <h4><i class="fa-solid fa-location-dot"></i> Step 3: Where should I report it?</h4>
                 <p>1. <b>Local Police Station:</b> जहां घटना हुई है उस क्षेत्र के थाने में।</p>
                 <p>2. <b>Zero FIR (जीरो एफआईआर):</b> अगर घटना किसी अन्य शहर/क्षेत्र में हुई है, तो भी आप नजदीकी थाने में Zero FIR दर्ज करा सकते हैं। बाद में केस ट्रांसफर हो जाता है।</p>
-                <p>3. <b>Online Cyber Crime:</b> साइबर फ्रॉड के लिए <a href="https://cybercrime.gov.in" target="_blank" style="color:var(--primary-dark);">cybercrime.gov.in</a> या Helpline <b>1930</b> पर रिपोर्ट करें।</p>
+                <p>3. <b>Online Cyber Crime:</b> साइबर फ्रॉड के लिए <a href="https://cybercrime.gov.in" target="_blank" style="color:var(--primary);">cybercrime.gov.in</a> या Helpline <b>1930</b> पर रिपोर्ट करें।</p>
                 <button class="modal-btn" style="margin-top:14px;" onclick="goToFIRStep(4)">Next: Evidence Checklist →</button>
             </div>
 
@@ -269,7 +344,7 @@
         </div>
     </div>
 
-    <!-- NEW TOOL 3: CASE LAW & JUDGMENT SIMPLIFIER -->
+    <!-- TOOL 3: CASE LAW & JUDGMENT SIMPLIFIER -->
     <div class="modal-overlay" id="modal-casesimplifier">
         <div class="modal-box">
             <span class="modal-close" onclick="closeAllModals()">&times;</span>
@@ -283,7 +358,7 @@
         </div>
     </div>
 
-    <!-- NEW TOOL 4: LEGAL UPDATES & SECTION AMENDMENTS (BNS, BNSS, BSA, CPC) -->
+    <!-- TOOL 4: LEGAL UPDATES & STATUTORY AMENDMENTS -->
     <div class="modal-overlay" id="modal-updates">
         <div class="modal-box" style="max-width:650px;">
             <span class="modal-close" onclick="closeAllModals()">&times;</span>
@@ -310,7 +385,7 @@
                 <div class="update-card" data-cat="bns">
                     <span class="update-badge badge-red">Penal Code (BNS 2023)</span>
                     <h4>Snatching (Section 304) & Community Service (Section 4) Introduced</h4>
-                    <p>Chain/Phone snatching ko IPC me alag se define nahi kiya gaya tha, ab BNS Section 304 ke tehat 3 saal tak ki qaid hai. Chhote apradhon (Chori < ₹5000, defamation) ke liye pehli baar Community Service (सामुदायिक सेवा) ka pravdhan joda gaya hai.</p>
+                    <p>Chain/Phone snatching ko IPC me alag se define nahi kiya gaya tha, ab BNS Section 304 ke tehat 3 saal tak ki qaid hai. Chhote apradhon (Chori &lt; ₹5000, defamation) ke liye pehli baar Community Service (सामुदायिक सेवा) ka pravdhan joda gaya hai.</p>
                 </div>
                 <div class="update-card" data-cat="bns">
                     <span class="update-badge badge-red">Penal Code (BNS 2023)</span>
@@ -374,8 +449,7 @@
         </div>
     </div>
 
-
-    <!-- 2. UNIVERSAL STATUTORY CODE NAVIGATOR: BNS • BNSS • BSA • CPC -->
+    <!-- TOOL 5: UNIVERSAL STATUTORY CODE NAVIGATOR -->
     <div class="modal-overlay" id="modal-bns">
         <div class="modal-box" style="max-width:620px;">
             <span class="modal-close" onclick="closeAllModals()">&times;</span>
@@ -392,7 +466,7 @@
 
             <div style="display:flex; gap:8px;">
                 <input type="text" id="ipc-input" class="modal-input" placeholder="Enter Section or Keyword (e.g. 302, 420, 154, 438, 65B, Order 39, Zero FIR)..." onkeypress="if(event.key==='Enter') convertSection()">
-                <button class="modal-btn" style="width:auto; padding:0 20px; white-space:nowrap; margin-bottom:14px;" onclick="convertSection()">
+                <button class="modal-btn" style="width:auto; padding:0 20px; white-space:nowrap; margin-bottom:12px;" onclick="convertSection()">
                     <i class="fa-solid fa-magnifying-glass"></i> Search
                 </button>
             </div>
@@ -411,7 +485,7 @@
         </div>
     </div>
 
-    <!-- 3. TRAFFIC FINE CALCULATOR MODAL -->
+    <!-- TOOL 6: TRAFFIC FINE CALCULATOR MODAL -->
     <div class="modal-overlay" id="modal-fine">
         <div class="modal-box">
             <span class="modal-close" onclick="closeAllModals()">&times;</span>
@@ -437,7 +511,7 @@
         </div>
     </div>
 
-    <!-- 4. LEGAL NOTICE DRAFTER MODAL -->
+    <!-- TOOL 7: LEGAL NOTICE DRAFTER MODAL -->
     <div class="modal-overlay" id="modal-drafter">
         <div class="modal-box">
             <span class="modal-close" onclick="closeAllModals()">&times;</span>
@@ -460,7 +534,7 @@
         </div>
     </div>
 
-    <!-- 5. LAWYER & FREE LEGAL AID MODAL -->
+    <!-- TOOL 8: LAWYER & FREE LEGAL AID MODAL -->
     <div class="modal-overlay" id="modal-lawyer">
         <div class="modal-box">
             <span class="modal-close" onclick="closeAllModals()">&times;</span>
@@ -468,7 +542,7 @@
             <p class="modal-desc">Government NALSA Free Legal Services and Verified Legal Experts.</p>
             
             <div style="background:var(--primary-light); border:1px solid var(--primary); padding:14px; border-radius:12px; margin-bottom:18px;">
-                <b style="color:var(--primary-dark); font-size:14px;"><i class="fa-solid fa-landmark"></i> National Legal Services (NALSA):</b>
+                <b style="color:var(--primary); font-size:14px;"><i class="fa-solid fa-landmark"></i> National Legal Services (NALSA):</b>
                 <p style="font-size:13px; color:var(--text-main); margin-top:4px;">Article 39A ke tehat har garib aur zarooratmand nagrik ko muft kanooni sahayata pane ka adhikar hai.</p>
                 <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
                     <a href="tel:15100" class="lawyer-call-btn" style="background:#111827; color:#fff;"><i class="fa-solid fa-phone"></i> Dial 15100 (Muft Helpline)</a>
@@ -481,7 +555,7 @@
                 <div class="lawyer-info" style="flex:1;">
                     <h4>Adv. Amit Sharma</h4>
                     <p>Criminal Defense, Bail & Cyber Law • 12 Yrs Exp</p>
-                    <p style="color:#00E676; font-weight:600;">● Available for Consultation</p>
+                    <p style="color:#10b981; font-weight:600;">● Available for Consultation</p>
                 </div>
                 <a href="tel:9876543210" class="lawyer-call-btn"><i class="fa-solid fa-phone"></i> Call</a>
             </div>
@@ -491,14 +565,14 @@
                 <div class="lawyer-info" style="flex:1;">
                     <h4>Adv. Priya Verma</h4>
                     <p>Family Law, Property & Civil Disputes • 9 Yrs Exp</p>
-                    <p style="color:#00E676; font-weight:600;">● Available for Consultation</p>
+                    <p style="color:#10b981; font-weight:600;">● Available for Consultation</p>
                 </div>
                 <a href="tel:9876543211" class="lawyer-call-btn"><i class="fa-solid fa-phone"></i> Call</a>
             </div>
         </div>
     </div>
 
-    <!-- 7. SOS ALERT OVERLAY -->
+    <!-- SOS ALERT OVERLAY -->
     <div class="sos-overlay" id="sosOverlay">
         <div class="sos-box">
             <h1><i class="fa-solid fa-triangle-exclamation"></i> SOS ACTIVATED</h1>
@@ -512,7 +586,7 @@
         </div>
     </div>
 
-    <!-- 8. USER SETTINGS MODAL -->
+    <!-- USER SETTINGS MODAL -->
     <div class="modal-overlay" id="settingsModal">
         <div class="modal-box">
             <span class="modal-close" onclick="closeAllModals()">&times;</span>
@@ -530,14 +604,14 @@
 
     <!-- VOICE ASSISTANT OVERLAY -->
     <div class="voice-overlay" id="voiceOverlay">
-        <button class="voice-close" id="voiceCloseBtn" onclick="closeVoiceAssistant()">
+        <button class="voice-close" id="voiceCloseBtn" onclick="closeVoiceAssistant()" title="Close Voice Assistant">
             <i class="fa-solid fa-xmark"></i>
         </button>
         <div class="voice-pulse-container">
             <div class="voice-pulse-ring"></div>
             <div class="voice-pulse-ring"></div>
             <div class="voice-pulse-ring"></div>
-            <div class="voice-mic-center" id="voiceMicBtn" onclick="toggleVoiceRecognition()">
+            <div class="voice-mic-center" id="voiceMicBtn" onclick="toggleVoiceRecognition()" title="Tap to Speak">
                 <i class="fa-solid fa-microphone"></i>
             </div>
         </div>
@@ -549,17 +623,17 @@
                 <i class="fa-solid fa-volume-high" id="voiceMuteIcon"></i>
                 <span id="voiceMuteLabel">Mute Audio</span>
             </button>
-            <button class="voice-control-btn stop-btn" id="voiceStopBtn" onclick="stopVoiceAssistant()" title="Click to Stop Listening & Speaking">
+            <button class="voice-control-btn" id="voiceStopBtn" onclick="stopVoiceAssistant()" title="Click to Stop Listening & Speaking">
                 <i class="fa-solid fa-circle-stop"></i>
                 <span>Click to Stop</span>
             </button>
-            <button class="voice-lang-toggle" id="voiceLangToggle" onclick="toggleVoiceLang()">
+            <button class="voice-lang-toggle" id="voiceLangToggle" onclick="toggleVoiceLang()" title="Toggle Voice Recognition Language">
                 <i class="fa-solid fa-language"></i> <span id="voiceLangLabel">हिंदी (hi-IN)</span>
             </button>
         </div>
     </div>
 
-    <!-- MOBILE BOTTOM NAV -->
+    <!-- MOBILE BOTTOM NAVIGATION -->
     <nav class="bottom-nav" id="bottomNav">
         <div class="bottom-nav-item active" id="bottomNavHome" onclick="switchBottomNav('home')">
             <i class="fa-solid fa-house"></i>
@@ -583,6 +657,6 @@
         </div>
     </nav>
 
-    <script src="js/script.js?v=4"></script>
+    <script src="js/script.js?v=12"></script>
 </body>
 </html>

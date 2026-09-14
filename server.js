@@ -116,6 +116,16 @@ function handleChatAPI(req, res) {
             const userMessage = parsedData.message || '';
             const category = parsedData.category || "General";
             const selectedLanguage = parsedData.language || "Multilingual";
+            const rawHistory = Array.isArray(parsedData.history) ? parsedData.history : [];
+
+            // Sanitize conversation memory: last 8 messages, valid roles, clean content
+            const cleanHistory = rawHistory
+                .filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string' && m.content.trim())
+                .slice(-8)
+                .map(m => ({
+                    role: m.role,
+                    content: m.content.trim().slice(0, 1500)
+                }));
 
             if (!userMessage.trim()) {
                 res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -186,7 +196,7 @@ RESPONSE FORMAT:
 
             systemPrompt += `\n\nContext:\nCategory: ${category}\nUser Query: ${userMessage}`;
 
-            const aiReply = await callGroqAI(systemPrompt, userMessage);
+            const aiReply = await callGroqAI(systemPrompt, userMessage, cleanHistory);
             
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ reply: aiReply }));
@@ -200,14 +210,17 @@ RESPONSE FORMAT:
 }
 
 // --- GROQ API FUNCTION ---
-function callGroqAI(systemPrompt, userMessage) {
+function callGroqAI(systemPrompt, userMessage, history = []) {
     return new Promise((resolve) => {
+        const messages = [
+            { role: "system", content: systemPrompt },
+            ...history,
+            { role: "user", content: userMessage }
+        ];
+
         const postData = JSON.stringify({
             model: "groq/compound-mini",
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: userMessage }
-            ],
+            messages: messages,
             temperature: 0.3,
             max_tokens: 800
         });
@@ -233,7 +246,7 @@ function callGroqAI(systemPrompt, userMessage) {
                         resolve(jsonResponse.choices[0].message.content);
                     } else if (jsonResponse.error) {
                         console.error("Groq Error Response:", jsonResponse.error);
-                        fallbackGroqAI(systemPrompt, userMessage).then(resolve);
+                        fallbackGroqAI(systemPrompt, userMessage, history).then(resolve);
                     } else {
                         resolve("AI response generation failed. Please try again.");
                     }
@@ -254,14 +267,17 @@ function callGroqAI(systemPrompt, userMessage) {
     });
 }
 
-function fallbackGroqAI(systemPrompt, userMessage) {
+function fallbackGroqAI(systemPrompt, userMessage, history = []) {
     return new Promise((resolve) => {
+        const messages = [
+            { role: "system", content: systemPrompt },
+            ...history,
+            { role: "user", content: userMessage }
+        ];
+
         const postData = JSON.stringify({
             model: "openai/gpt-oss-20b",
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: userMessage }
-            ],
+            messages: messages,
             temperature: 0.3,
             max_tokens: 800
         });

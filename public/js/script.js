@@ -1,20 +1,30 @@
-// ===================================================
-// Nyayi Pro (न्याय सेतु) - Core Client Script
+// =========================================================
+// NYAYI PRO (न्यायी) — CORE CLIENT APPLICATION SCRIPT
+// Architecture: IndexedDB Store • Multi-Turn Memory Manager
+// Structured Legal Presentation • Voice & Procedural Engines
 // Developed by Farhan Khan (BCA Student)
-// ===================================================
+// =========================================================
 
-let chats = JSON.parse(localStorage.getItem('nyayaChats')) || [];
+// --- 1. APPLICATION STATE ---
 let activeChatId = null;
+let currentChatMessages = [];
 let user = localStorage.getItem('nyayaUser') || "Citizen";
-
-// Voice Assistant & Language state
-let voiceLang = 'hi-IN'; // default Hindi
-let isVoiceQuery = false; // flag to auto-speak response
-let autoSpeak = true; // auto-speak AI response after voice query
-let activeRecognition = null;
 let aiLanguage = localStorage.getItem('nyayaLanguage') || 'Multilingual';
+let activeAbortController = null;
+let isGenerating = false;
+let thinkingInterval = null;
 
-// IPC to BNS Database (Comprehensive Official Mapping)
+// Voice Assistant state
+let voiceLang = 'hi-IN';
+let isVoiceQuery = false;
+let autoSpeak = true;
+let activeRecognition = null;
+let isVoiceMuted = false;
+let activeStatuteFilter = 'all';
+
+// --- 2. STATUTORY DATABASES (100% PRESERVED & COMPLETE) ---
+
+// A. Penal Law: IPC to BNS Database (Bharatiya Nyaya Sanhita, 2023)
 const BNS_DATABASE = {
     '420': { bns: 'Section 318(4)', title: 'Cheating (धोखाधड़ी / छल)', punishment: 'Up to 7 years imprisonment + Fine', bailable: 'Non-Bailable', cognizable: 'Cognizable' },
     '302': { bns: 'Section 103(1)', title: 'Murder (हत्या)', punishment: 'Death or Life Imprisonment + Fine', bailable: 'Non-Bailable', cognizable: 'Cognizable' },
@@ -35,8 +45,7 @@ const BNS_DATABASE = {
     '304A': { bns: 'Section 106(1)', title: 'Death by Negligence (लापरवाही से मौत)', punishment: 'Up to 5 years + Fine', bailable: 'Bailable', cognizable: 'Cognizable' }
 };
 
-
-// BNSS (Bharatiya Nagarik Suraksha Sanhita, 2023) Procedural Database
+// B. Procedural Law: CrPC to BNSS Database (Bharatiya Nagarik Suraksha Sanhita, 2023)
 const BNSS_DATABASE = {
     '154': { bnss: 'Section 173(1) BNSS', title: 'FIR Registration & Mandatory Zero FIR (प्राथमिकी)', old: 'Section 154 CrPC', category: 'Criminal Procedure', details: 'Zero FIR mandatory across any police station regardless of jurisdiction. E-FIR permitted with signature verification within 3 days.', nature: 'Cognizable Offences' },
     '156': { bnss: 'Section 175(3) BNSS', title: 'Magistrate Direction for FIR (156(3) Application)', old: 'Section 156(3) CrPC', category: 'Court Direction', details: 'Power of Judicial Magistrate to direct police to register FIR and submit investigation report.', nature: 'Judicial Remedy' },
@@ -53,7 +62,7 @@ const BNSS_DATABASE = {
     '197': { bnss: 'Section 218 BNSS', title: 'Sanction for Prosecution of Public Servants & Police', old: 'Section 197 CrPC', category: 'Official Sanction', details: 'Government sanction required before prosecuting public servants for acts done in discharge of official duty.', nature: 'Sanction Requirement' }
 };
 
-// BSA (Bharatiya Sakshya Adhiniyam, 2023) Law of Evidence Database
+// C. Law of Evidence: IEA to BSA Database (Bharatiya Sakshya Adhiniyam, 2023)
 const BSA_DATABASE = {
     '65B': { bsa: 'Section 63 BSA', title: 'Admissibility of Electronic Records / Certificates (डिजिटल साक्ष्य)', old: 'Section 65B Evidence Act', category: 'Electronic Evidence', details: 'Electronic records, cloud logs, emails, and phone chats directly admissible. Standardized schedule certificate for hash integrity.', significance: 'Digital Records as Primary Evidence' },
     '25': { bsa: 'Section 23(1) BSA', title: 'Confession to Police Officer Not Admissible (पुलिस को दिया बयान)', old: 'Section 25 Evidence Act', category: 'Confession Law', details: 'No confession made to a police officer shall be proved against a person accused of any offence.', significance: 'Protection Against Coercion' },
@@ -64,7 +73,7 @@ const BSA_DATABASE = {
     '133': { bsa: 'Section 138 BSA', title: 'Accomplice Evidence & Approver Testimony (सह-अपराधी की गवाही)', old: 'Section 133 Evidence Act', category: 'Approver Evidence', details: 'An accomplice shall be a competent witness against an accused person; conviction not illegal merely because uncorroborated.', significance: 'Approver Evidence Standard' }
 };
 
-// CPC (Code of Civil Procedure, 1908) Procedural Database
+// D. Civil Procedure Code (CPC 1908) Database
 const CPC_DATABASE = {
     'ORDER39': { cpc: 'Order XXXIX Rules 1 & 2 CPC', title: 'Temporary Injunctions & Interlocutory Stay Orders (स्टे ऑर्डर)', category: 'Civil Injunction', details: 'Urgent stay orders on property, construction, demolition, or contract. Requires 3 tests: Prima Facie Case, Balance of Convenience, and Irreparable Injury.', significance: 'Property & Civil Protection' },
     'ORDER7': { cpc: 'Order VII Rule 11 CPC', title: 'Rejection of Plaint (मुकदमा खारिज करने का आवेदन)', category: 'Pleading Defense', details: 'Plaint rejected where it discloses no cause of action, is undervalued, or barred by any law (e.g. Limitation Act).', significance: 'Preliminary Dismissal' },
@@ -77,8 +86,7 @@ const CPC_DATABASE = {
     'SEC9': { cpc: 'Section 9 CPC', title: 'Courts to Try All Civil Suits Unless Barred (दीवानी क्षेत्राधिकार)', category: 'Civil Jurisdiction', details: 'Civil courts have jurisdiction to try all suits of a civil nature unless expressly or impliedly barred by statute.', significance: 'Fundamental Civil Court Power' }
 };
 
-
-// Traffic Violations Detail
+// E. Traffic Penalties Database
 const TRAFFIC_FINES = {
     'helmet': { title: 'Driving Without Helmet', fine: '₹1,000', section: 'Section 194D MVA', penalty: 'License Disqualification for 3 months' },
     'seatbelt': { title: 'Driving Without Seatbelt', fine: '₹1,000', section: 'Section 194B MVA', penalty: 'Applicable to driver and front/rear passengers' },
@@ -92,29 +100,305 @@ const TRAFFIC_FINES = {
     'emergency': { title: 'Not Giving Way to Emergency Vehicles (Ambulance/Fire)', fine: '₹10,000', section: 'Section 194E MVA', penalty: 'Imprisonment up to 6 months' }
 };
 
-// =========================================
-// 1. INITIALIZATION
-// =========================================
-document.addEventListener('DOMContentLoaded', () => {
+// --- 3. CONVERSATION STORE (INDEXEDDB + LOCALSTORAGE HYBRID) ---
+const ConversationStore = {
+    db: null,
+    dbName: 'nyayi_legal_db',
+    storeName: 'conversations',
+
+    async init() {
+        return new Promise((resolve) => {
+            if (!('indexedDB' in window)) {
+                console.warn('IndexedDB not supported, falling back to localStorage');
+                resolve(false);
+                return;
+            }
+            try {
+                const request = indexedDB.open(this.dbName, 1);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(this.storeName)) {
+                        const store = db.createObjectStore(this.storeName, { keyPath: 'id' });
+                        store.createIndex('updatedAt', 'updatedAt', { unique: false });
+                    }
+                };
+                request.onsuccess = (e) => {
+                    this.db = e.target.result;
+                    // Migrate legacy localStorage if IndexedDB is empty
+                    this.migrateLegacyStorage().then(() => resolve(true));
+                };
+                request.onerror = () => {
+                    console.warn('IndexedDB open error, using localStorage');
+                    resolve(false);
+                };
+            } catch (err) {
+                console.warn('IndexedDB init failed:', err);
+                resolve(false);
+            }
+        });
+    },
+
+    async migrateLegacyStorage() {
+        try {
+            const legacy = localStorage.getItem('nyayaChats');
+            if (legacy) {
+                const parsed = JSON.parse(legacy);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    const allCurrent = await this.getAll();
+                    if (allCurrent.length === 0) {
+                        for (const chat of parsed) {
+                            await this.save({
+                                id: chat.id || Date.now().toString(),
+                                title: chat.title || 'Consultation',
+                                messages: chat.messages || [],
+                                createdAt: chat.id ? parseInt(chat.id) || Date.now() : Date.now(),
+                                updatedAt: Date.now()
+                            });
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Migration error:', e);
+        }
+    },
+
+    async getAll() {
+        if (!this.db) {
+            const raw = localStorage.getItem('nyayaChats');
+            return raw ? JSON.parse(raw) : [];
+        }
+        return new Promise((resolve) => {
+            try {
+                const tx = this.db.transaction(this.storeName, 'readonly');
+                const store = tx.objectStore(this.storeName);
+                const req = store.getAll();
+                req.onsuccess = () => {
+                    const items = req.result || [];
+                    items.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+                    resolve(items);
+                };
+                req.onerror = () => resolve([]);
+            } catch (err) {
+                resolve([]);
+            }
+        });
+    },
+
+    async get(id) {
+        if (!this.db) {
+            const all = await this.getAll();
+            return all.find(c => c.id === id) || null;
+        }
+        return new Promise((resolve) => {
+            try {
+                const tx = this.db.transaction(this.storeName, 'readonly');
+                const store = tx.objectStore(this.storeName);
+                const req = store.get(id);
+                req.onsuccess = () => resolve(req.result || null);
+                req.onerror = () => resolve(null);
+            } catch (err) {
+                resolve(null);
+            }
+        });
+    },
+
+    async save(chat) {
+        chat.updatedAt = Date.now();
+        if (!chat.createdAt) chat.createdAt = Date.now();
+
+        // Dual-write to localStorage for instant reliability & cross-tab resilience
+        try {
+            const all = await this.getAll();
+            const idx = all.findIndex(c => c.id === chat.id);
+            if (idx >= 0) all[idx] = chat;
+            else all.unshift(chat);
+            localStorage.setItem('nyayaChats', JSON.stringify(all));
+        } catch (e) {}
+
+        if (!this.db) return true;
+        return new Promise((resolve) => {
+            try {
+                const tx = this.db.transaction(this.storeName, 'readwrite');
+                const store = tx.objectStore(this.storeName);
+                store.put(chat);
+                tx.oncomplete = () => resolve(true);
+                tx.onerror = () => resolve(false);
+            } catch (err) {
+                resolve(false);
+            }
+        });
+    },
+
+    async delete(id) {
+        try {
+            const all = await this.getAll();
+            const filtered = all.filter(c => c.id !== id);
+            localStorage.setItem('nyayaChats', JSON.stringify(filtered));
+        } catch (e) {}
+
+        if (!this.db) return true;
+        return new Promise((resolve) => {
+            try {
+                const tx = this.db.transaction(this.storeName, 'readwrite');
+                const store = tx.objectStore(this.storeName);
+                store.delete(id);
+                tx.oncomplete = () => resolve(true);
+                tx.onerror = () => resolve(false);
+            } catch (err) {
+                resolve(false);
+            }
+        });
+    },
+
+    async clearAll() {
+        localStorage.removeItem('nyayaChats');
+        if (!this.db) return true;
+        return new Promise((resolve) => {
+            try {
+                const tx = this.db.transaction(this.storeName, 'readwrite');
+                const store = tx.objectStore(this.storeName);
+                store.clear();
+                tx.oncomplete = () => resolve(true);
+                tx.onerror = () => resolve(false);
+            } catch (err) {
+                resolve(false);
+            }
+        });
+    }
+};
+
+// --- 4. CONTEXT MEMORY MANAGER ---
+const MemoryManager = {
+    // Builds sliding context window for Groq API
+    getContextPayload(messages, maxTurns = 8) {
+        if (!Array.isArray(messages) || messages.length === 0) return [];
+        
+        // Take the last maxTurns messages (excluding the currently pending one)
+        const relevant = messages.slice(-maxTurns);
+        return relevant.map(m => ({
+            role: m.role === 'ai' ? 'assistant' : 'user',
+            content: this.cleanContentForContext(m.text || '')
+        })).filter(m => m.content.length > 0);
+    },
+
+    cleanContentForContext(text) {
+        if (!text) return '';
+        return text
+            .replace(/<[^>]*>/g, ' ')
+            .replace(/s+/g, ' ')
+            .trim()
+            .slice(0, 800);
+    }
+};
+
+// --- 5. STRUCTURED LEGAL RESPONSE PARSER ---
+const MessageRenderer = {
+    escapeHtml(text) {
+        if (!text) return '';
+        return text.replace(/[&<>"']/g, m => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[m]));
+    },
+
+    formatLegalResponse(rawText) {
+        if (!rawText) return '';
+        let text = rawText;
+
+        // 1. Basic formatting: bold, headings, links
+        text = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+        text = text.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+        text = text.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+        text = text.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+
+        // External URLs with security rel
+        text = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, 
+            '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--primary); font-weight:600;">$1 <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:10px;"></i></a>'
+        );
+
+        // List bullets
+        text = text.replace(/^\* (.*$)/gim, '<li>$1</li>');
+        text = text.replace(/^- (.*$)/gim, '<li>$1</li>');
+        text = text.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+
+        // Line breaks
+        text = text.replace(/\n/g, '<br>');
+        text = text.replace(/<br><\/li>/g, '</li>');
+        text = text.replace(/<br><li>/g, '<li>');
+
+        // 2. High-precision statutory pill detection
+        // Highlight BNS, BNSS, BSA, CPC, and IPC mentions as interactive pills
+        text = text.replace(/\b(BNS Section [0-9]+(\([0-9]+\))?|BNS [0-9]+|Section [0-9]+(\([0-9]+\))? BNS)/gi, 
+            `<span class="statute-pill" onclick="quickConvert('$1')"><i class="fa-solid fa-scale-balanced"></i> $1</span>`
+        );
+        text = text.replace(/\b(BNSS Section [0-9]+(\([0-9]+\))?|BNSS [0-9]+|Section [0-9]+(\([0-9]+\))? BNSS)/gi, 
+            `<span class="statute-pill" onclick="quickConvert('$1')"><i class="fa-solid fa-list-check"></i> $1</span>`
+        );
+        text = text.replace(/\b(BSA Section [0-9]+|Section [0-9]+ BSA|Section 65B|Section 63 BSA)/gi, 
+            `<span class="statute-pill" onclick="quickConvert('$1')"><i class="fa-solid fa-file-shield"></i> $1</span>`
+        );
+        text = text.replace(/\b(Order 39|Order 7 Rule 11|Order 8 Rule 1|Section 89 CPC)/gi, 
+            `<span class="statute-pill" onclick="quickConvert('$1')"><i class="fa-solid fa-building-shield"></i> $1</span>`
+        );
+
+        // 3. Highlight summary section if present
+        text = text.replace(/<b>(Summary|सारांश):<\/b>(.*?)(?=(<b>|<br><br>|$))/i, 
+            '<div class="legal-summary-box"><b><i class="fa-solid fa-feather-pointed" style="color:var(--primary); margin-right:6px;"></i> Summary:</b>$2</div>'
+        );
+
+        return text;
+    },
+
+    generateFollowUpQuestions(text) {
+        const questions = [];
+        const lower = text.toLowerCase();
+
+        if (lower.includes('cheating') || lower.includes('fraud') || lower.includes('420') || lower.includes('318') || lower.includes('1930')) {
+            questions.push('Bank me transaction chargeback request kaise karein?');
+            questions.push('Cyber Crime Helpline 1930 par complaint likhwane ke baad kya hota hai?');
+        } else if (lower.includes('fir') || lower.includes('police') || lower.includes('thana') || lower.includes('154') || lower.includes('173')) {
+            questions.push('Zero FIR darj karwane ka step-by-step procedure batao.');
+            questions.push('Agar police FIR na likhe toh SP ko letter kaise bhein?');
+        } else if (lower.includes('tenant') || lower.includes('rent') || lower.includes('property') || lower.includes('order 39') || lower.includes('stay')) {
+            questions.push('Civil court me Stay Order (Order 39) lene ki zaroori shartein kya hain?');
+            questions.push('Tenant ko Legal Eviction Notice bhejne ka format samjhao.');
+        } else if (lower.includes('bail') || lower.includes('arrest') || lower.includes('438') || lower.includes('482')) {
+            questions.push('Anticipatory Bail (अग्रिम जमानत) lene me kitna samay lagta hai?');
+            questions.push('Police arrest karte waqt citizen ke 5 zaroori adhikar kya hain?');
+        } else {
+            questions.push('Is mamle me kaunse zaroori saboot (evidence) ikattha karne chahiye?');
+            questions.push('Kya is apradh me seedhe court me private complaint file kar sakte hain?');
+        }
+
+        return questions.slice(0, 2);
+    }
+};
+
+// --- 6. INITIALIZATION & LIFECYCLE ---
+document.addEventListener('DOMContentLoaded', async () => {
     // Pre-warm SpeechSynthesis voices
     if ('speechSynthesis' in window) {
         window.speechSynthesis.getVoices();
         window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
     }
 
+    // Initialize IndexedDB Storage
+    await ConversationStore.init();
+
     // Restore selected AI language dropdown
     const langSelectEl = document.getElementById('langSelect');
-    if (langSelectEl) {
-        langSelectEl.value = aiLanguage;
-    }
+    if (langSelectEl) langSelectEl.value = aiLanguage;
 
     // Restore dark mode
-    if (localStorage.getItem('nyayaTheme') === 'dark') {
-        document.body.classList.add('dark-mode');
+    if (localStorage.getItem('nyayaTheme') === 'dark' || !localStorage.getItem('nyayaTheme')) {
+        document.body.classList.remove('light-mode');
         updateThemeIcon(true);
+    } else {
+        document.body.classList.add('light-mode');
+        updateThemeIcon(false);
     }
 
-    // Restore settings
+    // Restore settings inputs
     const savedName = localStorage.getItem('nyayaUser');
     if (savedName && document.getElementById('userNameInput')) {
         document.getElementById('userNameInput').value = savedName;
@@ -124,11 +408,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('userEmergencyContact').value = savedContact;
     }
 
-    // Initialize session
-    if (chats.length === 0) {
-        startNewChat();
+    // Load consultations from Store
+    const allChats = await ConversationStore.getAll();
+    if (allChats.length === 0) {
+        await startNewChat();
     } else {
-        openChat(chats[0].id);
+        await openChat(allChats[0].id);
     }
 
     // Modal background click to close
@@ -144,60 +429,84 @@ document.addEventListener('DOMContentLoaded', () => {
             closeAllModals();
             closeVoiceAssistant();
         }
-        // Alt+V or Ctrl+Shift+V for Voice Assistant
         if ((e.altKey && e.key.toLowerCase() === 'v') || (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'v')) {
             e.preventDefault();
             openVoiceAssistant();
         }
     });
 
-    // Swipe gesture to open/close sidebar on touch devices
+    // Touch swipe gesture for mobile drawer
     let touchStartX = 0;
     let touchEndX = 0;
-
     document.addEventListener('touchstart', (e) => {
         touchStartX = e.changedTouches[0].screenX;
     }, { passive: true });
-
     document.addEventListener('touchend', (e) => {
         touchEndX = e.changedTouches[0].screenX;
         const diff = touchEndX - touchStartX;
-        if (diff > 80 && touchStartX < 40) {
-            // Swipe right from left edge → open sidebar
-            toggleSidebar(true);
-        } else if (diff < -80) {
-            // Swipe left → close sidebar
-            toggleSidebar(false);
-        }
+        if (diff > 80 && touchStartX < 40) toggleSidebar(true);
+        else if (diff < -80) toggleSidebar(false);
     }, { passive: true });
 });
 
-// =========================================
-// 2. CHAT ENGINE & UI
-// =========================================
-
+// --- 7. EMPTY / WELCOME STATE ---
 function renderEmptyState() {
     const box = document.getElementById('chat-box');
+    if (!box) return;
+
     box.innerHTML = `
         <div class="welcome-hero">
             <div class="welcome-badge-icon">
                 <i class="fa-solid fa-scale-balanced"></i>
             </div>
-            <h1 class="gradient-text">Namaste, ${escapeHtml(user)} Ji</h1>
+            <h1 class="gradient-text">Namaste, ${MessageRenderer.escapeHtml(user)} Ji</h1>
             <p>Nyayi (न्यायी) me aapka swagat hai. Indian Penal Code, BNS 2023, Police FIR, Traffic Challan ya Consumer rights par turant vishwasniya kanooni margdarshan prapt karein.</p>
             
+            <!-- 4 Categorized Legal Domain Quick Action Cards -->
+            <div class="domain-cards-grid">
+                <div class="domain-card" onclick="askSuggestion('IPC Section 420 aur nayi BNS me kya antar hai? Cheating par kya saza hai?')">
+                    <div class="domain-card-header">
+                        <span class="domain-card-title"><i class="fa-solid fa-gavel"></i> Criminal Law & BNS</span>
+                        <span class="domain-badge">BNS 2023</span>
+                    </div>
+                    <p class="domain-card-desc">BNS vs IPC dharaen, bailable apradh, punishment, aur police adhikar.</p>
+                </div>
+
+                <div class="domain-card" onclick="askSuggestion('Mera online cyber fraud ho gaya hai, paise wapas kaise paayein? 1930 helpline kaise kaam karti hai?')">
+                    <div class="domain-card-header">
+                        <span class="domain-card-title"><i class="fa-solid fa-shield-halved"></i> Cyber Crime & Scams</span>
+                        <span class="domain-badge cyan">Golden Hour</span>
+                    </div>
+                    <p class="domain-card-desc">UPI fraud, frozen accounts, cybercrime.gov.in aur Helpline 1930 steps.</p>
+                </div>
+
+                <div class="domain-card" onclick="askSuggestion('Agar police station me FIR darj karne se mana karein toh kya kanooni adhikar hain?')">
+                    <div class="domain-card-header">
+                        <span class="domain-card-title"><i class="fa-solid fa-file-circle-check"></i> Police FIR & Remedies</span>
+                        <span class="domain-badge amber">Zero FIR</span>
+                    </div>
+                    <p class="domain-card-desc">Mandatory Zero FIR Section 173(1) BNSS aur Magistrate 175(3) remedies.</p>
+                </div>
+
+                <div class="domain-card" onclick="askSuggestion('Tenant rent nahi de raha hai, legal eviction notice kaise bhein? Stay order kaise lein?')">
+                    <div class="domain-card-header">
+                        <span class="domain-card-title"><i class="fa-solid fa-house-chimney-user"></i> Property & Civil Suits</span>
+                        <span class="domain-badge purple">Order 39</span>
+                    </div>
+                    <p class="domain-card-desc">Order 39 stay orders, property possession, aur legal notice drafting.</p>
+                </div>
+            </div>
+
+            <!-- Quick Action Suggestion Chips -->
             <div class="suggestion-chips">
-                <button class="chip" onclick="askSuggestion('Mera online cyber fraud ho gaya hai, paise wapas kaise paayein?')">
-                    <i class="fa-solid fa-shield-halved"></i> Cyber Fraud Recovery (1930)
+                <button class="chip" onclick="askSuggestion('Anticipatory bail lene ki prakriya aur Section 482 BNSS samjhao.')">
+                    <i class="fa-solid fa-handcuffs"></i> Anticipatory Bail Guide
                 </button>
-                <button class="chip" onclick="askSuggestion('Agar police station me FIR likhne se inkar karein toh kya karein?')">
-                    <i class="fa-solid fa-file-circle-check"></i> Police FIR Na Likhe Toh Kya Karein?
+                <button class="chip" onclick="askSuggestion('Motor Vehicle Act ke tehat bina helmet aur bina insurance challan fine kitna hai?')">
+                    <i class="fa-solid fa-calculator"></i> Traffic Challan Fines
                 </button>
-                <button class="chip" onclick="askSuggestion('IPC Section 420 aur BNS me kya antar hai?')">
-                    <i class="fa-solid fa-right-left"></i> IPC 420 vs BNS 318
-                </button>
-                <button class="chip" onclick="askSuggestion('Tenant rent nahi de raha hai, legal notice kaise bhein?')">
-                    <i class="fa-solid fa-house-chimney-user"></i> Tenant & Property Dispute
+                <button class="chip" onclick="askSuggestion('Cheque bounce hone par Section 138 NI Act ka legal notice kaise bhein?')">
+                    <i class="fa-solid fa-file-signature"></i> Cheque Bounce Notice
                 </button>
             </div>
         </div>
@@ -206,62 +515,19 @@ function renderEmptyState() {
 }
 
 function askSuggestion(text) {
-    document.getElementById('userInput').value = text;
-    sendMessage();
+    const input = document.getElementById('userInput');
+    if (input) {
+        input.value = text;
+        autoGrowTextarea(input);
+        sendMessage();
+    }
 }
 
-function escapeHtml(text) {
-    if (!text) return '';
-    return text.replace(/[&<>"']/g, m => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    }[m]));
-}
-
-function formatMessage(text) {
-    if (!text) return '';
-    
-    // Bold **text**
-    let formatted = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-
-    // Headings
-    formatted = formatted.replace(/^### (.*$)/gim, '<h3>$1</h3>');
-    formatted = formatted.replace(/^## (.*$)/gim, '<h2>$1</h2>');
-    formatted = formatted.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-
-    // Standard links
-    formatted = formatted.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, 
-        `<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--primary-dark); font-weight:600;">$1 <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:11px;"></i></a>`
-    );
-
-    // List bullets
-    formatted = formatted.replace(/^\* (.*$)/gim, '<li>$1</li>');
-    formatted = formatted.replace(/^- (.*$)/gim, '<li>$1</li>');
-
-    // Wrap consecutive <li> into <ul>
-    formatted = formatted.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
-
-    // Line breaks
-    formatted = formatted.replace(/\n/g, '<br>');
-
-    // Clean multiple <br> inside lists
-    formatted = formatted.replace(/<br><\/li>/g, '</li>');
-    formatted = formatted.replace(/<br><li>/g, '<li>');
-
-    return formatted;
-}
-
-function smoothScrollToBottom() {
+// --- 8. MESSAGE RENDERING & APP CHAT THREAD ---
+function appendMessage(text, role, skipScroll = false, isStreaming = false) {
     const box = document.getElementById('chat-box');
-    if (!box) return;
-    box.scrollTo({
-        top: box.scrollHeight,
-        behavior: 'smooth'
-    });
-}
+    if (!box) return null;
 
-function appendMessage(text, role, skipScroll = false) {
-    const box = document.getElementById('chat-box');
-    
     // Remove welcome hero if present
     const hero = box.querySelector('.welcome-hero');
     if (hero) hero.remove();
@@ -278,23 +544,54 @@ function appendMessage(text, role, skipScroll = false) {
 
     const contentDiv = document.createElement('div');
     contentDiv.className = 'msg-content';
-    contentDiv.innerHTML = role === 'user' ? escapeHtml(text).replace(/\n/g, '<br>') : formatMessage(text);
-
+    
+    if (role === 'user') {
+        contentDiv.innerHTML = MessageRenderer.escapeHtml(text).replace(/\n/g, '<br>');
+    } else {
+        contentDiv.innerHTML = MessageRenderer.formatLegalResponse(text);
+        
+        // Advocate consultation callout
+        const calloutDiv = document.createElement('div');
+        calloutDiv.className = 'advocate-callout';
+        calloutDiv.innerHTML = '<i class="fa-solid fa-circle-info"></i> <span><b>Kanooni Salah:</b> Nyayi AI kanooni jaankari pradan karta hai. Adalat me vakalatnama aur mudde ke liye verified advocate se paramarsh karein.</span>';
+        contentDiv.appendChild(calloutDiv);
+    }
     bodyWrapper.appendChild(contentDiv);
 
+    // AI Message Tools & Follow-up Suggestions
     if (role === 'ai') {
-        const cleanForAudio = text.replace(/\[.*?\]\(.*?\)/g, '').replace(/[\*#_]/g, '');
+        const cleanForAudio = text.replace(/<[^>]*>/g, '').replace(/[\[\]\*#_]/g, '');
+        
+        // Follow-up Suggestions
+        const followups = MessageRenderer.generateFollowUpQuestions(text);
+        if (followups.length > 0) {
+            const followupWrap = document.createElement('div');
+            followupWrap.className = 'followup-suggestions';
+            followups.forEach(q => {
+                const btn = document.createElement('button');
+                btn.className = 'followup-pill';
+                btn.innerHTML = `<i class="fa-solid fa-reply"></i> ${MessageRenderer.escapeHtml(q)}`;
+                btn.onclick = () => askSuggestion(q);
+                followupWrap.appendChild(btn);
+            });
+            contentDiv.appendChild(followupWrap);
+        }
+
+        // Action Toolbar: Listen, Copy, Share, Regenerate
         const toolsDiv = document.createElement('div');
         toolsDiv.className = 'msg-tools';
         toolsDiv.innerHTML = `
-            <button class="tool-pill" onclick="speakMessage(this, decodeURIComponent('${encodeURIComponent(cleanForAudio)}'))">
+            <button class="tool-pill" onclick="speakMessage(this, decodeURIComponent('${encodeURIComponent(cleanForAudio)}'))" title="Listen to spoken response">
                 <i class="fa-solid fa-volume-high"></i> Listen
             </button>
-            <button class="tool-pill" onclick="copyMessageText(this, decodeURIComponent('${encodeURIComponent(cleanForAudio)}'))">
+            <button class="tool-pill" onclick="copyMessageText(this, decodeURIComponent('${encodeURIComponent(cleanForAudio)}'))" title="Copy response text">
                 <i class="fa-regular fa-copy"></i> Copy
             </button>
-            <button class="tool-pill" onclick="shareResponse(decodeURIComponent('${encodeURIComponent(cleanForAudio)}'))">
+            <button class="tool-pill" onclick="shareResponse(decodeURIComponent('${encodeURIComponent(cleanForAudio)}'))" title="Share legal guidance">
                 <i class="fa-solid fa-share-nodes"></i> Share
+            </button>
+            <button class="tool-pill" onclick="regenerateLastResponse()" title="Regenerate this answer">
+                <i class="fa-solid fa-arrows-rotate"></i> Regenerate
             </button>
         `;
         bodyWrapper.appendChild(toolsDiv);
@@ -303,10 +600,9 @@ function appendMessage(text, role, skipScroll = false) {
     msgDiv.appendChild(avatar);
     msgDiv.appendChild(bodyWrapper);
     box.appendChild(msgDiv);
-    
+
     if (!skipScroll) {
         if (role === 'ai') {
-            // Align the START of the AI message with top of screen so user reads from beginning!
             setTimeout(() => {
                 msgDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 60);
@@ -314,67 +610,167 @@ function appendMessage(text, role, skipScroll = false) {
             msgDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
         }
     }
+
+    return msgDiv;
 }
 
-function showTypingIndicator() {
-    removeTypingIndicator();
+// --- 9. THINKING & GENERATION STATES ---
+function showThinkingIndicator() {
+    removeThinkingIndicator();
     const box = document.getElementById('chat-box');
+    if (!box) return;
+
+    const stages = [
+        "Analyzing legal statutes & facts...",
+        "Cross-referencing BNS 2023 & BNSS remedies...",
+        "Synthesizing citizen action plan..."
+    ];
+    let stageIdx = 0;
+
     const indicator = document.createElement('div');
     indicator.id = 'typingIndicator';
     indicator.className = 'message ai-msg';
     indicator.innerHTML = `
         <div class="msg-avatar"><i class="fa-solid fa-scale-balanced"></i></div>
         <div class="typing-indicator">
-            <div class="typing-dot"></div>
-            <div class="typing-dot"></div>
-            <div class="typing-dot"></div>
+            <div class="thinking-pulse-dots">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+            <span id="thinkingStatusText">${stages[0]}</span>
         </div>
     `;
     box.appendChild(indicator);
     smoothScrollToBottom();
+
+    thinkingInterval = setInterval(() => {
+        stageIdx = (stageIdx + 1) % stages.length;
+        const textEl = document.getElementById('thinkingStatusText');
+        if (textEl) textEl.innerText = stages[stageIdx];
+    }, 2200);
 }
 
-function removeTypingIndicator() {
+function removeThinkingIndicator() {
+    if (thinkingInterval) {
+        clearInterval(thinkingInterval);
+        thinkingInterval = null;
+    }
     const el = document.getElementById('typingIndicator');
     if (el) el.remove();
 }
 
-// =========================================
-// 3. SEND MESSAGE & API CALL
-// =========================================
+function setGeneratingState(generating) {
+    isGenerating = generating;
+    const sendBtn = document.getElementById('sendBtn');
+    const sendIcon = document.getElementById('sendBtnIcon');
+    if (!sendBtn || !sendIcon) return;
+
+    if (generating) {
+        sendBtn.classList.add('stop-mode');
+        sendBtn.title = 'Stop Generating';
+        sendIcon.className = 'fa-solid fa-stop';
+    } else {
+        sendBtn.classList.remove('stop-mode');
+        sendBtn.title = 'Send Message';
+        sendIcon.className = 'fa-solid fa-paper-plane';
+    }
+}
+
+function handleSendOrStop() {
+    if (isGenerating) {
+        stopGeneration();
+    } else {
+        sendMessage();
+    }
+}
+
+function stopGeneration() {
+    if (activeAbortController) {
+        activeAbortController.abort();
+        activeAbortController = null;
+    }
+    removeThinkingIndicator();
+    setGeneratingState(false);
+}
+
+// --- 10. COMPOSER & AUTO-GROW TEXTAREA ---
+function autoGrowTextarea(textarea) {
+    if (!textarea) return;
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 140) + 'px';
+}
+
+function handleInputKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+}
+
+function smoothScrollToBottom() {
+    const box = document.getElementById('chat-box');
+    if (!box) return;
+    box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
+}
+
+// --- 11. SEND MESSAGE & API ORCHESTRATION ---
 async function sendMessage() {
     const input = document.getElementById('userInput');
-    const text = input.value.trim();
-    if (!text) return;
+    const text = input ? input.value.trim() : '';
+    if (!text || isGenerating) return;
 
     input.value = '';
+    autoGrowTextarea(input);
 
     // Append user message
     appendMessage(text, 'user');
 
-    let currentChat = chats.find(c => c.id === activeChatId);
+    // Retrieve or initialize active conversation
+    let currentChat = await ConversationStore.get(activeChatId);
     if (!currentChat) {
-        currentChat = { id: Date.now().toString(), title: text.slice(0, 30), messages: [] };
-        chats.unshift(currentChat);
-        activeChatId = currentChat.id;
+        const newId = Date.now().toString();
+        currentChat = {
+            id: newId,
+            title: text.slice(0, 34),
+            messages: [],
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+        };
+        activeChatId = newId;
     } else if (currentChat.messages.length === 0) {
-        currentChat.title = text.slice(0, 32);
+        currentChat.title = text.slice(0, 34);
     }
 
-    currentChat.messages.push({ role: 'user', text: text });
-    saveData();
-    loadHistory();
+    // Push user message to store
+    currentChat.messages.push({ role: 'user', text: text, timestamp: Date.now() });
+    currentChatMessages = currentChat.messages;
+    await ConversationStore.save(currentChat);
+    await loadHistory();
 
-    showTypingIndicator();
+    // Prepare multi-turn contextual history payload
+    const contextHistory = MemoryManager.getContextPayload(currentChat.messages.slice(0, -1));
+
+    // Initiate AI Generation
+    setGeneratingState(true);
+    showThinkingIndicator();
+    activeAbortController = new AbortController();
 
     try {
         const response = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: text, category: "Indian Legal Advisory", language: aiLanguage })
+            body: JSON.stringify({
+                message: text,
+                category: "Indian Legal Advisory",
+                language: aiLanguage,
+                history: contextHistory
+            }),
+            signal: activeAbortController.signal
         });
 
-        removeTypingIndicator();
+        removeThinkingIndicator();
+        setGeneratingState(false);
 
         if (!response.ok) {
             throw new Error('Server returned status: ' + response.status);
@@ -384,65 +780,128 @@ async function sendMessage() {
         const reply = data.reply || "Maaf karein, AI se uttar lene me samasya aayi.";
 
         appendMessage(reply, 'ai');
-        currentChat.messages.push({ role: 'ai', text: reply });
-        saveData();
+        currentChat.messages.push({ role: 'ai', text: reply, timestamp: Date.now() });
+        currentChatMessages = currentChat.messages;
+        await ConversationStore.save(currentChat);
 
-        // Auto speak response if triggered by voice assistant
+        // Auto-speak response if triggered by voice query
         autoSpeakResponse(reply);
 
     } catch (err) {
-        console.error("Chat API error:", err);
-        removeTypingIndicator();
-        appendMessage("Network issue: Server se sampark nahi ho pa raha hai. Kripya check karein ki server run kar raha hai.", 'ai');
+        removeThinkingIndicator();
+        setGeneratingState(false);
+
+        if (err.name === 'AbortError') {
+            appendMessage("Response generation was stopped.", 'ai');
+        } else {
+            console.error("Chat API error:", err);
+            appendMessage("Network issue: Server se sampark nahi ho pa raha hai. Kripya check karein ki server chal raha hai.", 'ai');
+        }
+    } finally {
+        activeAbortController = null;
     }
 }
 
-function handleEnter(e) {
-    if (e.key === 'Enter') sendMessage();
+async function regenerateLastResponse() {
+    if (isGenerating) return;
+    const currentChat = await ConversationStore.get(activeChatId);
+    if (!currentChat || currentChat.messages.length === 0) return;
+
+    // Find the last user query
+    let lastUserQuery = '';
+    for (let i = currentChat.messages.length - 1; i >= 0; i--) {
+        if (currentChat.messages[i].role === 'user') {
+            lastUserQuery = currentChat.messages[i].text;
+            break;
+        }
+    }
+    if (!lastUserQuery) return;
+
+    // Remove the last AI message if present
+    if (currentChat.messages[currentChat.messages.length - 1].role === 'ai') {
+        currentChat.messages.pop();
+    }
+
+    const input = document.getElementById('userInput');
+    if (input) {
+        input.value = lastUserQuery;
+        sendMessage();
+    }
 }
 
-// =========================================
-// 4. CHAT SESSIONS & HISTORY
-// =========================================
-function startNewChat() {
+// --- 12. CHAT SESSIONS & HISTORY MANAGEMENT ---
+async function startNewChat() {
     const newId = Date.now().toString();
-    chats.unshift({
+    const newChat = {
         id: newId,
         title: "New Consultation",
-        messages: []
-    });
-    saveData();
-    openChat(newId);
-    if (window.innerWidth <= 768) {
-        toggleSidebar(false);
-    }
+        messages: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+    };
+    await ConversationStore.save(newChat);
+    await openChat(newId);
+    if (window.innerWidth <= 768) toggleSidebar(false);
 }
 
-function openChat(chatId) {
+async function openChat(chatId) {
     activeChatId = chatId;
     const box = document.getElementById('chat-box');
+    if (!box) return;
     box.innerHTML = '';
 
-    const chat = chats.find(c => c.id === chatId);
+    const chat = await ConversationStore.get(chatId);
     if (chat && chat.messages.length > 0) {
+        currentChatMessages = chat.messages;
         chat.messages.forEach(m => appendMessage(m.text, m.role, true));
-        box.scrollTop = 0; // Start viewing from top when opening chat history
+        box.scrollTop = 0;
     } else {
+        currentChatMessages = [];
         renderEmptyState();
     }
 
-    loadHistory();
+    await loadHistory();
 }
 
-function loadHistory() {
+async function deleteChat(chatId, event) {
+    if (event) event.stopPropagation();
+    await ConversationStore.delete(chatId);
+    const all = await ConversationStore.getAll();
+    if (all.length > 0) {
+        await openChat(all[0].id);
+    } else {
+        await startNewChat();
+    }
+}
+
+async function clearHistory() {
+    if (confirm("Kya aap apni consultation history clear karna chahte hain?")) {
+        await ConversationStore.clearAll();
+        await startNewChat();
+    }
+}
+
+async function loadHistory(filterText = '') {
     const list = document.getElementById('historyList');
     if (!list) return;
     list.innerHTML = '';
 
-    chats.forEach(chat => {
+    const chats = await ConversationStore.getAll();
+    const filtered = filterText ? chats.filter(c => (c.title || '').toLowerCase().includes(filterText.toLowerCase())) : chats;
+
+    if (filtered.length === 0) {
+        list.innerHTML = '<div style="padding:10px 12px; font-size:12px; color:var(--text-muted);">No consultations found</div>';
+        return;
+    }
+
+    filtered.forEach(chat => {
         const item = document.createElement('div');
         item.className = `history-item ${chat.id === activeChatId ? 'active' : ''}`;
-        item.innerHTML = `<i class="fa-regular fa-message"></i> <span style="flex:1; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(chat.title || "Consultation")}</span>`;
+        item.innerHTML = `
+            <i class="fa-regular fa-message"></i>
+            <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${MessageRenderer.escapeHtml(chat.title || "Consultation")}</span>
+            <i class="fa-solid fa-trash-can history-item-delete" title="Delete consultation" onclick="deleteChat('${chat.id}', event)"></i>
+        `;
         item.onclick = () => {
             openChat(chat.id);
             if (window.innerWidth <= 768) toggleSidebar(false);
@@ -451,22 +910,11 @@ function loadHistory() {
     });
 }
 
-function clearHistory() {
-    if (confirm("Kya aap apni consultation history clear karna chahte hain?")) {
-        chats = [];
-        saveData();
-        startNewChat();
-    }
+function filterHistory(query) {
+    loadHistory(query.trim());
 }
 
-function saveData() {
-    localStorage.setItem('nyayaChats', JSON.stringify(chats));
-    localStorage.setItem('nyayaUser', user);
-}
-
-// =========================================
-// 5. MODAL MANAGEMENT
-// =========================================
+// --- 13. MODAL MANAGEMENT (PRESERVED) ---
 function openTool(toolName) {
     closeAllModals();
     if (window.innerWidth <= 768) toggleSidebar(false);
@@ -496,12 +944,7 @@ function closeAllModals() {
     if (sos) sos.classList.remove('active');
 }
 
-// =========================================
-// 6. LEGAL TOOL FEATURES
-// =========================================
-
-// A. UNIVERSAL STATUTORY CODE CONVERTER & NAVIGATOR (BNS, BNSS, BSA, CPC)
-let activeStatuteFilter = 'all';
+// --- 14. STATUTORY TOOLS & SEARCH ENGINES (PRESERVED) ---
 
 function setStatuteFilter(statute, btn) {
     activeStatuteFilter = statute;
@@ -511,6 +954,7 @@ function setStatuteFilter(statute, btn) {
 }
 
 function quickConvert(val) {
+    openTool('bns');
     const input = document.getElementById('ipc-input');
     if (input) {
         input.value = val;
@@ -536,7 +980,7 @@ function convertSection() {
     let resultsHtml = '';
     let matchesCount = 0;
 
-    // Check BNS Database
+    // BNS Check
     if (activeStatuteFilter === 'all' || activeStatuteFilter === 'bns') {
         const bnsHit = BNS_DATABASE[query] || Object.values(BNS_DATABASE).find(x => x.bns.toUpperCase().includes(query) || x.title.toLowerCase().includes(raw.toLowerCase()));
         if (bnsHit) {
@@ -548,12 +992,12 @@ function convertSection() {
                         <span style="font-size:12px; color:var(--text-muted);">IPC Dhara: <b>${query}</b></span>
                     </div>
                     <div style="font-size:17px; font-weight:800; color:var(--text-main); margin-bottom:4px;">Nayi BNS: ${bnsHit.bns}</div>
-                    <div style="font-weight:700; font-size:14px; color:var(--primary-dark); margin-bottom:8px;">${bnsHit.title}</div>
+                    <div style="font-weight:700; font-size:14px; color:var(--primary); margin-bottom:8px;">${bnsHit.title}</div>
                     <div style="font-size:13px; line-height:1.6; color:var(--text-main);">
                         <div>⚖️ <b>Saza (Punishment):</b> ${bnsHit.punishment}</div>
                         <div>🔒 <b>Bailability:</b> ${bnsHit.bailable} • 🚨 <b>Nature:</b> ${bnsHit.cognizable}</div>
                     </div>
-                    <button class="modal-btn" style="margin-top:10px; font-size:12.5px; padding:9px 16px;" onclick="askSuggestion('Mujhe BNS ${bnsHit.bns} (purani IPC ${query}) ke baare me vistrit kanooni jankari dein.')">
+                    <button class="modal-btn" style="margin-top:10px; font-size:12.5px; padding:9px 16px;" onclick="closeAllModals(); askSuggestion('Mujhe BNS ${bnsHit.bns} (purani IPC ${query}) ke baare me vistrit kanooni jankari dein.')">
                         <i class="fa-solid fa-robot"></i> Research BNS ${bnsHit.bns} with AI
                     </button>
                 </div>
@@ -561,7 +1005,7 @@ function convertSection() {
         }
     }
 
-    // Check BNSS Database
+    // BNSS Check
     if (activeStatuteFilter === 'all' || activeStatuteFilter === 'bnss') {
         const bnssHit = BNSS_DATABASE[query] || Object.values(BNSS_DATABASE).find(x => x.bnss.toUpperCase().includes(query) || x.title.toLowerCase().includes(raw.toLowerCase()) || (x.old && x.old.toUpperCase().includes(query)));
         if (bnssHit) {
@@ -573,10 +1017,10 @@ function convertSection() {
                         <span style="font-size:12px; color:var(--text-muted);">Purani CrPC: <b>${bnssHit.old || query}</b></span>
                     </div>
                     <div style="font-size:17px; font-weight:800; color:var(--text-main); margin-bottom:4px;">Nayi BNSS: ${bnssHit.bnss}</div>
-                    <div style="font-weight:700; font-size:14px; color:var(--primary-dark); margin-bottom:8px;">${bnssHit.title}</div>
+                    <div style="font-weight:700; font-size:14px; color:var(--primary); margin-bottom:8px;">${bnssHit.title}</div>
                     <p style="font-size:13px; line-height:1.6; color:var(--text-main); margin-bottom:8px;">${bnssHit.details}</p>
                     <div style="font-size:12px; color:var(--text-muted);">📂 <b>Category:</b> ${bnssHit.category} • 📌 ${bnssHit.nature}</div>
-                    <button class="modal-btn" style="margin-top:10px; font-size:12.5px; padding:9px 16px;" onclick="askSuggestion('BNSS Section ${bnssHit.bnss} (CrPC ${bnssHit.old}) ke tehat kanooni prakriya aur adhikar samjhein.')">
+                    <button class="modal-btn" style="margin-top:10px; font-size:12.5px; padding:9px 16px;" onclick="closeAllModals(); askSuggestion('BNSS Section ${bnssHit.bnss} (CrPC ${bnssHit.old}) ke tehat kanooni prakriya aur adhikar samjhein.')">
                         <i class="fa-solid fa-robot"></i> Research BNSS Procedure with AI
                     </button>
                 </div>
@@ -584,7 +1028,7 @@ function convertSection() {
         }
     }
 
-    // Check BSA Database
+    // BSA Check
     if (activeStatuteFilter === 'all' || activeStatuteFilter === 'bsa') {
         const bsaHit = BSA_DATABASE[query] || Object.values(BSA_DATABASE).find(x => x.bsa.toUpperCase().includes(query) || x.title.toLowerCase().includes(raw.toLowerCase()) || (x.old && x.old.toUpperCase().includes(query)));
         if (bsaHit) {
@@ -596,10 +1040,10 @@ function convertSection() {
                         <span style="font-size:12px; color:var(--text-muted);">Purani IEA: <b>${bsaHit.old || query}</b></span>
                     </div>
                     <div style="font-size:17px; font-weight:800; color:var(--text-main); margin-bottom:4px;">Nayi BSA: ${bsaHit.bsa}</div>
-                    <div style="font-weight:700; font-size:14px; color:var(--primary-dark); margin-bottom:8px;">${bsaHit.title}</div>
+                    <div style="font-weight:700; font-size:14px; color:var(--primary); margin-bottom:8px;">${bsaHit.title}</div>
                     <p style="font-size:13px; line-height:1.6; color:var(--text-main); margin-bottom:8px;">${bsaHit.details}</p>
                     <div style="font-size:12px; color:var(--text-muted);">💡 <b>Key Rule:</b> ${bsaHit.significance}</div>
-                    <button class="modal-btn" style="margin-top:10px; font-size:12.5px; padding:9px 16px;" onclick="askSuggestion('Bharatiya Sakshya Adhiniyam me ${bsaHit.bsa} (purana ${bsaHit.old}) ke tehat saboot pramanit karne ke niyam samjhao.')">
+                    <button class="modal-btn" style="margin-top:10px; font-size:12.5px; padding:9px 16px;" onclick="closeAllModals(); askSuggestion('Bharatiya Sakshya Adhiniyam me ${bsaHit.bsa} ke tehat saboot pramanit karne ke niyam samjhao.')">
                         <i class="fa-solid fa-robot"></i> Research BSA Evidence Rules with AI
                     </button>
                 </div>
@@ -607,7 +1051,7 @@ function convertSection() {
         }
     }
 
-    // Check CPC Database
+    // CPC Check
     if (activeStatuteFilter === 'all' || activeStatuteFilter === 'cpc') {
         const cpcHit = CPC_DATABASE[query] || CPC_DATABASE[raw.replace(/\s+/g, '').toUpperCase()] || Object.values(CPC_DATABASE).find(x => x.cpc.toUpperCase().includes(raw.toUpperCase()) || x.title.toLowerCase().includes(raw.toLowerCase()));
         if (cpcHit) {
@@ -619,10 +1063,10 @@ function convertSection() {
                         <span style="font-size:12px; color:var(--text-muted);">Civil Code of India</span>
                     </div>
                     <div style="font-size:17px; font-weight:800; color:var(--text-main); margin-bottom:4px;">${cpcHit.cpc}</div>
-                    <div style="font-weight:700; font-size:14px; color:var(--primary-dark); margin-bottom:8px;">${cpcHit.title}</div>
+                    <div style="font-weight:700; font-size:14px; color:var(--primary); margin-bottom:8px;">${cpcHit.title}</div>
                     <p style="font-size:13px; line-height:1.6; color:var(--text-main); margin-bottom:8px;">${cpcHit.details}</p>
                     <div style="font-size:12px; color:var(--text-muted);">⚖️ <b>Litigation Standard:</b> ${cpcHit.significance}</div>
-                    <button class="modal-btn" style="margin-top:10px; font-size:12.5px; padding:9px 16px;" onclick="askSuggestion('Civil Procedure Code (CPC) me ${cpcHit.cpc} ke tehat case jeetne ki strategy aur court procedure batao.')">
+                    <button class="modal-btn" style="margin-top:10px; font-size:12.5px; padding:9px 16px;" onclick="closeAllModals(); askSuggestion('Civil Procedure Code (CPC) me ${cpcHit.cpc} ke tehat case jeetne ki strategy samjhao.')">
                         <i class="fa-solid fa-robot"></i> Research CPC Civil Procedure with AI
                     </button>
                 </div>
@@ -634,9 +1078,9 @@ function convertSection() {
         resultDiv.innerHTML = resultsHtml;
     } else {
         resultDiv.innerHTML = `
-            <div style="padding:12px; background:var(--bg-body); border-radius:10px; text-align:center;">
-                <p style="color:var(--text-muted); font-size:13px; margin-bottom:10px;">"${escapeHtml(raw)}" hamare quick local index me nahi mila.</p>
-                <button class="modal-btn" onclick="askSuggestion('${escapeHtml(raw)} ke bare me BNS, BNSS, BSA aur CPC ke tehat complete legal analysis provide karein.')">
+            <div style="padding:14px; background:var(--bg-body); border-radius:10px; text-align:center;">
+                <p style="color:var(--text-muted); font-size:13px; margin-bottom:10px;">"${MessageRenderer.escapeHtml(raw)}" hamare quick local index me nahi mila.</p>
+                <button class="modal-btn" onclick="closeAllModals(); askSuggestion('${MessageRenderer.escapeHtml(raw)} ke bare me BNS, BNSS, BSA aur CPC ke tehat complete legal analysis provide karein.')">
                     <i class="fa-solid fa-magnifying-glass"></i> Deep Search in Nyayi AI Law Engine
                 </button>
             </div>
@@ -644,7 +1088,7 @@ function convertSection() {
     }
 }
 
-// B. Traffic Fine Calculator
+// Traffic Fine Calculator
 function calculateFine() {
     const type = document.getElementById('fine-type').value;
     const resultDiv = document.getElementById('fine-result');
@@ -668,8 +1112,7 @@ function calculateFine() {
     }
 }
 
-
-// D. Legal Notice Generator
+// Legal Notice Drafter
 function generateLegalNotice() {
     const type = document.getElementById('notice-type').value;
     const sender = document.getElementById('notice-sender').value.trim() || "[Your Full Name & Address]";
@@ -737,14 +1180,14 @@ ${sender}`;
                 <i class="fa-regular fa-copy"></i> Copy Notice
             </button>
         </div>
-        <pre style="white-space:pre-wrap; font-family:inherit; background:var(--sidebar-bg); padding:14px; border-radius:10px; border:1px solid var(--border); font-size:13px; line-height:1.6;">${escapeHtml(noticeText)}</pre>
+        <pre style="white-space:pre-wrap; font-family:inherit; background:var(--sidebar-bg); padding:14px; border-radius:10px; border:1px solid var(--border); font-size:13px; line-height:1.6;">${MessageRenderer.escapeHtml(noticeText)}</pre>
         <button class="modal-btn" style="margin-top:12px; font-size:13px; padding:10px;" onclick="window.print()">
             <i class="fa-solid fa-print"></i> Print Notice
         </button>
     `;
 }
 
-// E. NEW: Which Law Applies (Fact-to-Law Analyzer)
+// Which Law Applies (Fact-to-Law Analyzer)
 async function analyzeFactsToLaw() {
     const input = document.getElementById('factlaw-input').value.trim();
     const resultDiv = document.getElementById('factlaw-result');
@@ -756,7 +1199,7 @@ async function analyzeFactsToLaw() {
     }
 
     resultDiv.style.display = 'block';
-    resultDiv.innerHTML = '<div style="color:var(--primary-dark);"><i class="fa-solid fa-spinner fa-spin"></i> Kanooni dharaon aur BNS ki janch ki ja rahi hai...</div>';
+    resultDiv.innerHTML = '<div style="color:var(--primary);"><i class="fa-solid fa-spinner fa-spin"></i> Kanooni dharaon aur BNS ki janch ki ja rahi hai...</div>';
 
     try {
         const response = await fetch('/api/chat', {
@@ -765,13 +1208,13 @@ async function analyzeFactsToLaw() {
             body: JSON.stringify({ message: input, category: "Which Law Applies" })
         });
         const data = await response.json();
-        resultDiv.innerHTML = formatMessage(data.reply || "Analysis complete.");
+        resultDiv.innerHTML = MessageRenderer.formatLegalResponse(data.reply || "Analysis complete.");
     } catch (e) {
         resultDiv.innerHTML = '<span style="color:#ef4444;">Analysis me samasya aayi. Kripya punah prayas karein.</span>';
     }
 }
 
-// F. NEW: FIR 6-Step Wizard Navigation
+// FIR Wizard Navigation
 function goToFIRStep(stepNum) {
     for (let i = 1; i <= 6; i++) {
         const content = document.getElementById('firStep' + i);
@@ -785,7 +1228,7 @@ function goToFIRStep(stepNum) {
     if (targetBtn) targetBtn.classList.add('active');
 }
 
-// G. NEW: Case Law & Judgment Simplifier
+// Case Law Simplifier
 async function simplifyCaseLaw() {
     const input = document.getElementById('casesimplifier-input').value.trim();
     const resultDiv = document.getElementById('casesimplifier-result');
@@ -797,7 +1240,7 @@ async function simplifyCaseLaw() {
     }
 
     resultDiv.style.display = 'block';
-    resultDiv.innerHTML = '<div style="color:var(--primary-dark);"><i class="fa-solid fa-spinner fa-spin"></i> Judgment aur Ratio Decidendi simplify ki ja rahi hai...</div>';
+    resultDiv.innerHTML = '<div style="color:var(--primary);"><i class="fa-solid fa-spinner fa-spin"></i> Judgment aur Ratio Decidendi simplify ki ja rahi hai...</div>';
 
     try {
         const response = await fetch('/api/chat', {
@@ -806,13 +1249,13 @@ async function simplifyCaseLaw() {
             body: JSON.stringify({ message: input, category: "Case Law Simplifier" })
         });
         const data = await response.json();
-        resultDiv.innerHTML = formatMessage(data.reply || "Simplification complete.");
+        resultDiv.innerHTML = MessageRenderer.formatLegalResponse(data.reply || "Simplification complete.");
     } catch (e) {
         resultDiv.innerHTML = '<span style="color:#ef4444;">Case Law analysis me samasya aayi. Kripya punah prayas karein.</span>';
     }
 }
 
-// H. NEW: Filter Legal Updates
+// Filter Legal Updates
 function filterLegalUpdates(cat, btn) {
     document.querySelectorAll('.update-tab').forEach(b => b.classList.remove('active'));
     if (btn) btn.classList.add('active');
@@ -826,7 +1269,7 @@ function filterLegalUpdates(cat, btn) {
     });
 }
 
-// I. SOS Emergency System
+// SOS Emergency System
 function triggerSOS() {
     closeAllModals();
     const sosOverlay = document.getElementById('sosOverlay');
@@ -841,12 +1284,7 @@ function stopSOS() {
     if (sosOverlay) sosOverlay.classList.remove('active');
 }
 
-let isVoiceMuted = false;
-
-// =========================================
-// 7. PREMIUM SPEECH SYNTHESIS ENGINE (TTS)
-//    Enhanced Pronunciation & Multi-Language
-// =========================================
+// --- 15. SPEECH SYNTHESIS ENGINE (TTS) ---
 function detectTextLanguage(text) {
     const devanagari = (text.match(/[\u0900-\u097F]/g) || []).length;
     const latin = (text.match(/[a-zA-Z]/g) || []).length;
@@ -931,12 +1369,8 @@ function speakMessage(btn, text) {
 
     playTTS(
         text,
-        () => {
-            btn.innerHTML = '<i class="fa-solid fa-stop"></i> Stop';
-        },
-        () => {
-            btn.innerHTML = '<i class="fa-solid fa-volume-high"></i> Listen';
-        }
+        () => { btn.innerHTML = '<i class="fa-solid fa-stop"></i> Stop'; },
+        () => { btn.innerHTML = '<i class="fa-solid fa-volume-high"></i> Listen'; }
     );
 }
 
@@ -947,9 +1381,7 @@ function autoSpeakResponse(text) {
     }
 }
 
-// =========================================
-// 8. VOICE ASSISTANT SYSTEM
-// =========================================
+// --- 16. VOICE ASSISTANT SYSTEM (PRESERVED) ---
 function openVoiceAssistant() {
     closeAllModals();
     const overlay = document.getElementById('voiceOverlay');
@@ -967,7 +1399,6 @@ function openVoiceAssistant() {
 
     document.getElementById('voiceMicBtn').classList.add('listening');
 
-    // Auto start recognition
     setTimeout(() => {
         startVoiceRecognition();
     }, 300);
@@ -1070,7 +1501,7 @@ function startVoiceRecognition() {
                 respBox.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing...';
             }
 
-            // Append to chat background
+            // Append to main chat background
             appendMessage(transcript, 'user');
 
             try {
@@ -1084,7 +1515,7 @@ function startVoiceRecognition() {
                 const reply = data.reply || "Maaf karein, AI se response lene me samasya aayi.";
 
                 if (respBox) {
-                    respBox.innerHTML = formatMessage(reply);
+                    respBox.innerHTML = MessageRenderer.formatLegalResponse(reply);
                 }
 
                 // Append to chat background
@@ -1128,7 +1559,6 @@ function toggleVoiceLang() {
         voiceLang = 'hi-IN';
         document.getElementById('voiceLangLabel').innerText = 'हिंदी (hi-IN)';
     }
-    // Restart recognition if active
     if (document.getElementById('voiceOverlay').classList.contains('active')) {
         startVoiceRecognition();
     }
@@ -1138,6 +1568,7 @@ function toggleMic() {
     openVoiceAssistant();
 }
 
+// --- 17. UTILITIES & CLIPBOARD ---
 function copyMessageText(btn, text) {
     navigator.clipboard.writeText(text).then(() => {
         const originalHtml = btn.innerHTML;
@@ -1170,9 +1601,7 @@ function shareResponse(text) {
     }
 }
 
-// =========================================
-// 9. BOTTOM NAV & UI HELPERS
-// =========================================
+// --- 18. NAVIGATION & UI CONTROLS ---
 function switchBottomNav(tab) {
     document.querySelectorAll('.bottom-nav-item').forEach(item => item.classList.remove('active'));
     
@@ -1212,9 +1641,9 @@ function toggleSidebar(forceState) {
 }
 
 function toggleDarkMode() {
-    const isDark = document.body.classList.toggle('dark-mode');
-    localStorage.setItem('nyayaTheme', isDark ? 'dark' : 'light');
-    updateThemeIcon(isDark);
+    const isLight = document.body.classList.toggle('light-mode');
+    localStorage.setItem('nyayaTheme', isLight ? 'light' : 'dark');
+    updateThemeIcon(!isLight);
 }
 
 function updateThemeIcon(isDark) {
@@ -1244,9 +1673,7 @@ function saveSettings() {
     closeAllModals();
     alert("Settings saved successfully!");
     
-    // Refresh welcome hero if on empty state
-    const currentChat = chats.find(c => c.id === activeChatId);
-    if (!currentChat || currentChat.messages.length === 0) {
+    if (currentChatMessages.length === 0) {
         renderEmptyState();
     }
 }
