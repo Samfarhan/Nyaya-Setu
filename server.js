@@ -63,7 +63,9 @@ const server = http.createServer((req, res) => {
 
     // Static File Serving
     let cleanUrl = req.url.split('?')[0];
-    let filePath = path.join(__dirname, 'public', cleanUrl === '/' ? 'index.html' : cleanUrl);
+    let fileTarget = cleanUrl === '/' ? 'index.html' : cleanUrl;
+    if (cleanUrl === '/login' || cleanUrl === '/auth') fileTarget = 'auth.html';
+    let filePath = path.join(__dirname, 'public', fileTarget);
     
     // Prevent directory traversal
     if (!filePath.startsWith(path.join(__dirname, 'public'))) {
@@ -422,11 +424,6 @@ async function sendAuthEmail(toEmail, subject, code, isReset = false) {
 
     if (RESEND_API_KEY) {
         // Send actual email via Resend API (no external npm dependencies required)
-        const payload = JSON.stringify({
-            from: fromSender,
-            to: [toEmail],
-            subject: subject,
-            html: htmlContent
         const sendViaResend = (sender) => {
             return new Promise((resolve) => {
                 const p = JSON.stringify({
