@@ -262,12 +262,17 @@ body, #app {
 }
 
 .history-item-actions {
-    display: none;
+    display: flex;
     gap: 4px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-fast);
 }
 
-.history-item:hover .history-item-actions {
-    display: flex;
+.history-item:hover .history-item-actions,
+.history-item.active .history-item-actions {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .history-action-btn {
@@ -1835,3 +1840,274 @@ body, #app {
         font-size: 12.5px;
     }
 }
+
+/* --- 17. COMPREHENSIVE SETTINGS LAYOUT --- */
+.settings-modal-box {
+    max-width: 800px;
+    width: 95%;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 80vh;
+    max-height: 700px;
+}
+
+.settings-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--nyayi-surface-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.settings-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.settings-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.settings-nav {
+    width: 200px;
+    border-right: 1px solid var(--nyayi-surface-border);
+    background: var(--nyayi-surface-2);
+    display: flex;
+    flex-direction: column;
+    padding: 12px 0;
+}
+
+.settings-tab {
+    background: transparent;
+    border: none;
+    color: var(--nyayi-text-secondary);
+    padding: 12px 20px;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.settings-tab:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--nyayi-text);
+}
+
+.settings-tab.active {
+    background: var(--nyayi-primary-subtle);
+    color: var(--nyayi-primary);
+    border-right: 3px solid var(--nyayi-primary);
+}
+
+.settings-content {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    background: var(--nyayi-surface);
+}
+
+.settings-pane {
+    display: none;
+}
+
+.settings-pane.active {
+    display: block;
+}
+
+.settings-pane h4 {
+    margin-bottom: 16px;
+    font-size: 16px;
+    color: var(--nyayi-text);
+}
+
+.settings-group {
+    margin-bottom: 20px;
+}
+
+.settings-group label {
+    display: block;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--nyayi-text);
+    margin-bottom: 6px;
+}
+
+.settings-help {
+    font-size: 12.5px;
+    color: var(--nyayi-text-secondary);
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+/* Toggle Switch */
+.toggle-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.switch input { 
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: var(--nyayi-surface-border);
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+}
+
+input:checked + .slider {
+    background-color: var(--nyayi-primary);
+}
+
+input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+.theme-toggle-group {
+    display: flex;
+    gap: 12px;
+}
+
+.theme-btn {
+    flex: 1;
+    background: var(--nyayi-surface-2);
+    border: 1px solid var(--nyayi-surface-border);
+    border-radius: var(--radius-sm);
+    padding: 10px;
+    color: var(--nyayi-text);
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all var(--transition-fast);
+}
+
+.theme-btn.active {
+    border-color: var(--nyayi-primary);
+    background: var(--nyayi-primary-subtle);
+    color: var(--nyayi-primary);
+}
+
+.about-card {
+    text-align: center;
+    padding: 30px 20px;
+    background: var(--nyayi-surface-2);
+    border: 1px solid var(--nyayi-surface-border);
+    border-radius: var(--radius-md);
+}
+
+.about-logo {
+    font-size: 40px;
+    color: var(--nyayi-primary);
+    margin-bottom: 16px;
+}
+
+.about-card h5 {
+    font-size: 18px;
+    margin-bottom: 4px;
+}
+
+.about-desc {
+    margin: 12px 0;
+    font-size: 13.5px;
+    color: var(--nyayi-text-secondary);
+}
+
+.about-links {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.about-links a {
+    font-size: 13px;
+}
+
+.settings-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--nyayi-surface-border);
+    display: flex;
+    justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+    .settings-modal-box {
+        height: 100dvh;
+        max-height: 100dvh;
+        width: 100vw;
+        border-radius: 0;
+        margin: 0;
+    }
+    .settings-layout {
+        flex-direction: column;
+    }
+    .settings-nav {
+        width: 100%;
+        flex-direction: row;
+        overflow-x: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--nyayi-surface-border);
+        padding: 0;
+        -webkit-overflow-scrolling: touch;
+    }
+    .settings-tab {
+        padding: 12px 16px;
+        white-space: nowrap;
+        border-right: none;
+        border-bottom: 3px solid transparent;
+    }
+    .settings-tab.active {
+        border-right: none;
+        border-bottom: 3px solid var(--nyayi-primary);
+    }
+}
+
+/* UI Fixes */
+.msg-content {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+

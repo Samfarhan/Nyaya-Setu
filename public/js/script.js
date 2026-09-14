@@ -1667,3 +1667,90 @@ function toggleVoiceLang() {
         openVoiceAssistant();
     }
 }
+
+// --- 17. SETTINGS ENHANCEMENTS ---
+function switchSettingsTab(tabId) {
+    document.querySelectorAll(".settings-tab").forEach(tab => tab.classList.remove("active"));
+    document.querySelectorAll(".settings-pane").forEach(pane => pane.classList.remove("active"));
+    
+    const clickedTab = Array.from(document.querySelectorAll(".settings-tab")).find(tab => tab.getAttribute("onclick").includes(tabId));
+    if (clickedTab) clickedTab.classList.add("active");
+    
+    const pane = document.getElementById("settings-" + tabId);
+    if (pane) pane.classList.add("active");
+}
+
+function setSpecificTheme(theme) {
+    document.querySelectorAll(".theme-btn").forEach(btn => btn.classList.remove("active"));
+    const btn = document.getElementById(theme === "dark" ? "themeBtnDark" : "themeBtnLight");
+    if (btn) btn.classList.add("active");
+    
+    if (theme === "light") {
+        document.body.classList.add("light-mode");
+    } else {
+        document.body.classList.remove("light-mode");
+    }
+    
+    localStorage.setItem("nyayi_theme", theme);
+    const icon = document.getElementById("themeIcon");
+    if (icon) icon.className = theme === "light" ? "fa-solid fa-sun" : "fa-solid fa-moon";
+}
+
+function exportData() {
+    ConversationStore.getAll().then(data => {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+        const dlAnchorElem = document.createElement("a");
+        dlAnchorElem.setAttribute("href", dataStr);
+        dlAnchorElem.setAttribute("download", "nyayi_consultations.json");
+        dlAnchorElem.click();
+    });
+}
+
+// Override openTool to initialize new settings state
+const originalOpenTool = openTool;
+openTool = function(toolId) {
+    originalOpenTool(toolId);
+    if (toolId === "settings") {
+        const theme = localStorage.getItem("nyayi_theme") || "dark";
+        setSpecificTheme(theme);
+        
+        const autoSpeak = document.getElementById("settingsAutoSpeak");
+        if (autoSpeak) autoSpeak.checked = window.autoSpeak !== false; // Default true
+        
+        const sendEnter = document.getElementById("settingsSendOnEnter");
+        if (sendEnter) sendEnter.checked = localStorage.getItem("nyayi_send_enter") !== "false";
+        
+        switchSettingsTab("general");
+    }
+};
+
+const originalSaveSettings = saveSettings;
+saveSettings = function() {
+    originalSaveSettings();
+    
+    const autoSpeak = document.getElementById("settingsAutoSpeak");
+    if (autoSpeak) window.autoSpeak = autoSpeak.checked;
+    
+    const sendEnter = document.getElementById("settingsSendOnEnter");
+    if (sendEnter) localStorage.setItem("nyayi_send_enter", sendEnter.checked);
+};
+
+// Fix for handleInputKey
+handleInputKey = function(e) {
+    const sendOnEnter = localStorage.getItem("nyayi_send_enter") !== "false";
+    if (e.key === "Enter" && !e.shiftKey && sendOnEnter) {
+        e.preventDefault();
+        sendMessage();
+    }
+};
+
+// ResizeObserver for #chat-box
+const chatBox = document.getElementById("chat-box");
+if (chatBox && window.ResizeObserver) {
+    new ResizeObserver(() => {
+        if (currentChatMessages && currentChatMessages.length > 0) {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    }).observe(chatBox);
+}
+

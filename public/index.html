@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
+    <!-- Strict Authentication Gate for ai.nyayi.in -->
+    <script>
+        (function() {
+            var isAuth = localStorage.getItem('nyayi_auth');
+            if (!isAuth || isAuth !== 'true') {
+                window.location.replace('auth.html');
+            }
+        })();
+    </script>
+    
     <!-- SEO Meta Tags -->
     <title>Nyayi (न्यायी) — India's AI Legal Guidance Assistant</title>
     <meta name="description" content="Nyayi (न्यायी) is an AI-powered Indian legal guidance assistant focused on helping ordinary citizens understand Indian law, rights, and legal procedures in simple language.">
@@ -155,6 +165,12 @@
                 </div>
                 
                 <div class="nav-right">
+                    <div id="authHeaderWidget" style="display:flex; align-items:center; gap:8px;">
+                        <span id="userDisplayName" style="font-size:13px; font-weight:600; color:var(--nyayi-primary); max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
+                        <button type="button" class="nav-icon-btn" onclick="logoutUser()" title="Logout of Nyayi AI" style="color:#ef4444;">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        </button>
+                    </div>
                     <select id="langSelect" class="lang-select-dropdown" onchange="changeAILanguage(this.value)" title="Select AI Response Language">
                         <option value="Multilingual">🌐 Multilingual</option>
                         <option value="Hindi">🇮🇳 हिंदी (Hindi)</option>
@@ -502,36 +518,124 @@
 
     <!-- SETTINGS & PROFILE MODAL -->
     <div class="modal-overlay" id="settingsModal">
-        <div class="modal-box">
-            <span class="modal-close" onclick="closeAllModals()">&times;</span>
-            <h3><i class="fa-solid fa-gear"></i> Settings & User Profile</h3>
-            <p class="modal-desc">Aapki personal preferences aur app configuration.</p>
+        <div class="modal-box settings-modal-box">
+            <div class="settings-header">
+                <h3><i class="fa-solid fa-gear"></i> Settings</h3>
+                <span class="modal-close" onclick="closeAllModals()">&times;</span>
+            </div>
             
-            <div style="margin-bottom:14px;">
-                <label style="display:block; font-size:13px; color:var(--nyayi-text-secondary); margin-bottom:6px;">Aapka Naam (User Name)</label>
-                <input type="text" id="settingsUserName" class="modal-input" placeholder="Citizen">
+            <div class="settings-layout">
+                <!-- Settings Sidebar for Desktop / Top Nav for Mobile -->
+                <div class="settings-nav">
+                    <button class="settings-tab active" onclick="switchSettingsTab('general')"><i class="fa-solid fa-user"></i> General</button>
+                    <button class="settings-tab" onclick="switchSettingsTab('appearance')"><i class="fa-solid fa-palette"></i> Appearance</button>
+                    <button class="settings-tab" onclick="switchSettingsTab('voice')"><i class="fa-solid fa-microphone"></i> Voice & Chat</button>
+                    <button class="settings-tab" onclick="switchSettingsTab('privacy')"><i class="fa-solid fa-shield-halved"></i> Data & Privacy</button>
+                    <button class="settings-tab" onclick="switchSettingsTab('about')"><i class="fa-solid fa-circle-info"></i> About</button>
+                </div>
+
+                <!-- Settings Content Area -->
+                <div class="settings-content">
+                    
+                    <!-- General Tab -->
+                    <div class="settings-pane active" id="settings-general">
+                        <h4>General Profile</h4>
+                        <div class="settings-group">
+                            <label>Aapka Naam (User Name)</label>
+                            <input type="text" id="settingsUserName" class="modal-input" placeholder="Citizen">
+                            <p class="settings-help">This name is used to address you in the chat.</p>
+                        </div>
+                        <div class="settings-group">
+                            <label>Primary AI Language</label>
+                            <select id="settingsAILang" class="modal-input">
+                                <option value="Multilingual">🌐 Multilingual (Auto-detect)</option>
+                                <option value="Hindi">🇮🇳 हिंदी (Hindi)</option>
+                                <option value="English">🇬🇧 English</option>
+                                <option value="Hinglish">🗣️ Hinglish</option>
+                            </select>
+                            <p class="settings-help">The language Nyayi will use for generating legal responses.</p>
+                        </div>
+                    </div>
+
+                    <!-- Appearance Tab -->
+                    <div class="settings-pane" id="settings-appearance">
+                        <h4>Appearance</h4>
+                        <div class="settings-group">
+                            <label>Theme</label>
+                            <div class="theme-toggle-group">
+                                <button type="button" class="theme-btn" id="themeBtnDark" onclick="setSpecificTheme('dark')"><i class="fa-solid fa-moon"></i> Dark</button>
+                                <button type="button" class="theme-btn" id="themeBtnLight" onclick="setSpecificTheme('light')"><i class="fa-solid fa-sun"></i> Light</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Voice & Chat Tab -->
+                    <div class="settings-pane" id="settings-voice">
+                        <h4>Voice & Chat Preferences</h4>
+                        <div class="settings-group toggle-group">
+                            <div>
+                                <label>Auto-Speak Voice Responses</label>
+                                <p class="settings-help">Automatically read aloud when you ask via voice.</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="settingsAutoSpeak" checked>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        <div class="settings-group toggle-group">
+                            <div>
+                                <label>Send on Enter</label>
+                                <p class="settings-help">Pressing Enter sends the message.</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="settingsSendOnEnter" checked>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Data & Privacy Tab -->
+                    <div class="settings-pane" id="settings-privacy">
+                        <h4>Data & Privacy</h4>
+                        <p class="settings-help" style="margin-bottom:12px;">Nyayi stores all your consultations locally on your device for complete privacy. We do not track your legal queries.</p>
+                        
+                        <div class="settings-group">
+                            <button type="button" class="modal-btn" onclick="exportData()" style="background-color:var(--nyayi-surface-2); color:var(--nyayi-text); border:1px solid var(--nyayi-surface-border); margin-bottom:8px;">
+                                <i class="fa-solid fa-download"></i> Export Consultations
+                            </button>
+                            <button type="button" class="reset-app-btn" onclick="clearHistory()" style="margin-bottom:8px;">
+                                <i class="fa-solid fa-eraser"></i> Clear Conversation History
+                            </button>
+                            <button type="button" class="reset-app-btn" onclick="clearAllLocalData()" style="color:var(--nyayi-danger); border-color:var(--nyayi-danger-subtle); background:var(--nyayi-danger-subtle);">
+                                <i class="fa-solid fa-trash-can"></i> Factory Reset App
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- About Tab -->
+                    <div class="settings-pane" id="settings-about">
+                        <h4>About Nyayi</h4>
+                        <div class="about-card">
+                            <i class="fa-solid fa-scale-balanced about-logo"></i>
+                            <h5>Nyayi Legal Assistant</h5>
+                            <p>Version 3.0 • BNS 2023 Update</p>
+                            <p class="about-desc">India's most advanced AI legal assistant providing reliable guidance on Indian law.</p>
+                            <div class="about-links">
+                                <a href="#">Terms of Service</a>
+                                <a href="#">Privacy Policy</a>
+                                <a href="#">Help & Support</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
             </div>
 
-            <div style="margin-bottom:14px;">
-                <label style="display:block; font-size:13px; color:var(--nyayi-text-secondary); margin-bottom:6px;">Primary AI Language</label>
-                <select id="settingsAILang" class="modal-input">
-                    <option value="Multilingual">Multilingual (Auto-detect)</option>
-                    <option value="Hindi">हिंदी (Hindi)</option>
-                    <option value="English">English</option>
-                    <option value="Hinglish">Hinglish</option>
-                </select>
-            </div>
-
-            <div style="margin-bottom:18px;">
-                <label style="display:block; font-size:13px; color:var(--nyayi-text-secondary); margin-bottom:6px;">Data Management</label>
-                <button type="button" class="reset-app-btn" onclick="clearAllLocalData()" style="color:var(--nyayi-danger); font-size:13px;">
-                    <i class="fa-solid fa-trash-can"></i> Clear All Local Consultations & Reset
+            <div class="settings-footer">
+                <button type="button" class="modal-btn" onclick="saveSettings()">
+                    <i class="fa-solid fa-check"></i> Save Preferences
                 </button>
             </div>
-
-            <button type="button" class="modal-btn" onclick="saveSettings()">
-                <i class="fa-solid fa-check"></i> Save Preferences
-            </button>
         </div>
     </div>
 
@@ -586,5 +690,24 @@
 
     <!-- SCRIPTS -->
     <script src="js/script.js?v=26"></script>
+    <script>
+        // Render authenticated user name
+        (function() {
+            var user = localStorage.getItem('nyayaUser') || 'Citizen';
+            var userEl = document.getElementById('userDisplayName');
+            var welcomeEl = document.getElementById('welcomeUserName');
+            if (userEl) userEl.innerText = user;
+            if (welcomeEl) welcomeEl.innerText = user;
+        })();
+
+        function logoutUser() {
+            if (confirm('Are you sure you want to sign out of Nyayi AI?')) {
+                localStorage.removeItem('nyayi_auth');
+                localStorage.removeItem('nyayaUser');
+                localStorage.removeItem('nyayi_user_email');
+                window.location.replace('auth.html');
+            }
+        }
+    </script>
 </body>
 </html>
