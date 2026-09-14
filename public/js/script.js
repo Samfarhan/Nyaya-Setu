@@ -254,6 +254,15 @@ const MemoryManager = {
         const q = query.trim();
         const lower = q.toLowerCase();
 
+        if (lower.includes('tourist') || lower.includes('foreigner') || lower.includes('foreign')) {
+            return 'Foreign Tourist Rights';
+        }
+        if (lower.includes('salary') || lower.includes('wages') || lower.includes('employer') || lower.includes('labour')) {
+            return 'Salary & Employment Rights';
+        }
+        if (lower.includes('consumer') || lower.includes('defective') || lower.includes('refund')) {
+            return 'Consumer Protection Claim';
+        }
         if (lower.includes('cyber') || lower.includes('fraud') || lower.includes('1930') || lower.includes('scam')) {
             return 'Cyber Fraud Recovery';
         }
@@ -261,7 +270,7 @@ const MemoryManager = {
             return 'Police FIR Guidance';
         }
         if (lower.includes('tenant') || lower.includes('rent') || lower.includes('landlord') || lower.includes('deposit')) {
-            return 'Tenancy & Rent Dispute';
+            return 'Tenancy & Deposit Dispute';
         }
         if (lower.includes('property') || lower.includes('stay') || lower.includes('order 39')) {
             return 'Property Dispute & Injunction';
@@ -421,18 +430,30 @@ const MessageRenderer = {
         const questions = [];
         const lower = text.toLowerCase();
 
-        if (lower.includes('cheating') || lower.includes('fraud') || lower.includes('420') || lower.includes('318') || lower.includes('1930')) {
+        if (lower.includes('tourist') || lower.includes('foreigner')) {
+            questions.push('What should a tourist do if detained or harassed?');
+            questions.push('Which embassy or helpline assists foreign citizens?');
+        } else if (lower.includes('salary') || lower.includes('employer') || lower.includes('wages')) {
+            questions.push('What legal notice can I send for unpaid salary?');
+            questions.push('How to file a complaint before Labour Commissioner?');
+        } else if (lower.includes('cheating') || lower.includes('fraud') || lower.includes('420') || lower.includes('318') || lower.includes('1930')) {
             questions.push('Bank me transaction chargeback request kaise karein?');
             questions.push('Cyber Crime Helpline 1930 complaint follow-up process kya hai?');
         } else if (lower.includes('fir') || lower.includes('police') || lower.includes('154') || lower.includes('173')) {
             questions.push('Zero FIR darj karwane ka exact step-by-step procedure batao.');
             questions.push('Agar police FIR na likhe toh Magistrate ko complaint kaise karein?');
-        } else if (lower.includes('tenant') || lower.includes('rent') || lower.includes('deposit') || lower.includes('eviction')) {
-            questions.push('Landlord ko security deposit refund ka legal notice draft karo.');
+        } else if (lower.includes('tenant') || lower.includes('rent') || lower.includes('deposit') || lower.includes('landlord')) {
+            questions.push('What legal steps can I take to recover my security deposit?');
+            questions.push('Landlord ko formal demand notice kaise bhejein?');
         } else if (lower.includes('cheque') || lower.includes('138') || lower.includes('bounce')) {
             questions.push('Section 138 notice bhejne ke baad court me complaint kab darj hoti hai?');
         } else if (lower.includes('bail') || lower.includes('arrest') || lower.includes('438')) {
             questions.push('Anticipatory bail petition me kaunse documents anivarya hain?');
+        } else {
+            // General conversational follow-up
+            if (!lower.includes('what you should do') && !lower.includes('step-by-step')) {
+                questions.push('What steps should I take next?');
+            }
         }
         return questions.slice(0, 2);
     }
@@ -505,19 +526,18 @@ function renderEmptyState() {
             <h2 class="welcome-subtitle">How can Nyayi help you today?</h2>
             <p class="welcome-tagline">Understand Indian law, rights and procedures in simple language.</p>
             
+            <!-- 4 Lightweight Quick Suggestions -->
             <div class="domain-cards-grid">
                 <div class="domain-card" onclick="askSuggestion('Mera online financial cyber fraud ho gaya hai, paise wapas kaise paayein? 1930 helpline kaise kaam karti hai?')">
                     <div class="domain-card-header">
                         <span class="domain-card-title"><i class="fa-solid fa-shield-halved"></i> Cyber Fraud</span>
-                        <span class="domain-badge cyan">1930 Helpline</span>
                     </div>
                     <p class="domain-card-desc">Recover money & report fraud</p>
                 </div>
 
                 <div class="domain-card" onclick="askSuggestion('Police station me FIR darj karwane ka process kya hai aur agar police FIR likhne se mana kare toh kya adhikar hain?')">
                     <div class="domain-card-header">
-                        <span class="domain-card-title"><i class="fa-solid fa-file-circle-check"></i> Police FIR</span>
-                        <span class="domain-badge amber">Zero FIR</span>
+                        <span class="domain-card-title"><i class="fa-solid fa-file-circle-check"></i> Police / FIR</span>
                     </div>
                     <p class="domain-card-desc">FIR process & rights</p>
                 </div>
@@ -525,30 +545,16 @@ function renderEmptyState() {
                 <div class="domain-card" onclick="askSuggestion('Property ya tenancy dispute me legal rights aur civil stay order (Order 39) ke niyam samjhao.')">
                     <div class="domain-card-header">
                         <span class="domain-card-title"><i class="fa-solid fa-house-chimney-user"></i> Property</span>
-                        <span class="domain-badge purple">Civil Rights</span>
                     </div>
                     <p class="domain-card-desc">Property dispute guidance</p>
                 </div>
 
                 <div class="domain-card" onclick="askSuggestion('IPC Section 420, 302, 376 aur nayi BNS provisions me kya antar hai? Kaunsi dhara lagu hogi?')">
                     <div class="domain-card-header">
-                        <span class="domain-card-title"><i class="fa-solid fa-gavel"></i> BNS / IPC</span>
-                        <span class="domain-badge">BNS 2023</span>
+                        <span class="domain-card-title"><i class="fa-solid fa-scale-balanced"></i> BNS / IPC</span>
                     </div>
                     <p class="domain-card-desc">Compare provisions</p>
                 </div>
-            </div>
-
-            <div class="suggestion-chips">
-                <button type="button" class="chip" onclick="askSuggestion('Anticipatory bail lene ki prakriya aur Section 482 BNSS samjhao.')">
-                    <i class="fa-solid fa-handcuffs"></i> Anticipatory Bail Guide
-                </button>
-                <button type="button" class="chip" onclick="askSuggestion('Motor Vehicle Act ke tehat bina helmet aur bina insurance challan fine kitna hai?')">
-                    <i class="fa-solid fa-calculator"></i> Traffic Challan Fines
-                </button>
-                <button type="button" class="chip" onclick="askSuggestion('Cheque bounce hone par Section 138 NI Act ka legal notice kaise bhejein?')">
-                    <i class="fa-solid fa-file-signature"></i> Cheque Bounce Notice
-                </button>
             </div>
         </div>
     `;

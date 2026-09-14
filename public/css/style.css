@@ -602,8 +602,8 @@ a:hover {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    min-height: 82px;
-    max-height: 95px;
+    min-height: 60px;
+    max-height: 74px;
 }
 
 .domain-card:hover {
@@ -1627,9 +1627,9 @@ a:hover {
     }
     
     .domain-card {
-        padding: 10px 12px;
-        min-height: 80px;
-        max-height: 95px;
+        padding: 8px 12px;
+        min-height: 56px;
+        max-height: 70px;
     }
     
     .domain-card-title {
