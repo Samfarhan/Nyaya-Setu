@@ -1,0 +1,62 @@
+NYAYI (à¤¨à¥à¤¯à¤¾à¤¯à¥€) PROPRIETARY SOFTWARE LICENSE & TERMS OF USE
+
+Copyright (c) 2026 Farhan Khan. All Rights Reserved.
+Author & Lead Architect: Farhan Khan
+Project: Nyayi AI (formerly Nyaya-Setu) â€” Indian Legal Intelligence Platform
+Website: https://nyayi.in | Web App: https://ai.nyayi.in
+
+================================================================================
+1. PROPRIETARY RIGHTS & GRANT OF CONDITIONAL ACCESS
+================================================================================
+This software, source code, neural prompt architectures, algorithmic workflows,
+user interfaces, documentation, and associated digital assets ("Software") are
+the proprietary intellectual property of Farhan Khan ("Owner/Creator").
+
+Permission is hereby granted to individuals accessing the public repository to:
+  (a) Inspect and review the source code for educational, research, and non-commercial evaluation purposes.
+  (b) Submit bug reports, security disclosures, and feedback to the official repository maintainer.
+
+STRICT RESTRICTIONS:
+  1. No part of this source code, brand assets, database designs, or architecture
+     may be reproduced, modified, distributed, sold, sublicensed, commercially exploited,
+     white-labeled, or republished in any form without prior express written permission
+     from Farhan Khan.
+  2. You may NOT create commercial derivative products or mirror instances of Nyayi AI
+     under a different brand or domain name.
+  3. Reverse engineering, decompilation, unauthorized model prompt extraction, or
+     scraping of the Nyayi knowledge base is strictly prohibited.
+
+================================================================================
+2. STATUTORY LEGAL DISCLAIMER (ADVOCATES ACT, 1961)
+================================================================================
+Nyayi is an AI-powered Indian legal guidance, legal literacy, and educational
+assistance platform. It utilizes machine learning models to synthesize and
+explain Indian statutory codes, including the Bharatiya Nyaya Sanhita (BNS) 2023,
+Bharatiya Nagarik Suraksha Sanhita (BNSS) 2023, Bharatiya Sakshya Adhiniyam (BSA)
+2023, and legacy Indian Penal Code (IPC) provisions in simple, understandable terms.
+
+CRITICAL STATUTORY DECLARATION:
+  (a) Nyayi is NOT a law firm and does NOT engage in the practice of law.
+  (b) The responses and guidance provided by Nyayi do NOT constitute formal legal advice,
+      advocate counseling, or court representation under the Advocates Act, 1961 or
+      the Bar Council of India (BCI) Rules.
+  (c) Use of this Software does NOT establish an attorney-client relationship.
+  (d) Citizens and users facing ongoing litigation, police investigation, or critical
+      legal proceedings are strongly advised to seek formal counsel from a certified,
+      enrolled advocate or free state legal aid (NALSA/SLSA).
+
+================================================================================
+3. LIMITATION OF LIABILITY & DISCLAIMER OF WARRANTIES
+================================================================================
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, OR ACCURACY OF LEGAL CITATIONS.
+
+IN NO EVENT SHALL THE AUTHOR, DEVELOPER, OR COPYRIGHT HOLDER (FARHAN KHAN) BE
+LIABLE FOR ANY CLAIM, DAMAGES, LOSS OF DATA, PROCEDURAL DELAY, LEGAL PENALTY,
+OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE,
+ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+
+For licensing inquiries, institutional partnerships, or permissions:
+Contact: farhankhan@nyayi.in | Platform: https://nyayi.in
