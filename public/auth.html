@@ -198,38 +198,53 @@
         }
 
         .input-group { position: relative; margin-bottom: 15px; }
-        .input-group i {
+        .input-group > i:not(.toggle-pass) {
             position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
             color: var(--text-muted); transition: 0.25s; font-size: 15px;
+            pointer-events: none; z-index: 2;
         }
         
         .input-group input {
             width: 100%; background: rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 12px;
-            padding: 14px 14px 14px 44px; color: var(--text-main); font-size: 14px;
+            padding: 14px 45px 14px 44px; color: var(--text-main); font-size: 14px;
             outline: none; transition: all 0.25s;
+            position: relative; z-index: 1;
         }
 
         .input-group input:focus {
             border-color: var(--primary); background: rgba(0, 0, 0, 0.5);
             box-shadow: 0 0 16px rgba(16, 185, 129, 0.2);
         }
-        .input-group input:focus + i { color: var(--primary); }
+        .input-group input:focus ~ i:not(.toggle-pass) { color: var(--primary); }
 
         .password-hint {
             font-size: 11px; color: var(--text-muted);
-            position: absolute; right: 44px; top: 50%; transform: translateY(-50%);
-            pointer-events: none; opacity: 0.7;
+            position: absolute; right: 46px; top: 50%; transform: translateY(-50%);
+            pointer-events: none; opacity: 0.7; z-index: 2;
         }
 
-        .toggle-pass {
-            position: absolute; right: 15px; top: 50%; transform: translateY(-50%);
-            color: var(--text-muted); cursor: pointer; transition: all 0.2s ease;
-            font-size: 15px; z-index: 5; padding: 4px;
+        .input-group .toggle-pass {
+            position: absolute !important;
+            left: auto !important;
+            right: 14px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            width: 26px !important;
+            height: 26px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            color: var(--text-muted);
+            cursor: pointer !important;
+            transition: all 0.2s ease;
+            font-size: 15px;
+            z-index: 10 !important;
+            pointer-events: auto !important;
         }
-        .toggle-pass:hover {
+        .input-group .toggle-pass:hover {
             color: var(--primary);
-            transform: translateY(-50%) scale(1.15);
+            transform: translateY(-50%) scale(1.15) !important;
         }
 
         /* Action Buttons */
@@ -654,6 +669,7 @@
                 iconEl.classList.add('fa-eye-slash');
                 iconEl.style.color = 'var(--text-muted)';
             }
+            input.focus();
         }
 
         // --- 3. AUTO FOCUS OTP INPUTS ---
