@@ -35,7 +35,7 @@
     <link rel="apple-touch-icon" href="images/logo.png">
 
     <!-- CSS & Fonts -->
-    <link rel="stylesheet" href="css/style.css?v=25">
+    <link rel="stylesheet" href="css/style.css?v=26">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     
     <!-- Schema.org JSON-LD -->
@@ -74,214 +74,225 @@
     <!-- Mobile Drawer Backdrop -->
     <div class="overlay-backdrop" id="overlayBackdrop" onclick="toggleSidebar(false)"></div>
 
-    <!-- SIDEBAR (Desktop 240px / Mobile Drawer) -->
-    <aside id="sidebar-container">
-        <div class="new-chat-wrapper">
-            <button class="new-chat-btn" onclick="startNewChat()">
-                <i class="fa-solid fa-plus"></i> New Consultation
-            </button>
-        </div>
-
-        <div class="history-search-wrapper">
-            <input type="text" id="historySearch" class="history-search-input" placeholder="Search consultations..." oninput="filterHistory(this.value)">
-        </div>
-
-        <div class="sidebar-section-title">Quick Tools</div>
-        <div class="sidebar-tools-grid">
-            <div class="sidebar-tool-chip" onclick="openTool('factlaw')">
-                <i class="fa-solid fa-gavel"></i>
-                <span>Fact to Law</span>
-            </div>
-            <div class="sidebar-tool-chip" onclick="openTool('firwizard')">
-                <i class="fa-solid fa-list-check"></i>
-                <span>FIR Wizard</span>
-            </div>
-            <div class="sidebar-tool-chip" onclick="openTool('casesimplifier')">
-                <i class="fa-solid fa-book-open-reader"></i>
-                <span>Case Law</span>
-            </div>
-            <div class="sidebar-tool-chip" onclick="openTool('bns')">
-                <i class="fa-solid fa-scale-balanced"></i>
-                <span>BNS Nav</span>
-            </div>
-            <div class="sidebar-tool-chip" onclick="openTool('drafter')">
-                <i class="fa-solid fa-file-signature"></i>
-                <span>Drafter</span>
-            </div>
-            <div class="sidebar-tool-chip" onclick="openTool('fine')">
-                <i class="fa-solid fa-calculator"></i>
-                <span>Challan Fine</span>
-            </div>
-            <div class="sidebar-tool-chip" onclick="openTool('updates')">
-                <i class="fa-solid fa-newspaper"></i>
-                <span>Updates</span>
-            </div>
-            <div class="sidebar-tool-chip" onclick="openTool('lawyer')">
-                <i class="fa-solid fa-user-tie"></i>
-                <span>Legal Aid</span>
-            </div>
-        </div>
-
-        <div class="sidebar-section-title" style="margin-top: 6px;">History</div>
-        <div id="historyList"></div>
-
-        <div class="sidebar-bottom">
-            <button class="reset-app-btn" onclick="clearHistory()" title="Clear all conversation history">
-                <i class="fa-solid fa-trash-can"></i> Clear History
-            </button>
-            <span style="font-size:11px; color:var(--nyayi-text-muted); font-family:var(--nyayi-font-mono);">v3.0 • BNS</span>
-        </div>
-    </aside>
-
-    <!-- MAIN CHAT CONTAINER -->
-    <main id="main-container">
-        <!-- Top Navigation Header (64px) -->
-        <header id="header-container">
-            <div class="header-left">
-                <button type="button" class="mobile-menu-btn" onclick="toggleSidebar()" title="Toggle Navigation">
-                    <i class="fa-solid fa-bars"></i>
+    <!-- APPLICATION SHELL (FLEX CONTAINER) -->
+    <div id="app">
+        <!-- SIDEBAR (Desktop 240px / Mobile Drawer) -->
+        <aside id="sidebar-container">
+            <div class="new-chat-wrapper">
+                <button class="new-chat-btn" onclick="startNewChat()">
+                    <i class="fa-solid fa-plus"></i> New Consultation
                 </button>
-                <div class="brand-logo" onclick="startNewChat()" title="Start New Consultation">
-                    <i class="fa-solid fa-scale-balanced brand-icon"></i>
-                    <span class="brand-name">Nyayi</span>
-                    <span class="brand-badge">PRO</span>
+            </div>
+
+            <div class="history-search-wrapper">
+                <input type="text" id="historySearch" class="history-search-input" placeholder="Search consultations..." oninput="filterHistory(this.value)">
+            </div>
+
+            <div class="sidebar-section-title">Quick Tools</div>
+            <div class="sidebar-tools-grid">
+                <div class="sidebar-tool-chip" onclick="openTool('factlaw')">
+                    <i class="fa-solid fa-gavel"></i>
+                    <span>Fact to Law</span>
                 </div>
-                <div class="brand-status-badge">
-                    <span class="status-dot"></span>
-                    <span>AI Online • BNS 2023</span>
+                <div class="sidebar-tool-chip" onclick="openTool('firwizard')">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>FIR Wizard</span>
                 </div>
-            </div>
-            
-            <div class="nav-right">
-                <select id="langSelect" class="lang-select-dropdown" onchange="changeAILanguage(this.value)" title="Select AI Response Language">
-                    <option value="Multilingual">🌐 Multilingual</option>
-                    <option value="Hindi">🇮🇳 हिंदी (Hindi)</option>
-                    <option value="English">🇬🇧 English</option>
-                    <option value="Hinglish">🗣️ Hinglish</option>
-                </select>
-                <button type="button" class="sos-btn" onclick="triggerSOS()" title="Emergency SOS Alert">
-                    <i class="fa-solid fa-bell"></i> <span>SOS</span>
-                </button>
-                <button type="button" class="nav-icon-btn" onclick="toggleDarkMode()" title="Toggle Dark/Light Mode">
-                    <i class="fa-solid fa-moon" id="themeIcon"></i>
-                </button>
-                <button type="button" class="nav-icon-btn" onclick="openTool('settings')" title="User Profile & Settings">
-                    <i class="fa-solid fa-gear"></i>
-                </button>
-            </div>
-        </header>
-
-        <!-- Chat messages workspace -->
-        <div id="chat-box">
-            <!-- Compact Welcome Area (25-30% initial viewport) -->
-            <div class="welcome-hero" id="welcomeSection">
-                <div class="welcome-ai-emblem">
+                <div class="sidebar-tool-chip" onclick="openTool('casesimplifier')">
+                    <i class="fa-solid fa-book-open-reader"></i>
+                    <span>Case Law</span>
+                </div>
+                <div class="sidebar-tool-chip" onclick="openTool('bns')">
                     <i class="fa-solid fa-scale-balanced"></i>
+                    <span>BNS Nav</span>
                 </div>
-                <h1 class="welcome-title">Namaste, <span id="welcomeUserName">Citizen</span> 👋</h1>
-                <h2 class="welcome-subtitle">How can Nyayi help you today?</h2>
-                <p class="welcome-tagline">Understand Indian law, rights and procedures in simple language.</p>
+                <div class="sidebar-tool-chip" onclick="openTool('drafter')">
+                    <i class="fa-solid fa-file-signature"></i>
+                    <span>Drafter</span>
+                </div>
+                <div class="sidebar-tool-chip" onclick="openTool('fine')">
+                    <i class="fa-solid fa-calculator"></i>
+                    <span>Challan Fine</span>
+                </div>
+                <div class="sidebar-tool-chip" onclick="openTool('updates')">
+                    <i class="fa-solid fa-newspaper"></i>
+                    <span>Updates</span>
+                </div>
+                <div class="sidebar-tool-chip" onclick="openTool('lawyer')">
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span>Legal Aid</span>
+                </div>
+            </div>
+
+            <div class="sidebar-section-title" style="margin-top: 6px;">History</div>
+            <div id="historyList"></div>
+
+            <div class="sidebar-bottom">
+                <button class="reset-app-btn" onclick="clearHistory()" title="Clear all conversation history">
+                    <i class="fa-solid fa-trash-can"></i> Clear History
+                </button>
+                <span style="font-size:11px; color:var(--nyayi-text-muted); font-family:var(--nyayi-font-mono);">v3.0 • BNS</span>
+            </div>
+        </aside>
+
+        <!-- MAIN CHAT CONTAINER -->
+        <main id="main-container">
+            <!-- Top Navigation Header (64px) -->
+            <header id="header-container">
+                <div class="header-left">
+                    <button type="button" class="mobile-menu-btn" onclick="toggleSidebar()" title="Toggle Navigation">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <div class="brand-logo" onclick="startNewChat()" title="Start New Consultation">
+                        <i class="fa-solid fa-scale-balanced brand-icon"></i>
+                        <span class="brand-name">Nyayi</span>
+                        <span class="brand-badge">PRO</span>
+                    </div>
+                    <div class="brand-status-badge">
+                        <span class="status-dot"></span>
+                        <span>AI Online • BNS 2023</span>
+                    </div>
+                </div>
                 
-                <!-- 4 Lightweight Quick Suggestions -->
-                <div class="domain-cards-grid">
-                    <div class="domain-card" onclick="askSuggestion('Mera online financial cyber fraud ho gaya hai, paise wapas kaise paayein? 1930 helpline kaise kaam karti hai?')">
-                        <div class="domain-card-header">
-                            <span class="domain-card-title"><i class="fa-solid fa-shield-halved"></i> Cyber Fraud</span>
-                        </div>
-                        <p class="domain-card-desc">Recover money & report fraud</p>
-                    </div>
-
-                    <div class="domain-card" onclick="askSuggestion('Police station me FIR darj karwane ka process kya hai aur agar police FIR likhne se mana kare toh kya adhikar hain?')">
-                        <div class="domain-card-header">
-                            <span class="domain-card-title"><i class="fa-solid fa-file-circle-check"></i> Police / FIR</span>
-                        </div>
-                        <p class="domain-card-desc">FIR process & rights</p>
-                    </div>
-
-                    <div class="domain-card" onclick="askSuggestion('Property ya tenancy dispute me legal rights aur civil stay order (Order 39) ke niyam samjhao.')">
-                        <div class="domain-card-header">
-                            <span class="domain-card-title"><i class="fa-solid fa-house-chimney-user"></i> Property</span>
-                        </div>
-                        <p class="domain-card-desc">Property dispute guidance</p>
-                    </div>
-
-                    <div class="domain-card" onclick="askSuggestion('IPC Section 420, 302, 376 aur nayi BNS provisions me kya antar hai? Kaunsi dhara lagu hogi?')">
-                        <div class="domain-card-header">
-                            <span class="domain-card-title"><i class="fa-solid fa-scale-balanced"></i> BNS / IPC</span>
-                        </div>
-                        <p class="domain-card-desc">Compare provisions</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Persistent Chat Composer (Centered 650-820px) -->
-        <div class="input-area">
-            <div class="composer-container">
-                <!-- [+] Quick Tools Popup Drawer -->
-                <div class="composer-tools-popup" id="composerToolsPopup">
-                    <div class="composer-popup-item" onclick="toggleComposerTools(); openTool('factlaw');">
-                        <i class="fa-solid fa-gavel"></i> Which Law Applies?
-                    </div>
-                    <div class="composer-popup-item" onclick="toggleComposerTools(); openTool('firwizard');">
-                        <i class="fa-solid fa-list-check"></i> FIR 6-Step Guide
-                    </div>
-                    <div class="composer-popup-item" onclick="toggleComposerTools(); openTool('casesimplifier');">
-                        <i class="fa-solid fa-book-open-reader"></i> Case Law Simplifier
-                    </div>
-                    <div class="composer-popup-item" onclick="toggleComposerTools(); openTool('bns');">
-                        <i class="fa-solid fa-scale-balanced"></i> Statutory Navigator
-                    </div>
-                    <div class="composer-popup-item" onclick="toggleComposerTools(); openTool('drafter');">
-                        <i class="fa-solid fa-file-signature"></i> Legal Notice Drafter
-                    </div>
-                    <div class="composer-popup-item" onclick="toggleComposerTools(); openTool('fine');">
-                        <i class="fa-solid fa-calculator"></i> Traffic Fine Calculator
-                    </div>
-                </div>
-
-                <div class="input-wrapper">
-                    <button type="button" class="composer-tool-btn" id="composerToolBtn" onclick="toggleComposerTools()" title="Legal Tools Menu (+)">
-                        <i class="fa-solid fa-plus"></i>
+                <div class="nav-right">
+                    <select id="langSelect" class="lang-select-dropdown" onchange="changeAILanguage(this.value)" title="Select AI Response Language">
+                        <option value="Multilingual">🌐 Multilingual</option>
+                        <option value="Hindi">🇮🇳 हिंदी (Hindi)</option>
+                        <option value="English">🇬🇧 English</option>
+                        <option value="Hinglish">🗣️ Hinglish</option>
+                    </select>
+                    <button type="button" class="sos-btn" onclick="triggerSOS()" title="Emergency SOS Alert">
+                        <i class="fa-solid fa-bell"></i> <span>SOS</span>
                     </button>
-                    <textarea id="userInput" rows="1" placeholder="Ask Nyayi anything about Indian law, FIRs, or rights..." onkeydown="handleInputKey(event)" oninput="autoGrowTextarea(this)"></textarea>
-                    <button type="button" class="mic-btn" id="micBtn" onclick="openVoiceAssistant()" title="Voice Assistant (Hindi / English)">
-                        <i class="fa-solid fa-microphone"></i>
+                    <button type="button" class="nav-icon-btn" onclick="toggleDarkMode()" title="Toggle Dark/Light Mode">
+                        <i class="fa-solid fa-moon" id="themeIcon"></i>
                     </button>
-                    <button type="button" class="send-btn" id="sendBtn" onclick="handleSendOrStop()" title="Send Message">
-                        <i class="fa-solid fa-paper-plane" id="sendBtnIcon"></i>
+                    <button type="button" class="nav-icon-btn" onclick="openTool('settings')" title="User Profile & Settings">
+                        <i class="fa-solid fa-gear"></i>
                     </button>
                 </div>
-                <div class="composer-hint">
-                    <span>Press <b>Enter ↵</b> to send • <b>Shift + Enter</b> for new line</span>
+            </header>
+
+            <!-- Chat messages workspace -->
+            <div id="chat-box">
+                <!-- Compact Welcome Area (25-30% initial viewport) -->
+                <div class="welcome-hero" id="welcomeSection">
+                    <div class="welcome-ai-emblem">
+                        <i class="fa-solid fa-scale-balanced"></i>
+                    </div>
+                    <h1 class="welcome-title">Namaste, <span id="welcomeUserName">Citizen</span> 👋</h1>
+                    <h2 class="welcome-subtitle">How can Nyayi help you today?</h2>
+                    <p class="welcome-tagline">Understand Indian law, rights and procedures in simple language.</p>
+                    
+                    <!-- 4 Lightweight Quick Suggestions -->
+                    <div class="domain-cards-grid">
+                        <div class="domain-card" onclick="askSuggestion('cyber')">
+                            <div class="domain-card-header">
+                                <span class="domain-card-title"><i class="fa-solid fa-shield-halved"></i> Cyber Fraud</span>
+                            </div>
+                            <p class="domain-card-desc">Recover money & report fraud</p>
+                        </div>
+
+                        <div class="domain-card" onclick="askSuggestion('fir')">
+                            <div class="domain-card-header">
+                                <span class="domain-card-title"><i class="fa-solid fa-file-circle-check"></i> Police / FIR</span>
+                            </div>
+                            <p class="domain-card-desc">FIR process & rights</p>
+                        </div>
+
+                        <div class="domain-card" onclick="askSuggestion('property')">
+                            <div class="domain-card-header">
+                                <span class="domain-card-title"><i class="fa-solid fa-house-chimney-user"></i> Property</span>
+                            </div>
+                            <p class="domain-card-desc">Property dispute guidance</p>
+                        </div>
+
+                        <div class="domain-card" onclick="askSuggestion('bns')">
+                            <div class="domain-card-header">
+                                <span class="domain-card-title"><i class="fa-solid fa-scale-balanced"></i> BNS / IPC</span>
+                            </div>
+                            <p class="domain-card-desc">Compare provisions</p>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Mobile Bottom Navigation (64px + safe area) -->
-        <nav class="bottom-nav" id="bottomNav">
-            <div class="bottom-nav-item active" onclick="switchBottomNav('chat')">
-                <i class="fa-solid fa-message"></i>
-                <span>Home</span>
+            <!-- Persistent Chat Composer (Centered 650-820px) -->
+            <div class="input-area">
+                <div class="composer-container">
+                    <!-- [+] Popup Tools Drawer -->
+                    <div class="composer-tools-popup" id="composerToolsPopup">
+                        <div class="composer-popup-grid">
+                            <div class="composer-popup-item" onclick="openTool('factlaw')">
+                                <i class="fa-solid fa-gavel"></i>
+                                <span>Fact to Law</span>
+                            </div>
+                            <div class="composer-popup-item" onclick="openTool('firwizard')">
+                                <i class="fa-solid fa-list-check"></i>
+                                <span>FIR Wizard</span>
+                            </div>
+                            <div class="composer-popup-item" onclick="openTool('casesimplifier')">
+                                <i class="fa-solid fa-book-open-reader"></i>
+                                <span>Case Simplifier</span>
+                            </div>
+                            <div class="composer-popup-item" onclick="openTool('bns')">
+                                <i class="fa-solid fa-scale-balanced"></i>
+                                <span>BNS / IPC</span>
+                            </div>
+                            <div class="composer-popup-item" onclick="openTool('drafter')">
+                                <i class="fa-solid fa-file-signature"></i>
+                                <span>Legal Notice</span>
+                            </div>
+                            <div class="composer-popup-item" onclick="openTool('fine')">
+                                <i class="fa-solid fa-calculator"></i>
+                                <span>Traffic Fine</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-wrapper">
+                        <button type="button" class="composer-tool-btn" id="composerToolBtn" onclick="toggleComposerTools()" title="Legal Tools Menu (+)">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                        <textarea id="userInput" rows="1" placeholder="Ask Nyayi anything about Indian law, FIRs, or rights..." onkeydown="handleInputKey(event)" oninput="autoGrowTextarea(this)"></textarea>
+                        <button type="button" class="mic-btn" id="micBtn" onclick="openVoiceAssistant()" title="Voice Assistant (Hindi / English)">
+                            <i class="fa-solid fa-microphone"></i>
+                        </button>
+                        <button type="button" class="send-btn" id="sendBtn" onclick="handleSendOrStop()" title="Send Message">
+                            <i class="fa-solid fa-paper-plane" id="sendBtnIcon"></i>
+                        </button>
+                    </div>
+                    <div class="composer-hint">
+                        <span>Press <b>Enter ↵</b> to send • <b>Shift + Enter</b> for new line</span>
+                    </div>
+                </div>
             </div>
-            <div class="bottom-nav-item" onclick="switchBottomNav('tools')">
-                <i class="fa-solid fa-grid-2"></i>
-                <span>Tools</span>
-            </div>
-            <div class="bottom-nav-item" onclick="switchBottomNav('voice')">
-                <i class="fa-solid fa-microphone"></i>
-                <span>Voice</span>
-            </div>
-            <div class="bottom-nav-item" onclick="switchBottomNav('history')">
-                <i class="fa-solid fa-clock-rotate-left"></i>
-                <span>History</span>
-            </div>
-            <div class="bottom-nav-item sos" onclick="switchBottomNav('sos')">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-                <span>SOS</span>
-            </div>
-        </nav>
-    </main>
+
+            <!-- Mobile Bottom Navigation (64px + safe area) -->
+            <nav class="bottom-nav" id="bottomNav">
+                <div class="bottom-nav-item active" onclick="switchBottomNav('chat')">
+                    <i class="fa-solid fa-message"></i>
+                    <span>Home</span>
+                </div>
+                <div class="bottom-nav-item" onclick="switchBottomNav('tools')">
+                    <i class="fa-solid fa-layer-group"></i>
+                    <span>Tools</span>
+                </div>
+                <div class="bottom-nav-item" onclick="switchBottomNav('voice')">
+                    <i class="fa-solid fa-microphone"></i>
+                    <span>Voice</span>
+                </div>
+                <div class="bottom-nav-item" onclick="switchBottomNav('history')">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>History</span>
+                </div>
+                <div class="bottom-nav-item sos" onclick="switchBottomNav('sos')">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>SOS</span>
+                </div>
+            </nav>
+        </main>
+    </div>
 
     <!-- TOOL 1: WHICH LAW APPLIES TO THIS? -->
     <div class="modal-overlay" id="modal-factlaw">
@@ -574,6 +585,6 @@
     </div>
 
     <!-- SCRIPTS -->
-    <script src="js/script.js?v=25"></script>
+    <script src="js/script.js?v=26"></script>
 </body>
 </html>

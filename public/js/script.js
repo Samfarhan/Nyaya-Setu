@@ -473,6 +473,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const langSelect = document.getElementById('langSelect');
     if (langSelect) langSelect.value = aiLanguage;
+    const settingsAILang = document.getElementById('settingsAILang');
+    if (settingsAILang) settingsAILang.value = aiLanguage;
+
+    // Set voice language according to stored aiLanguage
+    voiceLang = (aiLanguage === 'English') ? 'en-IN' : 'hi-IN';
+    const voiceBtn = document.getElementById('voiceLangBtn');
+    if (voiceBtn) {
+        voiceBtn.innerText = voiceLang === 'hi-IN' ? '🌐 Hindi (हि)' : '🌐 English (En)';
+    }
 
     updateWelcomeUserName();
 
@@ -561,7 +570,32 @@ function renderEmptyState() {
     box.scrollTop = 0;
 }
 
-function askSuggestion(text) {
+const SUGGESTION_QUERIES = {
+    cyber: {
+        en: "I have been a victim of online financial cyber fraud. How can I recover my money and how does the 1930 helpline work?",
+        hi: "Mera online financial cyber fraud ho gaya hai, paise wapas kaise paayein? 1930 helpline kaise kaam karti hai?"
+    },
+    fir: {
+        en: "What is the complete procedure for lodging an FIR at a police station, and what are my legal rights if police refuse to register it?",
+        hi: "Police station me FIR darj karwane ka process kya hai aur agar police FIR likhne se mana kare toh kya adhikar hain?"
+    },
+    property: {
+        en: "Explain legal rights and civil temporary stay order procedure (Order 39 Rules 1 & 2 CPC) in property and tenancy disputes.",
+        hi: "Property ya tenancy dispute me legal rights aur civil stay order (Order 39) ke niyam samjhao."
+    },
+    bns: {
+        en: "What are the differences between IPC Sections 420, 302, 376 and the new Bharatiya Nyaya Sanhita (BNS 2023) provisions?",
+        hi: "IPC Section 420, 302, 376 aur nayi BNS provisions me kya antar hai? Kaunsi dhara lagu hogi?"
+    }
+};
+
+function askSuggestion(keyOrText) {
+    let text = keyOrText;
+    if (SUGGESTION_QUERIES[keyOrText]) {
+        text = (aiLanguage === 'English') 
+            ? SUGGESTION_QUERIES[keyOrText].en 
+            : SUGGESTION_QUERIES[keyOrText].hi;
+    }
     const input = document.getElementById('userInput');
     if (input) {
         input.value = text;
@@ -1079,6 +1113,15 @@ function changeAILanguage(lang) {
     localStorage.setItem('nyayaLanguage', lang);
     const sel = document.getElementById('langSelect');
     if (sel) sel.value = lang;
+    const settingsSel = document.getElementById('settingsAILang');
+    if (settingsSel) settingsSel.value = lang;
+
+    // Synchronize voice recognition language
+    voiceLang = (lang === 'English') ? 'en-IN' : 'hi-IN';
+    const voiceBtn = document.getElementById('voiceLangBtn');
+    if (voiceBtn) {
+        voiceBtn.innerText = voiceLang === 'hi-IN' ? '🌐 Hindi (हि)' : '🌐 English (En)';
+    }
 }
 
 function switchBottomNav(tab) {
@@ -1123,7 +1166,13 @@ function openTool(toolId) {
     toggleSidebar(false);
     
     let modalId = 'modal-' + toolId;
-    if (toolId === 'settings') modalId = 'settingsModal';
+    if (toolId === 'settings') {
+        modalId = 'settingsModal';
+        const nameInput = document.getElementById('settingsUserName');
+        if (nameInput) nameInput.value = user;
+        const langSel = document.getElementById('settingsAILang');
+        if (langSel) langSel.value = aiLanguage;
+    }
 
     const target = document.getElementById(modalId);
     if (target) {

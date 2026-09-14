@@ -117,9 +117,12 @@ a:hover {
 }
 
 /* --- 3. APPLICATION SHELL & LAYOUT --- */
-#app {
+body, #app {
     display: flex;
+    flex-direction: row;
     width: 100vw;
+    max-width: 100vw;
+    height: 100%;
     height: 100dvh;
     overflow: hidden;
     position: relative;
@@ -128,7 +131,10 @@ a:hover {
 /* SIDEBAR (Desktop Left Nav 240px / Mobile Slide Drawer) */
 #sidebar-container {
     width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    max-width: var(--sidebar-width);
     height: 100%;
+    height: 100dvh;
     background-color: var(--nyayi-bg-subtle);
     border-right: 1px solid var(--nyayi-surface-border);
     display: flex;
@@ -136,6 +142,8 @@ a:hover {
     flex-shrink: 0;
     z-index: 100;
     transition: transform var(--transition-fast);
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .sidebar-header {
@@ -356,8 +364,12 @@ a:hover {
 
 /* MAIN WORKSPACE */
 #main-container {
-    flex: 1;
+    flex: 1 1 0%;
+    min-width: 0;
+    width: calc(100vw - var(--sidebar-width));
+    max-width: calc(100vw - var(--sidebar-width));
     height: 100%;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -1574,11 +1586,25 @@ a:hover {
 
 /* Mobile Breakpoint (<= 768px) */
 @media (max-width: 768px) {
+    body, #app {
+        flex-direction: column;
+        width: 100vw;
+        max-width: 100vw;
+        height: 100%;
+        height: 100dvh;
+        overflow: hidden;
+    }
+
     #sidebar-container {
         position: fixed;
         top: 0;
         left: 0;
         bottom: 0;
+        width: 280px;
+        min-width: 280px;
+        max-width: 85vw;
+        height: 100%;
+        height: 100dvh;
         transform: translateX(-100%);
         z-index: 150;
         box-shadow: 4px 0 24px rgba(0, 0, 0, 0.6);
@@ -1588,8 +1614,31 @@ a:hover {
         transform: translateX(0);
     }
     
+    #main-container {
+        width: 100vw;
+        max-width: 100vw;
+        min-width: 0;
+        height: 100%;
+        height: 100dvh;
+        flex: 1 1 0%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    #header-container {
+        height: 56px;
+        min-height: 56px;
+        max-height: 56px;
+        padding: 0 12px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
     .mobile-menu-btn {
-        display: block;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     
     .brand-status-badge {
@@ -1598,61 +1647,104 @@ a:hover {
     
     .bottom-nav {
         display: flex;
+        height: 56px;
+        min-height: 56px;
+        max-height: 56px;
+        flex-shrink: 0;
+        width: 100%;
+        box-sizing: border-box;
     }
     
     #chat-box {
-        padding: 16px 14px 20px;
+        padding: 12px 12px 16px;
+        width: 100%;
+        max-width: 100vw;
+        box-sizing: border-box;
+    }
+
+    .chat-content-container {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
     }
     
     .welcome-hero {
-        margin: 8px auto 16px;
+        margin: 6px auto 14px;
+        padding: 0 4px;
+        width: 100%;
+        box-sizing: border-box;
     }
     
     .welcome-title {
-        font-size: 22px;
+        font-size: 20px;
     }
     
     .welcome-subtitle {
-        font-size: 15px;
+        font-size: 14px;
     }
     
     .welcome-tagline {
-        font-size: 13px;
-        margin-bottom: 16px;
+        font-size: 12.5px;
+        margin-bottom: 12px;
     }
     
     .domain-cards-grid {
         grid-template-columns: 1fr 1fr;
         gap: 8px;
+        width: 100%;
+        box-sizing: border-box;
     }
     
     .domain-card {
-        padding: 8px 12px;
-        min-height: 56px;
-        max-height: 70px;
+        padding: 8px 10px;
+        min-height: 52px;
+        max-height: 66px;
     }
     
     .domain-card-title {
-        font-size: 13px;
+        font-size: 12.5px;
     }
     
     .domain-card-desc {
-        font-size: 11.5px;
+        font-size: 11px;
     }
     
     .user-msg .msg-body-wrapper {
-        max-width: 88%;
-        font-size: 15px;
+        max-width: 90%;
+        font-size: 14.5px;
         padding: 10px 14px;
     }
     
+    .ai-msg .msg-body-wrapper {
+        max-width: 100%;
+    }
+
     .msg-content {
         font-size: 15px;
         line-height: 1.65;
     }
     
     .input-area {
-        padding: 0 12px 8px;
+        padding: 0 10px 10px;
+        width: 100%;
+        max-width: 100vw;
+        box-sizing: border-box;
+    }
+
+    .composer-container {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .input-wrapper {
+        padding: 8px 12px;
+        border-radius: var(--radius-md);
+        box-sizing: border-box;
+    }
+
+    #userInput {
+        font-size: 14px;
     }
     
     .composer-hint {
@@ -1668,47 +1760,78 @@ a:hover {
     .modal-box {
         border-bottom-left-radius: 0;
         border-bottom-right-radius: 0;
-        max-height: 80vh;
+        max-height: 85vh;
+        width: 100%;
+        max-width: 100%;
         padding: 20px 16px 28px;
     }
 }
 
-/* Small Mobile Screens (320px - 380px) */
-@media (max-width: 380px) {
+/* Small Mobile Screens (<= 480px) */
+@media (max-width: 480px) {
     #header-container {
-        padding: 0 10px;
+        padding: 0 8px;
     }
     
     .brand-name {
-        font-size: 16px;
+        font-size: 17px;
     }
     
     .brand-badge {
         display: none;
     }
+
+    .nav-right {
+        gap: 5px;
+    }
+
+    .lang-select-dropdown {
+        padding: 4px 6px;
+        font-size: 11.5px;
+        max-width: 105px;
+    }
     
+    .sos-btn {
+        padding: 5px 8px;
+        font-size: 11.5px;
+        gap: 4px;
+    }
+
     .sos-btn span {
         display: none;
     }
     
-    .sos-btn {
-        padding: 6px 8px;
+    .nav-icon-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 13px;
     }
-    
+
     .domain-cards-grid {
-        grid-template-columns: 1fr 1fr;
         gap: 6px;
     }
     
     .domain-card {
-        padding: 8px 10px;
+        padding: 6px 8px;
+        min-height: 48px;
+        max-height: 60px;
     }
     
     .domain-card-title {
-        font-size: 12px;
+        font-size: 11.5px;
+        gap: 4px;
     }
     
-    .domain-badge {
-        display: none;
+    .domain-card-desc {
+        font-size: 10px;
+    }
+
+    .table-wrapper {
+        margin: 12px 0;
+    }
+
+    .nyayi-table {
+        min-width: 460px;
+        font-size: 12.5px;
     }
 }
