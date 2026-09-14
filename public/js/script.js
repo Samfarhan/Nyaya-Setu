@@ -1706,7 +1706,47 @@ function exportData() {
     });
 }
 
-// Override openTool to initialize new settings state
+// --- 16. COMPREHENSIVE SETTINGS & PROFILE CONTROLLER ---
+function switchSettingsTab(tabName) {
+    const tabs = document.querySelectorAll('.settings-tab');
+    const panes = document.querySelectorAll('.settings-pane');
+    
+    tabs.forEach(t => t.classList.remove('active'));
+    panes.forEach(p => p.classList.remove('active'));
+    
+    const targetTab = Array.from(tabs).find(t => {
+        const oc = t.getAttribute('onclick') || '';
+        return oc.includes(tabName);
+    });
+    if (targetTab) targetTab.classList.add('active');
+    
+    const targetPane = document.getElementById('settings-' + tabName);
+    if (targetPane) targetPane.classList.add('active');
+}
+
+function setSpecificTheme(theme) {
+    const darkBtn = document.getElementById('themeBtnDark');
+    const lightBtn = document.getElementById('themeBtnLight');
+    const themeIcon = document.getElementById('themeIcon');
+    
+    if (theme === 'dark') {
+        document.body.classList.add('dark-mode');
+        document.body.setAttribute('data-theme', 'dark');
+        localStorage.setItem('nyayi_theme', 'dark');
+        if (darkBtn) darkBtn.classList.add('active');
+        if (lightBtn) lightBtn.classList.remove('active');
+        if (themeIcon) themeIcon.className = 'fa-solid fa-moon';
+    } else {
+        document.body.classList.remove('dark-mode');
+        document.body.setAttribute('data-theme', 'light');
+        localStorage.setItem('nyayi_theme', 'light');
+        if (lightBtn) lightBtn.classList.add('active');
+        if (darkBtn) darkBtn.classList.remove('active');
+        if (themeIcon) themeIcon.className = 'fa-solid fa-sun';
+    }
+}
+
+// Override openTool to initialize and populate settings modal
 const originalOpenTool = openTool;
 openTool = function(toolId) {
     originalOpenTool(toolId);
@@ -1714,8 +1754,20 @@ openTool = function(toolId) {
         const theme = localStorage.getItem("nyayi_theme") || "dark";
         setSpecificTheme(theme);
         
-        const autoSpeak = document.getElementById("settingsAutoSpeak");
-        if (autoSpeak) autoSpeak.checked = window.autoSpeak !== false; // Default true
+        const currentUser = localStorage.getItem('nyayaUser') || 'Citizen';
+        const currentEmail = localStorage.getItem('nyayi_user_email') || 'user@nyayi.in';
+        
+        const nameInput = document.getElementById('settingsUserName');
+        if (nameInput) nameInput.value = currentUser;
+        
+        const emailInput = document.getElementById('settingsUserEmail');
+        if (emailInput) emailInput.value = currentEmail;
+        
+        const langSel = document.getElementById('settingsAILang');
+        if (langSel) langSel.value = localStorage.getItem('nyayaLanguage') || 'Multilingual';
+        
+        const autoSpeakEl = document.getElementById("settingsAutoSpeak");
+        if (autoSpeakEl) autoSpeakEl.checked = window.autoSpeak !== false;
         
         const sendEnter = document.getElementById("settingsSendOnEnter");
         if (sendEnter) sendEnter.checked = localStorage.getItem("nyayi_send_enter") !== "false";
@@ -1724,15 +1776,44 @@ openTool = function(toolId) {
     }
 };
 
-const originalSaveSettings = saveSettings;
+// Save Settings and notify user
+const originalSaveSettings = typeof saveSettings === 'function' ? saveSettings : function() {};
 saveSettings = function() {
     originalSaveSettings();
     
-    const autoSpeak = document.getElementById("settingsAutoSpeak");
-    if (autoSpeak) window.autoSpeak = autoSpeak.checked;
+    const nameInput = document.getElementById('settingsUserName');
+    if (nameInput && nameInput.value.trim()) {
+        const newName = nameInput.value.trim();
+        localStorage.setItem('nyayaUser', newName);
+        user = newName;
+        const welcomeEl = document.getElementById('welcomeUserName');
+        const userDisplay = document.getElementById('userDisplayName');
+        if (welcomeEl) welcomeEl.innerText = newName;
+        if (userDisplay) userDisplay.innerText = newName;
+    }
+    
+    const langSelect = document.getElementById('settingsAILang');
+    if (langSelect) {
+        localStorage.setItem('nyayaLanguage', langSelect.value);
+        aiLanguage = langSelect.value;
+        const mainLangSelect = document.getElementById('langSelect');
+        if (mainLangSelect) mainLangSelect.value = langSelect.value;
+    }
+    
+    const autoSpeakEl = document.getElementById("settingsAutoSpeak");
+    if (autoSpeakEl) window.autoSpeak = autoSpeakEl.checked;
     
     const sendEnter = document.getElementById("settingsSendOnEnter");
     if (sendEnter) localStorage.setItem("nyayi_send_enter", sendEnter.checked);
+    
+    closeAllModals();
+    
+    // Quick confirmation alert / notification
+    const banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed; bottom:24px; right:24px; background:#10b981; color:#000; padding:12px 20px; border-radius:10px; font-weight:700; font-size:13px; z-index:99999; box-shadow:0 10px 25px rgba(0,0,0,0.5); display:flex; align-items:center; gap:8px; animation:fadeIn 0.3s ease;';
+    banner.innerHTML = '<i class="fa-solid fa-check"></i> Preferences Saved Successfully!';
+    document.body.appendChild(banner);
+    setTimeout(() => { banner.remove(); }, 2500);
 };
 
 // Fix for handleInputKey

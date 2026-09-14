@@ -539,11 +539,22 @@
                     
                     <!-- General Tab -->
                     <div class="settings-pane active" id="settings-general">
-                        <h4>General Profile</h4>
+                        <h4>General Profile & Account</h4>
                         <div class="settings-group">
-                            <label>Aapka Naam (User Name)</label>
+                            <label>Aapka Naam (Full Name)</label>
                             <input type="text" id="settingsUserName" class="modal-input" placeholder="Citizen">
-                            <p class="settings-help">This name is used to address you in the chat.</p>
+                            <p class="settings-help">This name is used to address you in legal queries.</p>
+                        </div>
+                        <div class="settings-group">
+                            <label>Registered Email Address</label>
+                            <input type="email" id="settingsUserEmail" class="modal-input" readonly style="opacity:0.85; background:rgba(0,0,0,0.4); cursor:not-allowed;">
+                            <p class="settings-help">Your authenticated Nyayi citizen account email.</p>
+                        </div>
+                        <div class="settings-group">
+                            <label>Account Status</label>
+                            <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); color:#10b981; padding:8px 16px; border-radius:20px; font-size:12.5px; font-weight:600;">
+                                <i class="fa-solid fa-circle-check"></i> Verified Citizen Member
+                            </div>
                         </div>
                         <div class="settings-group">
                             <label>Primary AI Language</label>
@@ -555,16 +566,24 @@
                             </select>
                             <p class="settings-help">The language Nyayi will use for generating legal responses.</p>
                         </div>
+                        <div style="margin-top:16px; display:flex; flex-direction:column; gap:8px;">
+                            <button type="button" class="modal-btn" onclick="saveSettings()" style="width:100%;">
+                                <i class="fa-solid fa-floppy-disk"></i> Save Profile & Preferences
+                            </button>
+                            <button type="button" class="reset-app-btn" onclick="logoutUser()" style="width:100%; color:#ef4444; border-color:rgba(239,68,68,0.3); background:rgba(239,68,68,0.08);">
+                                <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out of Nyayi AI
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Appearance Tab -->
                     <div class="settings-pane" id="settings-appearance">
-                        <h4>Appearance</h4>
+                        <h4>Appearance & Theme</h4>
                         <div class="settings-group">
-                            <label>Theme</label>
+                            <label>Interface Theme</label>
                             <div class="theme-toggle-group">
-                                <button type="button" class="theme-btn" id="themeBtnDark" onclick="setSpecificTheme('dark')"><i class="fa-solid fa-moon"></i> Dark</button>
-                                <button type="button" class="theme-btn" id="themeBtnLight" onclick="setSpecificTheme('light')"><i class="fa-solid fa-sun"></i> Light</button>
+                                <button type="button" class="theme-btn" id="themeBtnDark" onclick="setSpecificTheme('dark')"><i class="fa-solid fa-moon"></i> Dark Theme</button>
+                                <button type="button" class="theme-btn" id="themeBtnLight" onclick="setSpecificTheme('light')"><i class="fa-solid fa-sun"></i> Light Theme</button>
                             </div>
                         </div>
                     </div>
@@ -597,33 +616,37 @@
                     <!-- Data & Privacy Tab -->
                     <div class="settings-pane" id="settings-privacy">
                         <h4>Data & Privacy</h4>
-                        <p class="settings-help" style="margin-bottom:12px;">Nyayi stores all your consultations locally on your device for complete privacy. We do not track your legal queries.</p>
+                        <p class="settings-help" style="margin-bottom:12px;">Nyayi stores your consultations locally on your browser for end-to-end privacy. We do not sell your legal queries.</p>
                         
                         <div class="settings-group">
-                            <button type="button" class="modal-btn" onclick="exportData()" style="background-color:var(--nyayi-surface-2); color:var(--nyayi-text); border:1px solid var(--nyayi-surface-border); margin-bottom:8px;">
-                                <i class="fa-solid fa-download"></i> Export Consultations
+                            <button type="button" class="modal-btn" onclick="exportData()" style="background-color:var(--nyayi-surface-2); color:var(--nyayi-text); border:1px solid var(--nyayi-surface-border); margin-bottom:8px; width:100%;">
+                                <i class="fa-solid fa-download"></i> Export Consultations (JSON)
                             </button>
-                            <button type="button" class="reset-app-btn" onclick="clearHistory()" style="margin-bottom:8px;">
+                            <button type="button" class="reset-app-btn" onclick="clearHistory()" style="margin-bottom:8px; width:100%;">
                                 <i class="fa-solid fa-eraser"></i> Clear Conversation History
                             </button>
-                            <button type="button" class="reset-app-btn" onclick="clearAllLocalData()" style="color:var(--nyayi-danger); border-color:var(--nyayi-danger-subtle); background:var(--nyayi-danger-subtle);">
-                                <i class="fa-solid fa-trash-can"></i> Factory Reset App
+                            <button type="button" class="reset-app-btn" onclick="clearAllLocalData()" style="color:var(--nyayi-danger); border-color:var(--nyayi-danger-subtle); background:var(--nyayi-danger-subtle); width:100%;">
+                                <i class="fa-solid fa-trash-can"></i> Factory Reset App Data
                             </button>
                         </div>
                     </div>
 
                     <!-- About Tab -->
                     <div class="settings-pane" id="settings-about">
-                        <h4>About Nyayi</h4>
+                        <h4>About Nyayi (न्यायी)</h4>
                         <div class="about-card">
                             <i class="fa-solid fa-scale-balanced about-logo"></i>
-                            <h5>Nyayi Legal Assistant</h5>
-                            <p>Version 3.0 • BNS 2023 Update</p>
-                            <p class="about-desc">India's most advanced AI legal assistant providing reliable guidance on Indian law.</p>
+                            <h5>Nyayi Legal Intelligence AI</h5>
+                            <p>Version 3.0 • BNS 2023 & BNSS 2023 Supported</p>
+                            <p class="about-desc">India's citizen-first AI legal guidance assistant helping every Indian understand their constitutional rights and procedural law.</p>
+                            <div style="margin:14px 0; font-size:12.5px; color:var(--nyayi-text-muted);">
+                                <strong>Architects:</strong> Farhan Khan & Kamran Sheikh<br>
+                                <strong>Platform:</strong> <a href="https://nyayi.in" target="_blank" style="color:#10b981; text-decoration:none;">nyayi.in</a>
+                            </div>
                             <div class="about-links">
-                                <a href="#">Terms of Service</a>
-                                <a href="#">Privacy Policy</a>
-                                <a href="#">Help & Support</a>
+                                <a href="https://nyayi.in/terms-of-use.html" target="_blank">Terms of Use</a>
+                                <a href="https://nyayi.in/privacy.html" target="_blank">Privacy Policy</a>
+                                <a href="https://nyayi.in/disclaimer.html" target="_blank">Disclaimer</a>
                             </div>
                         </div>
                     </div>
