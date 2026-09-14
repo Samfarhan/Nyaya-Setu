@@ -99,8 +99,8 @@
                 <span>Legal Updates</span>
             </div>
             <div class="tool-item" onclick="openTool('bns')">
-                <i class="fa-solid fa-right-left"></i>
-                <span>IPC ⇋ BNS</span>
+                <i class="fa-solid fa-scale-balanced"></i>
+                <span>BNS • BNSS • BSA • CPC</span>
             </div>
             <div class="tool-item" onclick="openTool('fine')">
                 <i class="fa-solid fa-calculator"></i>
@@ -180,7 +180,7 @@
             <span class="modal-close" onclick="closeAllModals()">&times;</span>
             <h3><i class="fa-solid fa-gavel"></i> Which Law Applies To This?</h3>
             <p class="modal-desc">Apni ghatna / facts yahan likhein. AI turant batayega ki ispar kaunsi dhara, BNS, ya kanoon lagu hota hai.</p>
-            <textarea id="factlaw-input" class="modal-textarea" rows="5" placeholder="Ghatna ka vivran dein (e.g. Kisi ne fake account banakar threat diya, ya landlord ne security deposit wapas nahi kiya, ya online fraud hua)..."></textarea>
+            <textarea id="factlaw-input" class="modal-textarea" rows="3" placeholder="Ghatna ka vivran dein (e.g. Kisi ne fake account banakar threat diya, ya landlord ne security deposit wapas nahi kiya, ya online fraud hua)..."></textarea>
             <button class="modal-btn" onclick="analyzeFactsToLaw()">
                 <i class="fa-solid fa-magnifying-glass-scale"></i> Analyze Relevant Laws & Sections
             </button>
@@ -275,7 +275,7 @@
             <span class="modal-close" onclick="closeAllModals()">&times;</span>
             <h3><i class="fa-solid fa-book-open-reader"></i> Case Law & Judgment Simplifier</h3>
             <p class="modal-desc">Kisi bhi Supreme Court / High Court ke faisle ya case law ka vivran paste karein. AI use aasan bhasha me samjhayega.</p>
-            <textarea id="casesimplifier-input" class="modal-textarea" rows="5" placeholder="Case Name / Citation ya Judgment Text yahan paste karein (e.g. D.K. Basu v. State of West Bengal, AIR 1997 SC 610, ya koi bhi court order text)..."></textarea>
+            <textarea id="casesimplifier-input" class="modal-textarea" rows="3" placeholder="Case Name / Citation ya Judgment Text yahan paste karein (e.g. D.K. Basu v. State of West Bengal, AIR 1997 SC 610, ya koi bhi court order text)..."></textarea>
             <button class="modal-btn" onclick="simplifyCaseLaw()">
                 <i class="fa-solid fa-wand-magic-sparkles"></i> Simplify Judgment & Ratio Decidendi
             </button>
@@ -283,56 +283,130 @@
         </div>
     </div>
 
-    <!-- NEW TOOL 4: LEGAL UPDATES & SECTIONS -->
+    <!-- NEW TOOL 4: LEGAL UPDATES & SECTION AMENDMENTS (BNS, BNSS, BSA, CPC) -->
     <div class="modal-overlay" id="modal-updates">
-        <div class="modal-box" style="max-width:640px;">
+        <div class="modal-box" style="max-width:650px;">
             <span class="modal-close" onclick="closeAllModals()">&times;</span>
-            <h3><i class="fa-solid fa-newspaper"></i> Latest Legal Updates & Section Amendments</h3>
-            <p class="modal-desc">BNS 2023, IT Act, Consumer Protection aur Naye Kanooni Sanshodhan (Amendments).</p>
+            <h3><i class="fa-solid fa-newspaper"></i> Latest Legal Updates & Statutory Amendments</h3>
+            <p class="modal-desc">BNS 2023, BNSS 2023, BSA 2023, CPC 1908 aur Naye Kanooni Sanshodhan.</p>
             
             <div class="updates-category-bar">
                 <button class="update-tab active" onclick="filterLegalUpdates('all', this)">All</button>
-                <button class="update-tab" onclick="filterLegalUpdates('criminal', this)">Criminal (BNS)</button>
+                <button class="update-tab" onclick="filterLegalUpdates('bns', this)">BNS (Penal)</button>
+                <button class="update-tab" onclick="filterLegalUpdates('bnss', this)">BNSS (Procedure)</button>
+                <button class="update-tab" onclick="filterLegalUpdates('bsa', this)">BSA (Evidence)</button>
+                <button class="update-tab" onclick="filterLegalUpdates('cpc', this)">CPC (Civil)</button>
                 <button class="update-tab" onclick="filterLegalUpdates('cyber', this)">Cyber & IT</button>
                 <button class="update-tab" onclick="filterLegalUpdates('civil', this)">Property & Family</button>
             </div>
 
             <div class="updates-list" id="updatesList">
-                <div class="update-card" data-cat="criminal">
-                    <span class="update-badge badge-red">Criminal Law (BNS 2023)</span>
-                    <h4>IPC Complete Replacement by Bharatiya Nyaya Sanhita (BNS 2023)</h4>
-                    <p>Purane 511 IPC sections ke sthan par ab 358 BNS sections lagu hain. Section 420 (Cheating) ab BNS 318(4) hai, Section 302 (Murder) ab BNS 103(1) hai.</p>
+                <!-- BNS UPDATES -->
+                <div class="update-card" data-cat="bns">
+                    <span class="update-badge badge-red">Penal Code (BNS 2023)</span>
+                    <h4>IPC Complete Overhaul: 511 Sections Consolidated into 358 Sections</h4>
+                    <p>Purani Indian Penal Code (IPC) ko Bharatiya Nyaya Sanhita (BNS) se replace kar diya gaya hai. Section 420 (Cheating) ab BNS 318(4) hai, Section 302 (Murder) ab BNS 103(1) hai, aur Section 376 (Rape) ab BNS Section 64 hai.</p>
                 </div>
-                <div class="update-card" data-cat="criminal">
-                    <span class="update-badge badge-green">Procedure (BNSS 2023)</span>
-                    <h4>Zero FIR & Electronic Summons Made Mandatory</h4>
-                    <p>BNSS 2023 ke tehat kisi bhi thane me Zero FIR darj karayi ja sakti hai. Ab WhatsApp aur Email dwara bheja gaya summons legally valid hai.</p>
+                <div class="update-card" data-cat="bns">
+                    <span class="update-badge badge-red">Penal Code (BNS 2023)</span>
+                    <h4>Snatching (Section 304) & Community Service (Section 4) Introduced</h4>
+                    <p>Chain/Phone snatching ko IPC me alag se define nahi kiya gaya tha, ab BNS Section 304 ke tehat 3 saal tak ki qaid hai. Chhote apradhon (Chori < ₹5000, defamation) ke liye pehli baar Community Service (सामुदायिक सेवा) ka pravdhan joda gaya hai.</p>
                 </div>
+                <div class="update-card" data-cat="bns">
+                    <span class="update-badge badge-red">Penal Code (BNS 2023)</span>
+                    <h4>Organized Crime (BNS 111) & Mob Lynching (BNS 103(2))</h4>
+                    <p>Mafia syndicate, extortion aur contract killing ke liye Section 111 me kade niyam banaye gaye hain. 5 ya usse zyada logon dwara jati/dharm ke aadhar par lynching karne par Death penalty ya Life Imprisonment ka kanoon lagu hai.</p>
+                </div>
+
+                <!-- BNSS UPDATES -->
+                <div class="update-card" data-cat="bnss">
+                    <span class="update-badge badge-green">Criminal Procedure (BNSS 2023)</span>
+                    <h4>Zero FIR & Electronic Summons Made Mandatory Nationwide (Section 173 & 64)</h4>
+                    <p>Kisi bhi thane me Zero FIR darj karana har nagrik ka kanooni adhikar hai (BNSS Section 173(1)). Thana kshetriya aadhar par mana nahi kar sakta. Ab WhatsApp, Email aur SMS dwara bheja gaya summons adalat me legally valid service mana jata hai (Section 64).</p>
+                </div>
+                <div class="update-card" data-cat="bnss">
+                    <span class="update-badge badge-green">Criminal Procedure (BNSS 2023)</span>
+                    <h4>Compulsory Forensic Investigation for 7+ Year Offences (Section 176(3))</h4>
+                    <p>7 saal ya usse zyada saza wale sabhi apradhon me Forensic Science Laboratory (FSL) team ka ghatna-sthal (crime scene) par aana aur mobile/video recording karna anivarya kar diya gaya hai.</p>
+                </div>
+                <div class="update-card" data-cat="bnss">
+                    <span class="update-badge badge-green">Criminal Procedure (BNSS 2023)</span>
+                    <h4>Flexible Police Custody (Section 187) & Trial in Absentia (Section 356)</h4>
+                    <p>Police remand 15 din ka initial 40 se 60 din ke dauran hisson me liya ja sakta hai. Bhage hue apradhiyon (Proclaimed Offenders) ke khilaf unki anupasthiti me bhi trial chalakar saza sunayi ja sakti hai (Section 356).</p>
+                </div>
+
+                <!-- BSA UPDATES -->
+                <div class="update-card" data-cat="bsa">
+                    <span class="update-badge badge-teal">Law of Evidence (BSA 2023)</span>
+                    <h4>Digital & Electronic Records Recognized as Primary Evidence (Section 61-63)</h4>
+                    <p>Bharatiya Sakshya Adhiniyam me server logs, emails, smartphone messages aur cloud backups ko Primary Evidence ka darja diya gaya hai. Purane Section 65B physical certificate ki jagah standardized digital declaration format lagu hua hai.</p>
+                </div>
+                <div class="update-card" data-cat="bsa">
+                    <span class="update-badge badge-teal">Law of Evidence (BSA 2023)</span>
+                    <h4>Cyber Forensics & Cryptographic Hash Value Integrity (Section 39)</h4>
+                    <p>Digital evidence ki authenticity verify karne ke liye Cryptographic Hash Values aur certified digital forensics examiner ki report ko statutory recognition diya gaya hai.</p>
+                </div>
+
+                <!-- CPC UPDATES -->
+                <div class="update-card" data-cat="cpc">
+                    <span class="update-badge badge-purple">Civil Procedure (CPC 1908)</span>
+                    <h4>Order 39 Rules 1 & 2: Temporary Injunctions & Property Stay Orders</h4>
+                    <p>Ghar, zameen ya contract par stay lene ke liye 3 zaroori tests: (1) Prima Facie Case, (2) Balance of Convenience, (3) Irreparable Injury. Bina inke civil court stay order nahi deti.</p>
+                </div>
+                <div class="update-card" data-cat="cpc">
+                    <span class="update-badge badge-purple">Civil Procedure (CPC 1908)</span>
+                    <h4>Mandatory Mediation (Section 89) & Strict 120-Day Limit on Written Statements</h4>
+                    <p>Commercial disputes me suit daalane se pehle Pre-Institution Mediation anivarya hai (Mediation Act 2023). Order 8 Rule 1 ke tehat Defendant ko 30 din (maximum 120 din) me apna Written Statement dakhil karna hota hai, anyatha haq samapt ho jata hai.</p>
+                </div>
+
+                <!-- CYBER & PROPERTY UPDATES -->
                 <div class="update-card" data-cat="cyber">
                     <span class="update-badge badge-blue">Cyber Law & IT Act</span>
                     <h4>Digital Personal Data Protection (DPDP) Act 2023</h4>
-                    <p>Bina consent kisi ki personal details share karne ya leak karne par ₹250 Crore tak ka fine ho sakta hai. Online fraud hone par turant Helpline 1930 par call karein.</p>
+                    <p>Bina consent kisi ki personal details leak karne par ₹250 Crore tak ka penalty ho sakta hai. Online fraud hone par turant National Helpline 1930 par call karein taaki golden hour me funds freeze ho sakein.</p>
                 </div>
                 <div class="update-card" data-cat="civil">
                     <span class="update-badge badge-orange">Property & Tenant Law</span>
                     <h4>Model Tenancy Act Rules for Renters & Landlords</h4>
-                    <p>Landlord bina 24 ghante pehle notice diye ghar me nahi ghus sakta. Security deposit maximum 2 months rent (Residential) tak hi liya ja sakta hai.</p>
+                    <p>Landlord bina 24 ghante pehle notice diye ghar me nahi ghus sakta. Residential security deposit maximum 2 months rent tak hi liya ja sakta hai.</p>
                 </div>
             </div>
         </div>
     </div>
 
 
-    <!-- 2. IPC <-> BNS CONVERTER MODAL -->
+    <!-- 2. UNIVERSAL STATUTORY CODE NAVIGATOR: BNS • BNSS • BSA • CPC -->
     <div class="modal-overlay" id="modal-bns">
-        <div class="modal-box">
+        <div class="modal-box" style="max-width:620px;">
             <span class="modal-close" onclick="closeAllModals()">&times;</span>
-            <h3><i class="fa-solid fa-right-left"></i> IPC ⇋ BNS Converter</h3>
-            <p class="modal-desc">Purani Indian Penal Code (IPC) ko nayi Bharatiya Nyaya Sanhita (BNS 2023) me badlein.</p>
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="ipc-input" class="modal-input" placeholder="Enter Section (e.g. 420, 302, 376, 378, 506)..." onkeypress="if(event.key==='Enter') convertSection()">
-                <button class="modal-btn" style="width:auto; padding:0 24px; margin-bottom:14px;" onclick="convertSection()">Convert</button>
+            <h3><i class="fa-solid fa-scale-balanced"></i> Statutory Code Navigator</h3>
+            <p class="modal-desc">BNS (IPC), BNSS (CrPC), BSA (Evidence Act) aur CPC (Civil Procedure) ke naye aur purane sections khojein.</p>
+            
+            <div class="converter-statute-bar">
+                <button class="conv-tab active" onclick="setStatuteFilter('all', this)">All Statutes</button>
+                <button class="conv-tab" onclick="setStatuteFilter('bns', this)">BNS ⇋ IPC (Penal)</button>
+                <button class="conv-tab" onclick="setStatuteFilter('bnss', this)">BNSS ⇋ CrPC (Procedure)</button>
+                <button class="conv-tab" onclick="setStatuteFilter('bsa', this)">BSA ⇋ IEA (Evidence)</button>
+                <button class="conv-tab" onclick="setStatuteFilter('cpc', this)">CPC (Civil Procedure)</button>
             </div>
+
+            <div style="display:flex; gap:8px;">
+                <input type="text" id="ipc-input" class="modal-input" placeholder="Enter Section or Keyword (e.g. 302, 420, 154, 438, 65B, Order 39, Zero FIR)..." onkeypress="if(event.key==='Enter') convertSection()">
+                <button class="modal-btn" style="width:auto; padding:0 20px; white-space:nowrap; margin-bottom:14px;" onclick="convertSection()">
+                    <i class="fa-solid fa-magnifying-glass"></i> Search
+                </button>
+            </div>
+
+            <div class="conv-pills-wrap">
+                <span class="conv-pill" onclick="quickConvert('302')"><i class="fa-solid fa-gavel"></i> Murder (302/103)</span>
+                <span class="conv-pill" onclick="quickConvert('420')"><i class="fa-solid fa-file-invoice"></i> Cheating (420/318)</span>
+                <span class="conv-pill" onclick="quickConvert('154')"><i class="fa-solid fa-file-shield"></i> FIR / Zero FIR (154/173)</span>
+                <span class="conv-pill" onclick="quickConvert('438')"><i class="fa-solid fa-handcuffs"></i> Anticipatory Bail (438/482)</span>
+                <span class="conv-pill" onclick="quickConvert('65B')"><i class="fa-solid fa-mobile-screen"></i> Digital Evidence (65B/63)</span>
+                <span class="conv-pill" onclick="quickConvert('Order 39')"><i class="fa-solid fa-building-shield"></i> Stay Order (Order 39)</span>
+                <span class="conv-pill" onclick="quickConvert('125')"><i class="fa-solid fa-scale-balanced"></i> Maintenance (125/144)</span>
+            </div>
+
             <div class="modal-result" id="bns-result"></div>
         </div>
     </div>

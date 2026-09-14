@@ -35,6 +35,49 @@ const BNS_DATABASE = {
     '304A': { bns: 'Section 106(1)', title: 'Death by Negligence (लापरवाही से मौत)', punishment: 'Up to 5 years + Fine', bailable: 'Bailable', cognizable: 'Cognizable' }
 };
 
+
+// BNSS (Bharatiya Nagarik Suraksha Sanhita, 2023) Procedural Database
+const BNSS_DATABASE = {
+    '154': { bnss: 'Section 173(1) BNSS', title: 'FIR Registration & Mandatory Zero FIR (प्राथमिकी)', old: 'Section 154 CrPC', category: 'Criminal Procedure', details: 'Zero FIR mandatory across any police station regardless of jurisdiction. E-FIR permitted with signature verification within 3 days.', nature: 'Cognizable Offences' },
+    '156': { bnss: 'Section 175(3) BNSS', title: 'Magistrate Direction for FIR (156(3) Application)', old: 'Section 156(3) CrPC', category: 'Court Direction', details: 'Power of Judicial Magistrate to direct police to register FIR and submit investigation report.', nature: 'Judicial Remedy' },
+    '161': { bnss: 'Section 180 BNSS', title: 'Police Examination of Witnesses (गवाहों के बयान)', old: 'Section 161 CrPC', category: 'Investigation', details: 'Police statement recording. Audio-video electronic recording permitted under new law.', nature: 'Investigation Procedure' },
+    '164': { bnss: 'Section 183 BNSS', title: 'Magistrate Recording of Confessions & Statements', old: 'Section 164 CrPC', category: 'Judicial Statement', details: 'Statements and confessions recorded by Magistrate. Mandatory audio-video recording in sexual offences.', nature: 'Admissible Evidence' },
+    '167': { bnss: 'Section 187 BNSS', title: 'Police Custody & Remand (पुलिस कस्टडी रिमांड)', old: 'Section 167 CrPC', category: 'Remand & Custody', details: '15-day police custody can be taken in parts across the first 40 or 60 days of the total detention period.', nature: 'Custody Powers' },
+    '173': { bnss: 'Section 193 BNSS', title: 'Police Final Report / Charge-Sheet (आरोप पत्र)', old: 'Section 173 CrPC', category: 'Investigation Conclusion', details: 'Police report submission within 60/90 days. Police must inform victim of investigation progress within 90 days.', nature: 'Final Report' },
+    '41A': { bnss: 'Section 35(3) BNSS', title: 'Notice of Appearance before Police Officer (Arrest Safeguards)', old: 'Section 41A CrPC', category: 'Arrest Protection', details: 'For offences punishable with less than 7 years imprisonment, notice of appearance is mandatory before arresting accused.', nature: 'Citizen Safeguard' },
+    '437': { bnss: 'Section 480 BNSS', title: 'Regular Bail in Non-Bailable Offences by Magistrate', old: 'Section 437 CrPC', category: 'Bail Law', details: 'Conditions under which Magistrate court can release accused on bail in non-bailable offences.', nature: 'Discretionary Bail' },
+    '438': { bnss: 'Section 482 BNSS', title: 'Anticipatory Bail (अग्रिम जमानत)', old: 'Section 438 CrPC', category: 'Pre-Arrest Bail', details: 'Application to Sessions Court or High Court for bail in anticipation of arrest in non-bailable offence.', nature: 'Protective Liberty' },
+    '439': { bnss: 'Section 483 BNSS', title: 'Special Powers of High Court & Sessions Court on Bail', old: 'Section 439 CrPC', category: 'High Court Bail', details: 'Powers of Sessions and High Courts to grant regular bail or cancel bail granted by subordinate courts.', nature: 'Superior Court Powers' },
+    '482': { bnss: 'Section 528 BNSS', title: 'Inherent Powers of High Court (Quashing of FIR / Proceedings)', old: 'Section 482 CrPC', category: 'High Court Jurisdiction', details: 'High Court power to quash malicious, fake, or compromise FIRs to prevent abuse of process of court.', nature: 'Inherent Justice' },
+    '125': { bnss: 'Section 144 BNSS', title: 'Maintenance for Wives, Children & Parents (भरण-पोषण)', old: 'Section 125 CrPC', category: 'Maintenance & Family', details: 'Summary remedy for grant of monthly maintenance to deserted wives, minor children, and senior parents.', nature: 'Social Welfare Remedy' },
+    '197': { bnss: 'Section 218 BNSS', title: 'Sanction for Prosecution of Public Servants & Police', old: 'Section 197 CrPC', category: 'Official Sanction', details: 'Government sanction required before prosecuting public servants for acts done in discharge of official duty.', nature: 'Sanction Requirement' }
+};
+
+// BSA (Bharatiya Sakshya Adhiniyam, 2023) Law of Evidence Database
+const BSA_DATABASE = {
+    '65B': { bsa: 'Section 63 BSA', title: 'Admissibility of Electronic Records / Certificates (डिजिटल साक्ष्य)', old: 'Section 65B Evidence Act', category: 'Electronic Evidence', details: 'Electronic records, cloud logs, emails, and phone chats directly admissible. Standardized schedule certificate for hash integrity.', significance: 'Digital Records as Primary Evidence' },
+    '25': { bsa: 'Section 23(1) BSA', title: 'Confession to Police Officer Not Admissible (पुलिस को दिया बयान)', old: 'Section 25 Evidence Act', category: 'Confession Law', details: 'No confession made to a police officer shall be proved against a person accused of any offence.', significance: 'Protection Against Coercion' },
+    '27': { bsa: 'Section 23(2) BSA', title: 'Information Leading to Discovery of Fact / Weapon (बरामदगी)', old: 'Section 27 Evidence Act', category: 'Discovery Rule', details: 'So much of confession that distinctly leads to the discovery of a physical fact/weapon is admissible.', significance: 'Recovery Exception' },
+    '32': { bsa: 'Section 26 BSA', title: 'Dying Declarations & Statements of Deceased Persons (मृत्युपूर्व कथन)', old: 'Section 32(1) Evidence Act', category: 'Dying Declaration', details: 'Statements made by a person as to cause of their death are admissible even without cross-examination.', significance: 'High Evidentiary Value' },
+    '45': { bsa: 'Section 39 BSA', title: 'Opinions of Experts (Cyber Forensics & Digital Analysts)', old: 'Section 45 Evidence Act', category: 'Expert Testimony', details: 'Expert testimony expanded to include certified digital forensic examiners, cryptographers, and data analysts.', significance: 'Modern Scientific Proof' },
+    '114A': { bsa: 'Section 119 BSA', title: 'Presumption of Absence of Consent in Certain Rape Cases', old: 'Section 114A Evidence Act', category: 'Legal Presumption', details: 'Where sexual intercourse is proved and victim states she did not consent, court shall presume absence of consent.', significance: 'Victim Protection Presumption' },
+    '133': { bsa: 'Section 138 BSA', title: 'Accomplice Evidence & Approver Testimony (सह-अपराधी की गवाही)', old: 'Section 133 Evidence Act', category: 'Approver Evidence', details: 'An accomplice shall be a competent witness against an accused person; conviction not illegal merely because uncorroborated.', significance: 'Approver Evidence Standard' }
+};
+
+// CPC (Code of Civil Procedure, 1908) Procedural Database
+const CPC_DATABASE = {
+    'ORDER39': { cpc: 'Order XXXIX Rules 1 & 2 CPC', title: 'Temporary Injunctions & Interlocutory Stay Orders (स्टे ऑर्डर)', category: 'Civil Injunction', details: 'Urgent stay orders on property, construction, demolition, or contract. Requires 3 tests: Prima Facie Case, Balance of Convenience, and Irreparable Injury.', significance: 'Property & Civil Protection' },
+    'ORDER7': { cpc: 'Order VII Rule 11 CPC', title: 'Rejection of Plaint (मुकदमा खारिज करने का आवेदन)', category: 'Pleading Defense', details: 'Plaint rejected where it discloses no cause of action, is undervalued, or barred by any law (e.g. Limitation Act).', significance: 'Preliminary Dismissal' },
+    'ORDER8': { cpc: 'Order VIII Rule 1 CPC', title: 'Written Statement by Defendant (प्रतिवाद पत्र / W.S.)', category: 'Civil Defense', details: 'Defendant must file Written Statement within 30 days of summons, extendable up to 90 days (120 days in Commercial Courts).', significance: 'Defense Pleading Deadline' },
+    'ORDER21': { cpc: 'Order XXI CPC', title: 'Execution of Decrees and Court Orders (डिक्री का निष्पादन)', category: 'Decree Enforcement', details: 'Execution procedure to realize monetary decrees, auction attached property, or recover physical possession of land.', significance: 'Enforcing Court Verdict' },
+    'SEC89': { cpc: 'Section 89 CPC', title: 'Settlement of Disputes Outside Court (Mediation & Lok Adalat)', category: 'ADR & Mediation', details: 'Court referral of civil disputes to Arbitration, Conciliation, Judicial Settlement, Lok Adalat, or Mediation.', significance: 'Amicable Dispute Resolution' },
+    'SEC96': { cpc: 'Section 96 CPC', title: 'First Appeal from Original Civil Decree (प्रथम अपील)', category: 'Civil Appeals', details: 'Statutory right to challenge trial court civil decree on both questions of fact and questions of law before District Court / High Court.', significance: 'Appellate Remedy' },
+    'SEC100': { cpc: 'Section 100 CPC', title: 'Second Appeal to High Court (द्वितीय अपील)', category: 'High Court Appeal', details: 'Second appeal to High Court lies strictly on a Substantial Question of Law (कानून का सारभूत प्रश्न).', significance: 'Substantial Law Question Only' },
+    'SEC115': { cpc: 'Section 115 CPC', title: 'Civil Revision to High Court (सिविल रिवीजन)', category: 'Revisionary Jurisdiction', details: 'High Court power to correct jurisdictional errors of subordinate courts where no regular appeal lies.', significance: 'Jurisdictional Correction' },
+    'SEC9': { cpc: 'Section 9 CPC', title: 'Courts to Try All Civil Suits Unless Barred (दीवानी क्षेत्राधिकार)', category: 'Civil Jurisdiction', details: 'Civil courts have jurisdiction to try all suits of a civil nature unless expressly or impliedly barred by statute.', significance: 'Fundamental Civil Court Power' }
+};
+
+
 // Traffic Violations Detail
 const TRAFFIC_FINES = {
     'helmet': { title: 'Driving Without Helmet', fine: '₹1,000', section: 'Section 194D MVA', penalty: 'License Disqualification for 3 months' },
@@ -457,43 +500,146 @@ function closeAllModals() {
 // 6. LEGAL TOOL FEATURES
 // =========================================
 
-// A. IPC <-> BNS Converter
+// A. UNIVERSAL STATUTORY CODE CONVERTER & NAVIGATOR (BNS, BNSS, BSA, CPC)
+let activeStatuteFilter = 'all';
+
+function setStatuteFilter(statute, btn) {
+    activeStatuteFilter = statute;
+    document.querySelectorAll('.conv-tab').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    convertSection();
+}
+
+function quickConvert(val) {
+    const input = document.getElementById('ipc-input');
+    if (input) {
+        input.value = val;
+        convertSection();
+    }
+}
+
 function convertSection() {
     const input = document.getElementById('ipc-input');
     const resultDiv = document.getElementById('bns-result');
-    const query = input.value.trim().toUpperCase().replace(/[^0-9A-Z]/g, '');
+    if (!input || !resultDiv) return;
 
-    if (!query) {
+    const raw = input.value.trim();
+    const query = raw.toUpperCase().replace(/[^0-9A-Z]/g, '');
+
+    if (!raw) {
         resultDiv.style.display = 'block';
-        resultDiv.innerHTML = '<span style="color:#ef4444;">Kripya koi IPC Dhara (Section) darj karein. (jaise 420, 302, 376, 506)</span>';
+        resultDiv.innerHTML = '<span style="color:#ef4444; font-size:13px;">Kripya koi Dhara (Section), Order ya Keyword darj karein (e.g. 302, 420, 154, 438, 65B, Order 39, Zero FIR).</span>';
         return;
     }
 
-    const hit = BNS_DATABASE[query];
     resultDiv.style.display = 'block';
+    let resultsHtml = '';
+    let matchesCount = 0;
 
-    if (hit) {
-        resultDiv.innerHTML = `
-            <div style="background:var(--primary-light); padding:12px; border-radius:10px; border-left:4px solid var(--primary); margin-bottom:12px;">
-                <div style="font-size:13px; color:var(--text-muted);">Purani IPC: <b>Section ${query}</b></div>
-                <div style="font-size:18px; font-weight:800; color:var(--primary-dark); margin:4px 0;">Nayi BNS: ${hit.bns}</div>
-                <div style="font-weight:700; font-size:14px; margin-bottom:8px;">${hit.title}</div>
-            </div>
-            <div style="font-size:13.5px; line-height:1.7;">
-                <div>⚖️ <b>Punishment:</b> ${hit.punishment}</div>
-                <div>🔒 <b>Bailability:</b> ${hit.bailable}</div>
-                <div>🚨 <b>Nature:</b> ${hit.cognizable}</div>
-            </div>
-            <button class="modal-btn" style="margin-top:14px; font-size:13px; padding:10px;" onclick="askSuggestion('Mujhe IPC ${query} aur BNS ${hit.bns} ke baare me vistrit legal advice chahiye.')">
-                <i class="fa-solid fa-robot"></i> Ask Nyayi AI for Detailed Analysis
-            </button>
-        `;
+    // Check BNS Database
+    if (activeStatuteFilter === 'all' || activeStatuteFilter === 'bns') {
+        const bnsHit = BNS_DATABASE[query] || Object.values(BNS_DATABASE).find(x => x.bns.toUpperCase().includes(query) || x.title.toLowerCase().includes(raw.toLowerCase()));
+        if (bnsHit) {
+            matchesCount++;
+            resultsHtml += `
+                <div style="background:var(--card-bg); border:1px solid var(--border); border-left:4px solid #dc2626; padding:14px; border-radius:12px; margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <span style="font-size:11px; font-weight:800; background:#fee2e2; color:#dc2626; padding:3px 8px; border-radius:6px;">PENAL LAW (BNS 2023)</span>
+                        <span style="font-size:12px; color:var(--text-muted);">IPC Dhara: <b>${query}</b></span>
+                    </div>
+                    <div style="font-size:17px; font-weight:800; color:var(--text-main); margin-bottom:4px;">Nayi BNS: ${bnsHit.bns}</div>
+                    <div style="font-weight:700; font-size:14px; color:var(--primary-dark); margin-bottom:8px;">${bnsHit.title}</div>
+                    <div style="font-size:13px; line-height:1.6; color:var(--text-main);">
+                        <div>⚖️ <b>Saza (Punishment):</b> ${bnsHit.punishment}</div>
+                        <div>🔒 <b>Bailability:</b> ${bnsHit.bailable} • 🚨 <b>Nature:</b> ${bnsHit.cognizable}</div>
+                    </div>
+                    <button class="modal-btn" style="margin-top:10px; font-size:12.5px; padding:9px 16px;" onclick="askSuggestion('Mujhe BNS ${bnsHit.bns} (purani IPC ${query}) ke baare me vistrit kanooni jankari dein.')">
+                        <i class="fa-solid fa-robot"></i> Research BNS ${bnsHit.bns} with AI
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    // Check BNSS Database
+    if (activeStatuteFilter === 'all' || activeStatuteFilter === 'bnss') {
+        const bnssHit = BNSS_DATABASE[query] || Object.values(BNSS_DATABASE).find(x => x.bnss.toUpperCase().includes(query) || x.title.toLowerCase().includes(raw.toLowerCase()) || (x.old && x.old.toUpperCase().includes(query)));
+        if (bnssHit) {
+            matchesCount++;
+            resultsHtml += `
+                <div style="background:var(--card-bg); border:1px solid var(--border); border-left:4px solid #16a34a; padding:14px; border-radius:12px; margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <span style="font-size:11px; font-weight:800; background:#dcfce7; color:#16a34a; padding:3px 8px; border-radius:6px;">PROCEDURE (BNSS 2023)</span>
+                        <span style="font-size:12px; color:var(--text-muted);">Purani CrPC: <b>${bnssHit.old || query}</b></span>
+                    </div>
+                    <div style="font-size:17px; font-weight:800; color:var(--text-main); margin-bottom:4px;">Nayi BNSS: ${bnssHit.bnss}</div>
+                    <div style="font-weight:700; font-size:14px; color:var(--primary-dark); margin-bottom:8px;">${bnssHit.title}</div>
+                    <p style="font-size:13px; line-height:1.6; color:var(--text-main); margin-bottom:8px;">${bnssHit.details}</p>
+                    <div style="font-size:12px; color:var(--text-muted);">📂 <b>Category:</b> ${bnssHit.category} • 📌 ${bnssHit.nature}</div>
+                    <button class="modal-btn" style="margin-top:10px; font-size:12.5px; padding:9px 16px;" onclick="askSuggestion('BNSS Section ${bnssHit.bnss} (CrPC ${bnssHit.old}) ke tehat kanooni prakriya aur adhikar samjhein.')">
+                        <i class="fa-solid fa-robot"></i> Research BNSS Procedure with AI
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    // Check BSA Database
+    if (activeStatuteFilter === 'all' || activeStatuteFilter === 'bsa') {
+        const bsaHit = BSA_DATABASE[query] || Object.values(BSA_DATABASE).find(x => x.bsa.toUpperCase().includes(query) || x.title.toLowerCase().includes(raw.toLowerCase()) || (x.old && x.old.toUpperCase().includes(query)));
+        if (bsaHit) {
+            matchesCount++;
+            resultsHtml += `
+                <div style="background:var(--card-bg); border:1px solid var(--border); border-left:4px solid #0f766e; padding:14px; border-radius:12px; margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <span style="font-size:11px; font-weight:800; background:#ccfbf1; color:#0f766e; padding:3px 8px; border-radius:6px;">EVIDENCE LAW (BSA 2023)</span>
+                        <span style="font-size:12px; color:var(--text-muted);">Purani IEA: <b>${bsaHit.old || query}</b></span>
+                    </div>
+                    <div style="font-size:17px; font-weight:800; color:var(--text-main); margin-bottom:4px;">Nayi BSA: ${bsaHit.bsa}</div>
+                    <div style="font-weight:700; font-size:14px; color:var(--primary-dark); margin-bottom:8px;">${bsaHit.title}</div>
+                    <p style="font-size:13px; line-height:1.6; color:var(--text-main); margin-bottom:8px;">${bsaHit.details}</p>
+                    <div style="font-size:12px; color:var(--text-muted);">💡 <b>Key Rule:</b> ${bsaHit.significance}</div>
+                    <button class="modal-btn" style="margin-top:10px; font-size:12.5px; padding:9px 16px;" onclick="askSuggestion('Bharatiya Sakshya Adhiniyam me ${bsaHit.bsa} (purana ${bsaHit.old}) ke tehat saboot pramanit karne ke niyam samjhao.')">
+                        <i class="fa-solid fa-robot"></i> Research BSA Evidence Rules with AI
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    // Check CPC Database
+    if (activeStatuteFilter === 'all' || activeStatuteFilter === 'cpc') {
+        const cpcHit = CPC_DATABASE[query] || CPC_DATABASE[raw.replace(/\s+/g, '').toUpperCase()] || Object.values(CPC_DATABASE).find(x => x.cpc.toUpperCase().includes(raw.toUpperCase()) || x.title.toLowerCase().includes(raw.toLowerCase()));
+        if (cpcHit) {
+            matchesCount++;
+            resultsHtml += `
+                <div style="background:var(--card-bg); border:1px solid var(--border); border-left:4px solid #7e22ce; padding:14px; border-radius:12px; margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <span style="font-size:11px; font-weight:800; background:#f3e8ff; color:#7e22ce; padding:3px 8px; border-radius:6px;">CIVIL PROCEDURE (CPC 1908)</span>
+                        <span style="font-size:12px; color:var(--text-muted);">Civil Code of India</span>
+                    </div>
+                    <div style="font-size:17px; font-weight:800; color:var(--text-main); margin-bottom:4px;">${cpcHit.cpc}</div>
+                    <div style="font-weight:700; font-size:14px; color:var(--primary-dark); margin-bottom:8px;">${cpcHit.title}</div>
+                    <p style="font-size:13px; line-height:1.6; color:var(--text-main); margin-bottom:8px;">${cpcHit.details}</p>
+                    <div style="font-size:12px; color:var(--text-muted);">⚖️ <b>Litigation Standard:</b> ${cpcHit.significance}</div>
+                    <button class="modal-btn" style="margin-top:10px; font-size:12.5px; padding:9px 16px;" onclick="askSuggestion('Civil Procedure Code (CPC) me ${cpcHit.cpc} ke tehat case jeetne ki strategy aur court procedure batao.')">
+                        <i class="fa-solid fa-robot"></i> Research CPC Civil Procedure with AI
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    if (matchesCount > 0) {
+        resultDiv.innerHTML = resultsHtml;
     } else {
         resultDiv.innerHTML = `
-            <p style="color:var(--text-muted); margin-bottom:10px;">Section ${escapeHtml(query)} fast-database me nahi mili.</p>
-            <button class="modal-btn" onclick="askSuggestion('IPC Section ${query} ko Bharatiya Nyaya Sanhita (BNS) me kya kahte hain aur iski poori jankari dein.')">
-                <i class="fa-solid fa-magnifying-glass"></i> Search in Nyayi AI Law Engine
-            </button>
+            <div style="padding:12px; background:var(--bg-body); border-radius:10px; text-align:center;">
+                <p style="color:var(--text-muted); font-size:13px; margin-bottom:10px;">"${escapeHtml(raw)}" hamare quick local index me nahi mila.</p>
+                <button class="modal-btn" onclick="askSuggestion('${escapeHtml(raw)} ke bare me BNS, BNSS, BSA aur CPC ke tehat complete legal analysis provide karein.')">
+                    <i class="fa-solid fa-magnifying-glass"></i> Deep Search in Nyayi AI Law Engine
+                </button>
+            </div>
         `;
     }
 }

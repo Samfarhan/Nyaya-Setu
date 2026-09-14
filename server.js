@@ -175,7 +175,11 @@ Analyze the given incident/facts and identify all relevant Indian Laws:
 
 RESPONSE FORMAT:
 1. **Summary (सारांश):** 1-2 sentence simple explanation of what happened legally.
-2. **Applicable Indian Laws (लागू कानून):** Explicitly mention Bharatiya Nyaya Sanhita (BNS, 2023) or IPC equivalents, IT Act 2000, CrPC/BNSS, or Motor Vehicles Act as relevant.
+2. **Applicable Indian Laws (लागू कानून):** 
+   - Substantive Crime: Cite Bharatiya Nyaya Sanhita (BNS, 2023) along with classic IPC equivalents.
+   - Criminal Procedure: Cite Bharatiya Nagarik Suraksha Sanhita (BNSS, 2023) along with CrPC equivalents (e.g. Zero FIR Section 173, Bail 480-482, Police Custody 187).
+   - Rules of Evidence: Cite Bharatiya Sakshya Adhiniyam (BSA, 2023) for digital logs, phone records, and electronic proof (Sections 61-63).
+   - Civil Matters: Cite Code of Civil Procedure (CPC 1908) for injunctions (Order 39), plaints, and stay orders.
 3. **Step-by-Step Action Plan (उपाय एवं प्रक्रिया):** Clear actionable steps (e.g. cybercrime.gov.in, Dial 1930, writing FIR to SHO, approaching Legal Services Authority NALSA).
 4. **Important Precaution / Rights (सलाह):** Time limits, documents required, and citizen rights.`;
             }
