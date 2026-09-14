@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="icon" type="image/png" href="images/logo.png">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         :root {
             --primary: #10b981;
@@ -898,23 +899,107 @@
             }, 1100);
         }
 
-        // --- 7. OAUTH DIALOGS (GOOGLE & GITHUB) ---
-        function openGoogleOAuth() {
-            document.getElementById('googleOverlay').style.display = 'flex';
+        // --- 7. REAL GOOGLE & GITHUB OAUTH ---
+        const GOOGLE_CLIENT_ID = '53892516032-u3b1e607tekoldr1uh5mkb2l10udggn6.apps.googleusercontent.com';
+
+        function decodeJwt(token) {
+            try {
+                var base64Url = token.split('.')[1];
+                var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (e) {
+                return null;
+            }
         }
+
+        function handleGoogleCredentialResponse(response) {
+            if (response && response.credential) {
+                const payload = decodeJwt(response.credential);
+                if (payload && payload.email) {
+                    showAlert(`Authenticated as ${payload.name || payload.email}! Redirecting...`, false);
+                    grantAccess(payload.name || payload.email.split('@')[0], payload.email);
+                    return;
+                }
+            }
+            showAlert('Google authentication failed. Please try again.');
+        }
+
+        let googleTokenClient = null;
+
+        function initGoogleAuth() {
+            if (window.google && google.accounts) {
+                google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: handleGoogleCredentialResponse,
+                    auto_select: false,
+                    cancel_on_tap_outside: true
+                });
+
+                if (google.accounts.oauth2) {
+                    googleTokenClient = google.accounts.oauth2.initTokenClient({
+                        client_id: GOOGLE_CLIENT_ID,
+                        scope: 'email profile openid',
+                        callback: async (tokenResponse) => {
+                            if (tokenResponse && tokenResponse.access_token) {
+                                try {
+                                    const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                                        headers: { 'Authorization': `Bearer ${tokenResponse.access_token}` }
+                                    });
+                                    const user = await res.json();
+                                    if (user && user.email) {
+                                        showAlert(`Signed in as ${user.name || user.email}!`, false);
+                                        grantAccess(user.name || user.email.split('@')[0], user.email);
+                                        return;
+                                    }
+                                } catch (err) {}
+                            }
+                        }
+                    });
+                }
+            }
+        }
+
+        window.addEventListener('load', () => {
+            initGoogleAuth();
+
+            // Check if returned from OAuth redirect token
+            if (window.location.hash) {
+                const params = new URLSearchParams(window.location.hash.substring(1));
+                const accessToken = params.get('access_token');
+                if (accessToken) {
+                    fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                        headers: { 'Authorization': `Bearer ${accessToken}` }
+                    })
+                    .then(r => r.json())
+                    .then(u => {
+                        if (u && u.email) grantAccess(u.name || u.email.split('@')[0], u.email);
+                    })
+                    .catch(() => {});
+                }
+            }
+        });
+
+        function openGoogleOAuth() {
+            // First try Google Identity Services Popup
+            if (googleTokenClient) {
+                googleTokenClient.requestAccessToken({ prompt: 'select_account' });
+            } else if (window.google && google.accounts && google.accounts.id) {
+                google.accounts.id.prompt();
+            } else {
+                // Fallback: Real Google OAuth2 Redirect
+                const redirect = encodeURIComponent(window.location.href.split('#')[0]);
+                window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${redirect}&response_type=token&scope=email%20profile%20openid`;
+            }
+        }
+
         function openGithubOAuth() {
             document.getElementById('githubOverlay').style.display = 'flex';
         }
         function closeOAuth(id) {
             document.getElementById(id).style.display = 'none';
-        }
-
-        function executeGoogleLogin(name, email) {
-            const bar = document.getElementById('googleLoading');
-            bar.style.display = 'block';
-            setTimeout(() => {
-                grantAccess(name, email);
-            }, 1200);
         }
 
         function executeGithubLogin(name, email) {
