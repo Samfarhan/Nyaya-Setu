@@ -284,6 +284,21 @@
             transform: translateY(-2px);
         }
 
+        .otp-input.otp-error {
+            border-color: var(--danger) !important;
+            background: rgba(239, 68, 68, 0.15) !important;
+            color: #fca5a5 !important;
+            box-shadow: 0 0 18px rgba(239, 68, 68, 0.45) !important;
+            animation: shakeOTP 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+
+        @keyframes shakeOTP {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+
         /* Alert Toast */
         .auth-alert {
             padding: 10px 14px; border-radius: 10px; font-size: 13px;
@@ -678,6 +693,7 @@
             inputs.forEach((input, index) => {
                 input.addEventListener('input', function() {
                     this.value = this.value.replace(/[^0-9]/g, '');
+                    inputs.forEach(inp => inp.classList.remove('otp-error'));
                     if (this.value.length === 1 && index < inputs.length - 1) {
                         inputs[index + 1].focus();
                     }
@@ -686,6 +702,9 @@
                     if (e.key === 'Backspace' && !this.value && index > 0) {
                         inputs[index - 1].focus();
                     }
+                });
+                input.addEventListener('focus', function() {
+                    inputs.forEach(inp => inp.classList.remove('otp-error'));
                 });
             });
         }
@@ -715,6 +734,11 @@
             views.forEach(v => {
                 const el = document.getElementById(v);
                 if (el) el.classList.remove('active');
+            });
+
+            // Clear any OTP error highlights and values when changing views
+            document.querySelectorAll('.otp-input').forEach(i => {
+                i.classList.remove('otp-error');
             });
 
             const toggleBar = document.getElementById('toggleBar');
@@ -871,7 +895,8 @@
             inputs.forEach(i => otpVal += i.value);
 
             if (otpVal.length < 6) {
-                showAlert('Please enter the complete 6-digit code.');
+                showAlert('Please enter the complete 6-digit verification code.');
+                inputs.forEach(i => i.classList.add('otp-error'));
                 return;
             }
 
@@ -890,7 +915,12 @@
                 if (!res.ok || !data.success) {
                     btn.disabled = false;
                     btn.innerHTML = '<span>Verify & Continue</span> <i class="fa-solid fa-check"></i>';
-                    showAlert(data.error || 'Invalid or expired verification code.');
+                    showAlert(data.error || 'Wrong verification code entered! Please check your code and try again.');
+                    inputs.forEach(i => {
+                        i.classList.add('otp-error');
+                        i.value = '';
+                    });
+                    if (inputs[0]) inputs[0].focus();
                     return;
                 }
 
@@ -957,7 +987,8 @@
             inputs.forEach(i => otpVal += i.value);
 
             if (otpVal.length < 6) {
-                showAlert('Please enter the 6-digit code received on your email.');
+                showAlert('Please enter the complete 6-digit code received on your email.');
+                inputs.forEach(i => i.classList.add('otp-error'));
                 return;
             }
             if (newPass.length < 8) {
@@ -981,7 +1012,12 @@
                 btn.innerHTML = '<span>Update Password</span> <i class="fa-solid fa-check"></i>';
 
                 if (!res.ok || !data.success) {
-                    showAlert(data.error || 'Invalid or expired code. Please try again.');
+                    showAlert(data.error || 'Wrong verification code entered! Please check your code and try again.');
+                    inputs.forEach(i => {
+                        i.classList.add('otp-error');
+                        i.value = '';
+                    });
+                    if (inputs[0]) inputs[0].focus();
                     return;
                 }
 
