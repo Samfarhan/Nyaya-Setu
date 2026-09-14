@@ -484,7 +484,7 @@ async function sendAuthEmail(toEmail, subject, code, isReset = false) {
                                                 <div style="color:#ffffff; font-size:14px; font-weight:700;">Farhan Khan</div>
                                                 <div style="color:#10b981; font-size:12px; font-weight:500;">Founder & Lead Architect, Nyayi AI</div>
                                                 <div style="color:#64748b; font-size:11.5px; margin-top:2px;">
-                                                    Co-architected with Kamran Sheikh • <a href="https://nyayi.in" style="color:#10b981; text-decoration:none;">nyayi.in</a>
+                                                    <a href="https://nyayi.in" style="color:#10b981; text-decoration:none;">nyayi.in</a> • Empowering Indian Citizens with AI Justice
                                                 </div>
                                             </td>
                                         </tr>
