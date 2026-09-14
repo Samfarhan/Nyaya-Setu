@@ -605,7 +605,7 @@ function askSuggestion(keyOrText) {
 }
 
 // --- 8. MESSAGE THREAD & RENDERING ---
-function appendMessage(text, role, skipScroll = false) {
+function appendMessage(text, role, skipScroll = false, attachments = []) {
     const box = document.getElementById('chat-box');
     if (!box) return null;
 
@@ -618,6 +618,22 @@ function appendMessage(text, role, skipScroll = false) {
 
     const bodyWrapper = document.createElement('div');
     bodyWrapper.className = 'msg-body-wrapper';
+
+    // If user message has attached documents/photos, render attachment badges
+    if (role === 'user' && attachments && attachments.length > 0) {
+        const attBox = document.createElement('div');
+        attBox.className = 'user-msg-attachments';
+        attachments.forEach(att => {
+            const pill = document.createElement('div');
+            pill.className = 'user-msg-att-pill';
+            const iconHtml = att.isImage 
+                ? (att.dataUrl ? `<img src="${att.dataUrl}" class="msg-att-img" alt="Attached evidence"/>` : '<i class="fa-solid fa-image"></i>')
+                : (att.name.toLowerCase().endsWith('.pdf') ? '<i class="fa-solid fa-file-pdf" style="color:#ef4444;"></i>' : '<i class="fa-solid fa-file-lines" style="color:#38bdf8;"></i>');
+            pill.innerHTML = `${iconHtml} <span>${MessageRenderer.escapeHtml(att.name)}</span> <small>(${att.size})</small>`;
+            attBox.appendChild(pill);
+        });
+        bodyWrapper.appendChild(attBox);
+    }
 
     if (role === 'ai') {
         const headerDiv = document.createElement('div');
@@ -749,17 +765,44 @@ async function sendMessage() {
     if (!input || isGenerating) return;
 
     const message = input.value.trim();
-    if (!message) return;
+    if (!message && attachedMediaList.length === 0) return;
+
+    // Snapshot attached files & reset tray
+    const currentAttachments = [...attachedMediaList];
+    attachedMediaList = [];
+    renderAttachmentTray();
 
     input.value = '';
     autoGrowTextarea(input);
-
     closeComposerTools();
+
+    // Prepare prompt payload (combining user text and attachment metadata/excerpts)
+    let promptPayload = message;
+    if (currentAttachments.length > 0) {
+        const docNotes = currentAttachments.map(a => {
+            let desc = `[Citizen Document Attachment: "${a.name}" (${a.size}, ${a.type || 'Legal Paper'})]`;
+            if (a.textSnippet) {
+                desc += `\nDocument Content Snippet:\n"""\n${a.textSnippet}\n"""`;
+            } else if (a.isImage) {
+                desc += ` (Photo/evidence scan attached by citizen for legal analysis)`;
+            } else {
+                desc += ` (Legal case paper / document attached by citizen for analysis)`;
+            }
+            return desc;
+        }).join('\n\n');
+        
+        const userPrompt = message 
+            ? `User Query/Details:\n${message}` 
+            : 'Citizen attached this document for review. Please analyze it under Indian Law (BNS/BNSS/BSA), explain the legal implications, relevant sections, and recommend immediate next steps.';
+        promptPayload = `${docNotes}\n\n${userPrompt}`;
+    }
+
+    const displayMessage = message || (currentAttachments.length > 0 ? `Attached ${currentAttachments.length} document${currentAttachments.length > 1 ? 's' : ''} for review` : '');
 
     // Create session if not active
     if (!activeChatId) {
         activeChatId = 'chat_' + Date.now();
-        const initialTitle = MemoryManager.generateMeaningfulTitle(message);
+        const initialTitle = MemoryManager.generateMeaningfulTitle(message || (currentAttachments[0] ? currentAttachments[0].name : 'Document Review'));
         const newChat = {
             id: activeChatId,
             title: initialTitle,
@@ -770,14 +813,19 @@ async function sendMessage() {
         await ConversationStore.save(newChat);
     }
 
-    // Append User Message
-    appendMessage(message, 'user');
-    currentChatMessages.push({ role: 'user', text: message, timestamp: Date.now() });
+    // Append User Message with attachments
+    appendMessage(displayMessage, 'user', false, currentAttachments);
+    currentChatMessages.push({
+        role: 'user',
+        text: displayMessage,
+        attachments: currentAttachments,
+        timestamp: Date.now()
+    });
 
     // Update conversation in storage
     const chatData = await ConversationStore.get(activeChatId) || {
         id: activeChatId,
-        title: MemoryManager.generateMeaningfulTitle(message),
+        title: MemoryManager.generateMeaningfulTitle(message || (currentAttachments[0] ? currentAttachments[0].name : 'Document Review')),
         createdAt: Date.now(),
         updatedAt: Date.now(),
         messages: []
@@ -801,7 +849,7 @@ async function sendMessage() {
             headers: { 'Content-Type': 'application/json' },
             signal: activeAbortController.signal,
             body: JSON.stringify({
-                message: message,
+                message: promptPayload,
                 category: "Indian Legal Advisory",
                 language: aiLanguage,
                 history: historyPayload
@@ -1020,7 +1068,7 @@ async function openChat(id) {
             renderEmptyState();
         } else {
             currentChatMessages.forEach(m => {
-                appendMessage(m.text, m.role, true);
+                appendMessage(m.text, m.role, true, m.attachments || []);
             });
             box.scrollTop = box.scrollHeight;
         }
@@ -1148,7 +1196,9 @@ function switchBottomNav(tab) {
     }
 }
 
-// [+] Quick Tools Popup Drawer
+// [+] Media Upload & Quick Tools Popup Drawer
+let attachedMediaList = [];
+
 function toggleComposerTools() {
     const popup = document.getElementById('composerToolsPopup');
     if (popup) popup.classList.toggle('active');
@@ -1157,6 +1207,123 @@ function toggleComposerTools() {
 function closeComposerTools() {
     const popup = document.getElementById('composerToolsPopup');
     if (popup) popup.classList.remove('active');
+}
+
+// Click outside to auto-close popup drawer
+document.addEventListener('click', (e) => {
+    const popup = document.getElementById('composerToolsPopup');
+    const btn = document.getElementById('composerToolBtn');
+    if (popup && popup.classList.contains('active')) {
+        if (!popup.contains(e.target) && btn && !btn.contains(e.target)) {
+            closeComposerTools();
+        }
+    }
+});
+
+// Trigger file inputs
+function triggerMediaPicker(type) {
+    closeComposerTools();
+    if (type === 'camera') {
+        const camInput = document.getElementById('cameraUploadInput');
+        if (camInput) camInput.click();
+    } else if (type === 'photo') {
+        const mediaInput = document.getElementById('mediaUploadInput');
+        if (mediaInput) {
+            mediaInput.accept = "image/*";
+            mediaInput.click();
+        }
+    } else {
+        const mediaInput = document.getElementById('mediaUploadInput');
+        if (mediaInput) {
+            mediaInput.accept = ".pdf,.doc,.docx,.txt,image/*";
+            mediaInput.click();
+        }
+    }
+}
+
+// Handle File Selection (PDF, Word, Text, Images, Camera)
+function handleMediaFilesSelected(e) {
+    const files = Array.from(e.target.files || []);
+    if (!files || files.length === 0) return;
+
+    files.forEach(file => {
+        const id = 'att_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+        const item = {
+            id: id,
+            name: file.name,
+            size: formatBytes(file.size),
+            rawSize: file.size,
+            type: file.type,
+            isImage: file.type.startsWith('image/'),
+            dataUrl: null,
+            textSnippet: ''
+        };
+
+        if (item.isImage) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                item.dataUrl = ev.target.result;
+                renderAttachmentTray();
+            };
+            reader.readAsDataURL(file);
+        } else if (file.type.includes('text') || file.name.endsWith('.txt')) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                item.textSnippet = (ev.target.result || '').substring(0, 3000);
+            };
+            reader.readAsText(file);
+        }
+
+        attachedMediaList.push(item);
+    });
+
+    renderAttachmentTray();
+    e.target.value = '';
+}
+
+function formatBytes(bytes, decimals = 1) {
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+function removeAttachment(id) {
+    attachedMediaList = attachedMediaList.filter(item => item.id !== id);
+    renderAttachmentTray();
+}
+
+function renderAttachmentTray() {
+    const tray = document.getElementById('attachmentTray');
+    if (!tray) return;
+
+    if (attachedMediaList.length === 0) {
+        tray.style.display = 'none';
+        tray.innerHTML = '';
+        return;
+    }
+
+    tray.style.display = 'flex';
+    let html = '';
+    attachedMediaList.forEach(item => {
+        const icon = item.isImage 
+            ? (item.dataUrl ? `<img src="${item.dataUrl}" class="tray-img-thumb" alt="Thumb"/>` : '<i class="fa-solid fa-image"></i>')
+            : (item.name.toLowerCase().endsWith('.pdf') ? '<i class="fa-solid fa-file-pdf" style="color:#ef4444;"></i>' : '<i class="fa-solid fa-file-lines" style="color:#38bdf8;"></i>');
+        
+        html += `
+            <div class="attachment-chip" id="${item.id}">
+                <div class="attachment-chip-icon">${icon}</div>
+                <div class="attachment-chip-meta">
+                    <span class="attachment-chip-name" title="${MessageRenderer.escapeHtml(item.name)}">${MessageRenderer.escapeHtml(item.name)}</span>
+                    <span class="attachment-chip-size">${item.size}</span>
+                </div>
+                <button type="button" class="attachment-chip-remove" onclick="removeAttachment('${item.id}')" title="Remove attachment">&times;</button>
+            </div>
+        `;
+    });
+    tray.innerHTML = html;
 }
 
 // --- 13. LEGAL TOOLS & MODAL DISPATCHER ---
@@ -1170,6 +1337,8 @@ function openTool(toolId) {
         modalId = 'settingsModal';
         const nameInput = document.getElementById('settingsUserName');
         if (nameInput) nameInput.value = user;
+        const emailInput = document.getElementById('settingsUserEmail');
+        if (emailInput) emailInput.value = localStorage.getItem('nyayi_user_email') || 'citizen@nyayi.in';
         const langSel = document.getElementById('settingsAILang');
         if (langSel) langSel.value = aiLanguage;
     }

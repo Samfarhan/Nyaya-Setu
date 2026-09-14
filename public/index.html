@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <!-- Google tag (gtag.js) -->
@@ -11,7 +11,7 @@
       gtag('config', 'G-EVQN8MSMZE');
     </script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
     <!-- Strict Authentication Gate for ai.nyayi.in -->
     <script>
@@ -46,15 +46,21 @@
     <meta property="twitter:description" content="Get instant legal guidance on Indian laws, FIRs, BNS, and Cyber Fraud. Free AI legal advisor for every citizen.">
     <meta property="twitter:image" content="https://nyayi.in/images/logo.png">
 
-    <!-- Theme & App Settings -->
+    <!-- Progressive Web App (PWA) & Mobile App Meta Tags -->
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#07090e">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Nyayi">
+    <meta name="application-name" content="Nyayi">
+    <meta name="msapplication-TileColor" content="#07090e">
+    <meta name="msapplication-TileImage" content="images/logo.png">
     <link rel="icon" type="image/png" href="images/logo.png">
     <link rel="apple-touch-icon" href="images/logo.png">
 
     <!-- CSS & Fonts -->
-    <link rel="stylesheet" href="css/style.css?v=26">
+    <link rel="stylesheet" href="css/style.css?v=27">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     
     <!-- Schema.org JSON-LD -->
@@ -183,6 +189,9 @@
                 </div>
                 
                 <div class="nav-right">
+                    <button type="button" id="pwaInstallBtn" class="pwa-install-pill" style="display:none;" onclick="triggerPwaInstall()" title="Install Nyayi App on Device">
+                        <i class="fa-solid fa-download"></i> <span>Install App</span>
+                    </button>
                     <div id="authHeaderWidget" style="display:flex; align-items:center; gap:8px;">
                         <span id="userDisplayName" style="font-size:13px; font-weight:600; color:var(--nyayi-primary); max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
                         <button type="button" class="nav-icon-btn" onclick="logoutUser()" title="Logout of Nyayi AI" style="color:#ef4444;">
@@ -254,41 +263,81 @@
             <!-- Persistent Chat Composer (Centered 650-820px) -->
             <div class="input-area">
                 <div class="composer-container">
-                    <!-- [+] Popup Tools Drawer -->
+                    <!-- [+] Media Upload & Legal Tools Popup Drawer -->
                     <div class="composer-tools-popup" id="composerToolsPopup">
-                        <div class="composer-popup-grid">
-                            <div class="composer-popup-item" onclick="openTool('factlaw')">
-                                <i class="fa-solid fa-gavel"></i>
-                                <span>Fact to Law</span>
+                        <div class="composer-popup-header">
+                            <span class="popup-title"><i class="fa-solid fa-paperclip"></i> Upload & Legal Tools</span>
+                            <button type="button" class="popup-close-btn" onclick="closeComposerTools()" title="Close">&times;</button>
+                        </div>
+
+                        <!-- 1. Media & Document Upload Options (User requested) -->
+                        <div class="composer-popup-section">
+                            <div class="popup-section-label">Media & Case Documents</div>
+                            <div class="composer-media-grid">
+                                <div class="composer-media-btn" onclick="triggerMediaPicker('document')">
+                                    <div class="media-icon-box doc-icon"><i class="fa-solid fa-file-pdf"></i></div>
+                                    <div class="media-btn-text">
+                                        <strong>Document / PDF</strong>
+                                        <span>FIR, Notice, Agreement</span>
+                                    </div>
+                                </div>
+                                <div class="composer-media-btn" onclick="triggerMediaPicker('photo')">
+                                    <div class="media-icon-box photo-icon"><i class="fa-solid fa-image"></i></div>
+                                    <div class="media-btn-text">
+                                        <strong>Photo / Evidence</strong>
+                                        <span>Document photo, screenshot</span>
+                                    </div>
+                                </div>
+                                <div class="composer-media-btn" onclick="triggerMediaPicker('camera')">
+                                    <div class="media-icon-box camera-icon"><i class="fa-solid fa-camera"></i></div>
+                                    <div class="media-btn-text">
+                                        <strong>Scan / Camera</strong>
+                                        <span>Capture live paper</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="composer-popup-item" onclick="openTool('firwizard')">
-                                <i class="fa-solid fa-list-check"></i>
-                                <span>FIR Wizard</span>
-                            </div>
-                            <div class="composer-popup-item" onclick="openTool('casesimplifier')">
-                                <i class="fa-solid fa-book-open-reader"></i>
-                                <span>Case Simplifier</span>
-                            </div>
-                            <div class="composer-popup-item" onclick="openTool('bns')">
-                                <i class="fa-solid fa-scale-balanced"></i>
-                                <span>BNS / IPC</span>
-                            </div>
-                            <div class="composer-popup-item" onclick="openTool('drafter')">
-                                <i class="fa-solid fa-file-signature"></i>
-                                <span>Legal Notice</span>
-                            </div>
-                            <div class="composer-popup-item" onclick="openTool('fine')">
-                                <i class="fa-solid fa-calculator"></i>
-                                <span>Traffic Fine</span>
+                        </div>
+
+                        <!-- 2. Quick Legal AI Tools -->
+                        <div class="composer-popup-section" style="border-top: 1px solid var(--nyayi-surface-border); padding-top: 8px; margin-top: 6px;">
+                            <div class="popup-section-label">Quick Legal Tools</div>
+                            <div class="composer-popup-grid">
+                                <div class="composer-popup-item" onclick="openTool('factlaw')">
+                                    <i class="fa-solid fa-gavel"></i>
+                                    <span>Fact to Law</span>
+                                </div>
+                                <div class="composer-popup-item" onclick="openTool('firwizard')">
+                                    <i class="fa-solid fa-list-check"></i>
+                                    <span>FIR Wizard</span>
+                                </div>
+                                <div class="composer-popup-item" onclick="openTool('casesimplifier')">
+                                    <i class="fa-solid fa-book-open-reader"></i>
+                                    <span>Case Law</span>
+                                </div>
+                                <div class="composer-popup-item" onclick="openTool('bns')">
+                                    <i class="fa-solid fa-scale-balanced"></i>
+                                    <span>BNS / IPC</span>
+                                </div>
+                                <div class="composer-popup-item" onclick="openTool('drafter')">
+                                    <i class="fa-solid fa-file-signature"></i>
+                                    <span>Notice Drafter</span>
+                                </div>
+                                <div class="composer-popup-item" onclick="openTool('fine')">
+                                    <i class="fa-solid fa-calculator"></i>
+                                    <span>Traffic Fine</span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Attachment Preview Tray (Shows above textarea when files are attached) -->
+                    <div class="attachment-preview-tray" id="attachmentTray" style="display:none;"></div>
+
                     <div class="input-wrapper">
-                        <button type="button" class="composer-tool-btn" id="composerToolBtn" onclick="toggleComposerTools()" title="Legal Tools Menu (+)">
+                        <button type="button" class="composer-tool-btn" id="composerToolBtn" onclick="toggleComposerTools()" title="Upload Media / Legal Tools (+)">
                             <i class="fa-solid fa-plus"></i>
                         </button>
-                        <textarea id="userInput" rows="1" placeholder="Ask Nyayi anything about Indian law, FIRs, or rights..." onkeydown="handleInputKey(event)" oninput="autoGrowTextarea(this)"></textarea>
+                        <textarea id="userInput" rows="1" placeholder="Ask Nyayi anything or attach documents..." onkeydown="handleInputKey(event)" oninput="autoGrowTextarea(this)"></textarea>
                         <button type="button" class="mic-btn" id="micBtn" onclick="openVoiceAssistant()" title="Voice Assistant (Hindi / English)">
                             <i class="fa-solid fa-microphone"></i>
                         </button>
@@ -296,6 +345,11 @@
                             <i class="fa-solid fa-paper-plane" id="sendBtnIcon"></i>
                         </button>
                     </div>
+
+                    <!-- Hidden File Inputs for Document & Camera Uploads -->
+                    <input type="file" id="mediaUploadInput" accept=".pdf,.doc,.docx,.txt,image/*" multiple style="display:none;" onchange="handleMediaFilesSelected(event)">
+                    <input type="file" id="cameraUploadInput" accept="image/*" capture="environment" style="display:none;" onchange="handleMediaFilesSelected(event)">
+
                     <div class="composer-hint">
                         <span>Press <b>Enter ↵</b> to send • <b>Shift + Enter</b> for new line</span>
                     </div>
@@ -730,7 +784,7 @@
     </div>
 
     <!-- SCRIPTS -->
-    <script src="js/script.js?v=26"></script>
+    <script src="js/script.js?v=27"></script>
     <script>
         // Render authenticated user name
         (function() {
@@ -741,14 +795,55 @@
             if (welcomeEl) welcomeEl.innerText = user;
         })();
 
+        // Persistent Sign Out — Requires explicit user action
         function logoutUser() {
             if (confirm('Are you sure you want to sign out of Nyayi AI?')) {
                 localStorage.removeItem('nyayi_auth');
                 localStorage.removeItem('nyayaUser');
                 localStorage.removeItem('nyayi_user_email');
-                window.location.replace('auth.html');
+                window.location.replace('auth.html?logout=1');
             }
         }
+
+        // --- PWA SERVICE WORKER & APP INSTALL PROMPT ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                    console.log('[PWA SW registered]', reg.scope);
+                }).catch(function(err) {
+                    console.warn('[PWA SW registration failed]', err);
+                });
+            });
+        }
+
+        var deferredPwaPrompt = null;
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            deferredPwaPrompt = e;
+            var installBtn = document.getElementById('pwaInstallBtn');
+            if (installBtn) installBtn.style.display = 'inline-flex';
+        });
+
+        function triggerPwaInstall() {
+            if (deferredPwaPrompt) {
+                deferredPwaPrompt.prompt();
+                deferredPwaPrompt.userChoice.then(function(choice) {
+                    if (choice.outcome === 'accepted') {
+                        var installBtn = document.getElementById('pwaInstallBtn');
+                        if (installBtn) installBtn.style.display = 'none';
+                    }
+                    deferredPwaPrompt = null;
+                });
+            } else {
+                alert('Install Nyayi on your Phone/PC:\n\n1. In Chrome / Edge: Tap menu (⋮) -> "Install App" or "Add to Home Screen"\n2. In Safari (iOS): Tap the Share button -> "Add to Home Screen"');
+            }
+        }
+
+        window.addEventListener('appinstalled', function() {
+            var installBtn = document.getElementById('pwaInstallBtn');
+            if (installBtn) installBtn.style.display = 'none';
+            deferredPwaPrompt = null;
+        });
     </script>
 </body>
 </html>

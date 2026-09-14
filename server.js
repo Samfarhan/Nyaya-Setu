@@ -388,7 +388,10 @@ const usersFilePath = path.join(__dirname, 'users.json');
 function getUsers() {
     try {
         if (!fs.existsSync(usersFilePath)) return [];
-        return JSON.parse(fs.readFileSync(usersFilePath, 'utf8') || '[]');
+        const parsed = JSON.parse(fs.readFileSync(usersFilePath, 'utf8') || '[]');
+        if (Array.isArray(parsed)) return parsed;
+        if (parsed && typeof parsed === 'object') return [parsed];
+        return [];
     } catch (e) {
         return [];
     }
@@ -679,7 +682,43 @@ function handleAuthAPI(req, res) {
                 return sendJSON(400, { error: 'Incorrect password. Please verify and try again, or reset your password.' });
             }
 
+            user.lastLogin = new Date().toISOString();
+            saveUsers(users);
+
             console.log(`[LOGIN SUCCESS] User ${user.name} (${user.email}) logged in.`);
+            return sendJSON(200, { success: true, name: user.name, email: user.email });
+        }
+
+        // 3.1 Google OAuth - Save Google user to users.json
+        if (url === '/api/auth/google' && req.method === 'POST') {
+            const email = (json.email || '').trim().toLowerCase();
+            const name = (json.name || email.split('@')[0]).trim();
+            const avatar = json.avatar || '';
+
+            if (!email) {
+                return sendJSON(400, { error: 'Email is required for Google authentication.' });
+            }
+
+            const users = getUsers();
+            let user = users.find(u => u.email === email);
+            if (!user) {
+                user = {
+                    name: name || 'Google User',
+                    email: email,
+                    provider: 'google',
+                    avatar: avatar,
+                    createdAt: new Date().toISOString(),
+                    lastLogin: new Date().toISOString()
+                };
+                users.push(user);
+            } else {
+                user.lastLogin = new Date().toISOString();
+                if (!user.name && name) user.name = name;
+                if (!user.avatar && avatar) user.avatar = avatar;
+                if (!user.provider) user.provider = 'google';
+            }
+            saveUsers(users);
+            console.log(`[GOOGLE AUTH SUCCESS] User ${user.name} (${user.email}) stored in users.json.`);
             return sendJSON(200, { success: true, name: user.name, email: user.email });
         }
 
@@ -872,10 +911,14 @@ function handleAuthAPI(req, res) {
                         githubId: ghUser.id,
                         avatar: ghUser.avatar_url,
                         provider: 'github',
-                        createdAt: new Date().toISOString()
+                        createdAt: new Date().toISOString(),
+                        lastLogin: new Date().toISOString()
                     });
-                    saveUsers(users);
+                } else {
+                    existing.lastLogin = new Date().toISOString();
+                    if (ghUser.avatar_url) existing.avatar = ghUser.avatar_url;
                 }
+                saveUsers(users);
 
                 console.log(`[GITHUB AUTH SUCCESS] User ${finalName} (${finalEmail}) logged in.`);
                 return sendJSON(200, {

@@ -10,6 +10,17 @@
 
       gtag('config', 'G-EVQN8MSMZE');
     </script>
+    <!-- Auto-redirect if already logged in (Persistent Session) -->
+    <script>
+        (function() {
+            var isAuth = localStorage.getItem('nyayi_auth');
+            var params = new URLSearchParams(window.location.search);
+            if (isAuth === 'true' && !params.has('logout')) {
+                var target = params.get('redirect') || 'index.html';
+                window.location.replace(target);
+            }
+        })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Nyayi (न्यायी) — Secure Portal</title>
@@ -1129,6 +1140,7 @@
                 const payload = decodeJwt(response.credential);
                 if (payload && payload.email) {
                     showAlert(`Authenticated as ${payload.name || payload.email}! Redirecting...`, false);
+                    syncGoogleUserToServer(payload.name, payload.email, payload.picture || '');
                     grantAccess(payload.name || payload.email.split('@')[0], payload.email);
                     return;
                 }
@@ -1160,6 +1172,7 @@
                                     const user = await res.json();
                                     if (user && user.email) {
                                         showAlert(`Signed in as ${user.name || user.email}!`, false);
+                                        await syncGoogleUserToServer(user.name, user.email, user.picture || '');
                                         grantAccess(user.name || user.email.split('@')[0], user.email);
                                         return;
                                     }
@@ -1223,13 +1236,26 @@
             }
         });
 
-        function executeGoogleLogin(name, email) {
+        async function syncGoogleUserToServer(name, email, avatar = '') {
+            try {
+                await fetch(`${AUTH_API_BASE}/api/auth/google`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, avatar })
+                });
+            } catch (e) {
+                console.warn('[SYNC GOOGLE USER FAILED]', e);
+            }
+        }
+
+        async function executeGoogleLogin(name, email) {
             const bar = document.getElementById('googleLoading');
             if (bar) bar.style.display = 'block';
             showAlert(`Signing in with Google as ${name}...`, false);
+            await syncGoogleUserToServer(name, email);
             setTimeout(() => {
                 grantAccess(name, email);
-            }, 800);
+            }, 600);
         }
 
         function showGoogleFallback() {
