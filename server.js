@@ -405,22 +405,100 @@ function saveUsers(users) {
 // Send real email via Resend / SMTP or fallback to console log
 async function sendAuthEmail(toEmail, subject, code, isReset = false) {
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
-    const fromSender = process.env.EMAIL_FROM || 'Nyayi AI <auth@nyayi.in>';
+    const fromSender = process.env.EMAIL_FROM || 'Farhan Khan - Nyayi AI <auth@nyayi.in>';
+    const emailSubject = subject || (isReset 
+        ? `🔑 ${code} is your Nyayi AI Password Reset Code`
+        : `🔒 ${code} is your Nyayi AI Verification Code`);
 
     const htmlContent = `
-    <div style="background-color:#05070a; font-family:Helvetica,Arial,sans-serif; color:#ffffff; padding:40px 20px; text-align:center;">
-        <div style="max-width:520px; margin:0 auto; background-color:#111722; border:1px solid #1f2937; border-radius:18px; padding:36px 28px;">
-            <div style="font-size:24px; font-weight:700; color:#10b981; margin-bottom:12px;">Nyayi (न्यायी) AI</div>
-            <h2 style="color:#ffffff; font-size:20px; margin-bottom:12px;">${isReset ? 'Password Reset Verification' : 'Verify Your Email Address'}</h2>
-            <p style="color:#94a3b8; font-size:14px; line-height:22px; margin-bottom:24px;">
-                ${isReset ? 'Use the following 6-digit code to securely reset your password:' : 'Welcome to Nyayi Legal AI. Enter this 6-digit code to activate your account:'}
-            </p>
-            <div style="background:#05070a; border:1px solid #10b981; border-radius:12px; padding:18px; display:inline-block; margin-bottom:24px;">
-                <span style="font-size:32px; font-weight:700; color:#10b981; letter-spacing:8px;">${code}</span>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+    <body style="margin:0; padding:0; background-color:#05070a; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#ffffff;">
+        <div style="background-color:#05070a; padding:40px 15px; width:100%; box-sizing:border-box;">
+            <div style="max-width:540px; margin:0 auto; background:#0f1523; border:1px solid #1f293d; border-radius:20px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.7);">
+                
+                <!-- Top Brand Banner -->
+                <div style="background:linear-gradient(135deg, #064e3b, #022c22); padding:32px 28px 24px; text-align:center; border-bottom:1px solid rgba(16,185,129,0.2);">
+                    <div style="display:inline-block; padding:8px 16px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); border-radius:30px; margin-bottom:12px;">
+                        <span style="color:#10b981; font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase;">⚖️ Nyayi (न्यायी) Legal AI</span>
+                    </div>
+                    <h1 style="color:#ffffff; font-size:24px; font-weight:800; margin:0 0 6px 0; letter-spacing:-0.5px;">
+                        ${isReset ? 'Password Reset Verification' : 'Verify Your Email Address'}
+                    </h1>
+                    <p style="color:#a7f3d0; font-size:13px; margin:0; opacity:0.9;">
+                        India's AI Legal Intelligence & Citizen Guidance Platform
+                    </p>
+                </div>
+
+                <!-- Main Content Body -->
+                <div style="padding:32px 28px;">
+                    
+                    <!-- Personal Greeting Box from Farhan Khan -->
+                    <div style="background:#090d16; border-left:4px solid #10b981; border-radius:8px; padding:16px 18px; margin-bottom:26px;">
+                        <p style="color:#e2e8f0; font-size:14px; line-height:22px; margin:0;">
+                            ${isReset
+                                ? "<strong>Hello, Farhan Khan here from Nyayi AI.</strong><br>We received a security request to reset the password for your Nyayi AI account. If you initiated this request, use the one-time code below to create your new password."
+                                : "<strong>Namaste! Farhan Khan here, Founder of Nyayi AI.</strong><br>Welcome to Nyayi (न्यायी). We built this platform to bring instant, honest, and accessible legal guidance to every Indian citizen. Please enter this verification code to activate your account."}
+                        </p>
+                    </div>
+
+                    <p style="color:#94a3b8; font-size:13px; text-align:center; margin:0 0 12px 0;">
+                        Enter this 6-digit verification code to proceed:
+                    </p>
+
+                    <!-- Glowing OTP Container -->
+                    <div style="background:#05070e; border:2px dashed #10b981; border-radius:14px; padding:22px 16px; text-align:center; margin:0 0 24px 0;">
+                        <span style="font-family:'Courier New', Courier, monospace; font-size:40px; font-weight:900; color:#10b981; letter-spacing:10px; display:inline-block; padding-left:10px;">${code}</span>
+                        <div style="color:#64748b; font-size:12px; margin-top:10px;">
+                            ⏱ Expires in <strong>15 minutes</strong> • Keep this confidential
+                        </div>
+                    </div>
+
+                    <!-- Security Alert -->
+                    <div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.25); border-radius:10px; padding:12px 16px; margin-bottom:28px;">
+                        <p style="color:#fca5a5; font-size:12px; line-height:18px; margin:0;">
+                            🛡️ <strong>Security Notice:</strong> Nyayi AI representatives will never ask you for this OTP, your password, or your banking details. If you did not make this request, please safely disregard this email.
+                        </p>
+                    </div>
+
+                    <!-- Founder Signature Section -->
+                    <div style="border-top:1px solid #1f293d; padding-top:22px; text-align:left;">
+                        <table style="width:100%; border-collapse:collapse;">
+                            <tr>
+                                <td style="vertical-align:middle; width:46px;">
+                                    <div style="width:42px; height:42px; background:linear-gradient(135deg, #10b981, #047857); border-radius:50%; text-align:center; line-height:42px; color:#ffffff; font-weight:800; font-size:16px;">
+                                        FK
+                                    </div>
+                                </td>
+                                <td style="vertical-align:middle; padding-left:12px;">
+                                    <div style="color:#ffffff; font-size:14px; font-weight:700;">Farhan Khan</div>
+                                    <div style="color:#10b981; font-size:12px; font-weight:500;">Founder & Lead Architect, Nyayi AI</div>
+                                    <div style="color:#64748b; font-size:11px; margin-top:2px;">
+                                        <a href="https://nyayi.in" style="color:#10b981; text-decoration:none;">nyayi.in</a> • Empowering Indian Citizens with AI Justice
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                </div>
+
+                <!-- Footer -->
+                <div style="background:#090d16; padding:18px 24px; text-align:center; border-top:1px solid #1f293d;">
+                    <p style="color:#64748b; font-size:11px; margin:0 0 6px 0;">
+                        This is an automated security communication from Nyayi AI Authentication Systems.
+                    </p>
+                    <p style="color:#475569; font-size:10px; margin:0;">
+                        © ${new Date().getFullYear()} Nyayi (न्यायी) AI. All rights reserved. • <a href="https://nyayi.in/privacy.html" style="color:#64748b; text-decoration:underline;">Privacy Policy</a> • <a href="https://nyayi.in/terms-of-use.html" style="color:#64748b; text-decoration:underline;">Terms of Use</a>
+                    </p>
+                </div>
+
             </div>
-            <p style="color:#64748b; font-size:12px;">Code expires in 15 minutes. If you did not request this, please ignore this email.</p>
         </div>
-    </div>`;
+    </body>
+    </html>
+    `;
 
     if (RESEND_API_KEY) {
         // Send actual email via Resend API (no external npm dependencies required)
@@ -429,8 +507,9 @@ async function sendAuthEmail(toEmail, subject, code, isReset = false) {
                 const p = JSON.stringify({
                     from: sender,
                     to: [toEmail],
-                    subject: subject,
-                    html: htmlContent
+                    subject: emailSubject,
+                    html: htmlContent,
+                    reply_to: 'farhankhan@nyayi.in'
                 });
 
                 const req = https.request({
