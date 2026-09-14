@@ -34,7 +34,6 @@
             justify-content: center;
             position: relative;
             overflow-x: hidden;
-            perspective: 1200px;
         }
 
         /* Ambient Glow Background */
@@ -78,18 +77,17 @@
             100% { transform: translateY(-10vh) scale(1); opacity: 0; }
         }
 
-        /* Card Container */
+        /* Card Container (Stable & Perfectly Centered) */
         .auth-wrapper {
             position: relative; z-index: 10;
             width: 100%; max-width: 440px;
-            margin: 24px;
-            animation: floatIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            transform-style: preserve-3d;
+            margin: 24px auto;
+            animation: floatIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
         @keyframes floatIn {
-            0% { opacity: 0; transform: translateY(40px) scale(0.96); }
-            100% { opacity: 1; transform: translateY(0) scale(1); }
+            0% { opacity: 0; transform: translateY(24px); }
+            100% { opacity: 1; transform: translateY(0); }
         }
 
         .auth-container {
@@ -102,7 +100,6 @@
             box-shadow: 0 25px 70px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.15);
             position: relative;
             overflow: hidden;
-            transition: transform 0.25s ease-out;
         }
 
         /* Segmented Slider Toggle */
@@ -628,18 +625,7 @@
             particleBox.appendChild(p);
         }
 
-        // --- 2. SMOOTH 3D PARALLAX EFFECT ---
-        const wrapper = document.getElementById('authWrapper');
-        document.addEventListener('mousemove', (e) => {
-            const x = (window.innerWidth / 2 - e.pageX) / 45;
-            const y = (window.innerHeight / 2 - e.pageY) / 45;
-            wrapper.style.transform = `rotateY(${x}deg) rotateX(${y}deg)`;
-        });
-        document.addEventListener('mouseleave', () => {
-            wrapper.style.transform = 'rotateY(0deg) rotateX(0deg)';
-        });
-
-        // --- 3. AUTO FOCUS OTP INPUTS ---
+        // --- 2. AUTO FOCUS OTP INPUTS ---
         function setupOTPInputListeners(containerSelector) {
             const inputs = document.querySelectorAll(containerSelector);
             inputs.forEach((input, index) => {
