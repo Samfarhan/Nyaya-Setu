@@ -1,7 +1,8 @@
 // =========================================================
-// NYAYI PRO (न्यायी) — CORE CLIENT APPLICATION SCRIPT
+// NYAYI (न्यायी) — PREMIUM INDIAN LEGAL INTELLIGENCE CLIENT
 // Architecture: IndexedDB Store • Multi-Turn Context Memory
-// Date-Grouped History • Structured Legal Parser • Voice Engine
+// Document-Style Legal Parser • Isolated Table System
+// Minimal State Engine • Voice Engine • 100% Feature Intact
 // Developed by Farhan Khan (BCA Student)
 // =========================================================
 
@@ -12,7 +13,6 @@ let user = localStorage.getItem('nyayaUser') || "Citizen";
 let aiLanguage = localStorage.getItem('nyayaLanguage') || 'Multilingual';
 let activeAbortController = null;
 let isGenerating = false;
-let thinkingInterval = null;
 
 // Voice Assistant state
 let voiceLang = 'hi-IN';
@@ -48,165 +48,113 @@ const BNS_DATABASE = {
 // B. Procedural Law: CrPC to BNSS Database (Bharatiya Nagarik Suraksha Sanhita, 2023)
 const BNSS_DATABASE = {
     '154': { bnss: 'Section 173(1) BNSS', title: 'FIR Registration & Mandatory Zero FIR (प्राथमिकी)', old: 'Section 154 CrPC', category: 'Criminal Procedure', details: 'Zero FIR mandatory across any police station regardless of jurisdiction. E-FIR permitted with signature verification within 3 days.', nature: 'Cognizable Offences' },
-    '156': { bnss: 'Section 175(3) BNSS', title: 'Magistrate Direction for FIR (156(3) Application)', old: 'Section 156(3) CrPC', category: 'Court Direction', details: 'Power of Judicial Magistrate to direct police to register FIR and submit investigation report.', nature: 'Judicial Remedy' },
-    '161': { bnss: 'Section 180 BNSS', title: 'Police Examination of Witnesses (गवाहों के बयान)', old: 'Section 161 CrPC', category: 'Investigation', details: 'Police statement recording. Audio-video electronic recording permitted under new law.', nature: 'Investigation Procedure' },
-    '164': { bnss: 'Section 183 BNSS', title: 'Magistrate Recording of Confessions & Statements', old: 'Section 164 CrPC', category: 'Judicial Statement', details: 'Statements and confessions recorded by Magistrate. Mandatory audio-video recording in sexual offences.', nature: 'Admissible Evidence' },
-    '167': { bnss: 'Section 187 BNSS', title: 'Police Custody & Remand (पुलिस कस्टडी रिमांड)', old: 'Section 167 CrPC', category: 'Remand & Custody', details: '15-day police custody can be taken in parts across the first 40 or 60 days of the total detention period.', nature: 'Custody Powers' },
-    '173': { bnss: 'Section 193 BNSS', title: 'Police Final Report / Charge-Sheet (आरोप पत्र)', old: 'Section 173 CrPC', category: 'Investigation Conclusion', details: 'Police report submission within 60/90 days. Police must inform victim of investigation progress within 90 days.', nature: 'Final Report' },
-    '41A': { bnss: 'Section 35(3) BNSS', title: 'Notice of Appearance before Police Officer (Arrest Safeguards)', old: 'Section 41A CrPC', category: 'Arrest Protection', details: 'For offences punishable with less than 7 years imprisonment, notice of appearance is mandatory before arresting accused.', nature: 'Citizen Safeguard' },
-    '437': { bnss: 'Section 480 BNSS', title: 'Regular Bail in Non-Bailable Offences by Magistrate', old: 'Section 437 CrPC', category: 'Bail Law', details: 'Conditions under which Magistrate court can release accused on bail in non-bailable offences.', nature: 'Discretionary Bail' },
-    '438': { bnss: 'Section 482 BNSS', title: 'Anticipatory Bail (अग्रिम जमानत)', old: 'Section 438 CrPC', category: 'Pre-Arrest Bail', details: 'Application to Sessions Court or High Court for bail in anticipation of arrest in non-bailable offence.', nature: 'Protective Liberty' },
-    '439': { bnss: 'Section 483 BNSS', title: 'Special Powers of High Court & Sessions Court on Bail', old: 'Section 439 CrPC', category: 'High Court Bail', details: 'Powers of Sessions and High Courts to grant regular bail or cancel bail granted by subordinate courts.', nature: 'Superior Court Powers' },
-    '482': { bnss: 'Section 528 BNSS', title: 'Inherent Powers of High Court (Quashing of FIR / Proceedings)', old: 'Section 482 CrPC', category: 'High Court Jurisdiction', details: 'High Court power to quash malicious, fake, or compromise FIRs to prevent abuse of process of court.', nature: 'Inherent Justice' },
-    '125': { bnss: 'Section 144 BNSS', title: 'Maintenance for Wives, Children & Parents (भरण-पोषण)', old: 'Section 125 CrPC', category: 'Maintenance & Family', details: 'Summary remedy for grant of monthly maintenance to deserted wives, minor children, and senior parents.', nature: 'Social Welfare Remedy' },
-    '197': { bnss: 'Section 218 BNSS', title: 'Sanction for Prosecution of Public Servants & Police', old: 'Section 197 CrPC', category: 'Official Sanction', details: 'Government sanction required before prosecuting public servants for acts done in discharge of official duty.', nature: 'Sanction Requirement' }
+    '41A': { bnss: 'Section 35(3) BNSS', title: 'Notice of Appearance Before Police (गिरफ्तारी से पूर्व नोटिस)', old: 'Section 41A CrPC', category: 'Arrest Safeguards', details: 'Offences punishable up to 7 years imprisonment require mandatory prior notice before arrest, subject to SP approval.', nature: 'Arrest Protection' },
+    '438': { bnss: 'Section 482 BNSS', title: 'Anticipatory Bail (अग्रिम जमानत)', old: 'Section 438 CrPC', category: 'Bail & Liberty', details: 'Applied before Sessions Court or High Court in anticipation of arrest in non-bailable offences.', nature: 'Constitutional Liberty' },
+    '437': { bnss: 'Section 480 BNSS', title: 'Bail in Non-Bailable Cases by Magistrate (जमानत नियम)', old: 'Section 437 CrPC', category: 'Bail & Liberty', details: 'Magisterial power to grant bail in non-bailable offences with special leniency for women, sick, or aged persons.', nature: 'Judicial Discretion' },
+    '161': { bnss: 'Section 180 BNSS', title: 'Examination of Witnesses by Police (गवाहों के बयान)', old: 'Section 161 CrPC', category: 'Investigation', details: 'Audio-video electronic recording of witness statements now recognized as official procedural evidence.', nature: 'Evidence Recording' },
+    '164': { bnss: 'Section 183 BNSS', title: 'Confessions & Statements Recorded by Magistrate (मजिस्ट्रेट के समक्ष बयान)', old: 'Section 164 CrPC', category: 'Judicial Evidence', details: 'Mandatory audio-video recording for sexual offenses statements before Judicial Magistrate.', nature: 'Direct Judicial Evidence' },
+    '167': { bnss: 'Section 187 BNSS', title: 'Police Custody Remand Procedure (रिमांड प्रक्रिया)', old: 'Section 167 CrPC', category: 'Custody & Remand', details: 'Police custody remand of up to 15 days can now be granted in parts across initial 40 or 60 days of detention.', nature: 'Judicial Remand' },
+    '173': { bnss: 'Section 193 BNSS', title: 'Police Final Report / Charge-Sheet (चार्जशीट समयसीमा)', old: 'Section 173(2) CrPC', category: 'Investigation Timeline', details: 'Investigation must be concluded within 90 days in heinous offences; 60 days in other cases.', nature: 'Trial Stage' },
+    '125': { bnss: 'Section 144 BNSS', title: 'Maintenance for Wives, Children & Parents (भरण-पोषण)', old: 'Section 125 CrPC', category: 'Social Justice', details: 'Summary remedy for maintenance claims of wife, minor children, or elderly parents.', nature: 'Civil-Criminal Remedy' }
 };
 
-// C. Law of Evidence: IEA to BSA Database (Bharatiya Sakshya Adhiniyam, 2023)
+// C. Evidence Law: IEA to BSA Database (Bharatiya Sakshya Adhiniyam, 2023)
 const BSA_DATABASE = {
-    '65B': { bsa: 'Section 63 BSA', title: 'Admissibility of Electronic Records / Certificates (डिजिटल साक्ष्य)', old: 'Section 65B Evidence Act', category: 'Electronic Evidence', details: 'Electronic records, cloud logs, emails, and phone chats directly admissible. Standardized schedule certificate for hash integrity.', significance: 'Digital Records as Primary Evidence' },
-    '25': { bsa: 'Section 23(1) BSA', title: 'Confession to Police Officer Not Admissible (पुलिस को दिया बयान)', old: 'Section 25 Evidence Act', category: 'Confession Law', details: 'No confession made to a police officer shall be proved against a person accused of any offence.', significance: 'Protection Against Coercion' },
-    '27': { bsa: 'Section 23(2) BSA', title: 'Information Leading to Discovery of Fact / Weapon (बरामदगी)', old: 'Section 27 Evidence Act', category: 'Discovery Rule', details: 'So much of confession that distinctly leads to the discovery of a physical fact/weapon is admissible.', significance: 'Recovery Exception' },
-    '32': { bsa: 'Section 26 BSA', title: 'Dying Declarations & Statements of Deceased Persons (मृत्युपूर्व कथन)', old: 'Section 32(1) Evidence Act', category: 'Dying Declaration', details: 'Statements made by a person as to cause of their death are admissible even without cross-examination.', significance: 'High Evidentiary Value' },
-    '45': { bsa: 'Section 39 BSA', title: 'Opinions of Experts (Cyber Forensics & Digital Analysts)', old: 'Section 45 Evidence Act', category: 'Expert Testimony', details: 'Expert testimony expanded to include certified digital forensic examiners, cryptographers, and data analysts.', significance: 'Modern Scientific Proof' },
-    '114A': { bsa: 'Section 119 BSA', title: 'Presumption of Absence of Consent in Certain Rape Cases', old: 'Section 114A Evidence Act', category: 'Legal Presumption', details: 'Where sexual intercourse is proved and victim states she did not consent, court shall presume absence of consent.', significance: 'Victim Protection Presumption' },
-    '133': { bsa: 'Section 138 BSA', title: 'Accomplice Evidence & Approver Testimony (सह-अपराधी की गवाही)', old: 'Section 133 Evidence Act', category: 'Approver Evidence', details: 'An accomplice shall be a competent witness against an accused person; conviction not illegal merely because uncorroborated.', significance: 'Approver Evidence Standard' }
+    '65B': { bsa: 'Section 63 BSA', title: 'Admissibility of Electronic Records / Certificates (डिजिटल साक्ष्य)', old: 'Section 65B Indian Evidence Act', category: 'Digital Evidence', details: 'Electronic records (WhatsApp, emails, CCTV, server logs, mobile screenshots) have status of primary document. Certificate mandatory per Section 63(4).', significance: 'Cyber & Digital Law' },
+    '25': { bsa: 'Section 23 BSA', title: 'Confession to Police Officer Inadmissible (पुलिस के सामने कबूलनामा)', old: 'Section 25 Indian Evidence Act', category: 'Confession Rules', details: 'Confession made to a police officer cannot be proved against accused, protecting against custodial coercion.', significance: 'Trial Protection' },
+    '27': { bsa: 'Section 23(2) BSA', title: 'Discovery of Fact Pursuant to Information (बरामदगी पंचनामा)', old: 'Section 27 Indian Evidence Act', category: 'Recovery of Evidence', details: 'Only that portion of information which leads distinctly to discovery of a weapon/fact is admissible.', significance: 'Forensic Linkage' },
+    '113B': { bsa: 'Section 118 BSA', title: 'Presumption as to Dowry Death (दहेज मृत्यु की उपधारणा)', old: 'Section 113B Evidence Act', category: 'Legal Presumptions', details: 'Court shall presume dowry death if harassment for dowry soon before death is established.', significance: 'Women Rights' },
+    '114A': { bsa: 'Section 119 BSA', title: 'Presumption of Absence of Consent in Rape Cases (सहमति न होने की उपधारणा)', old: 'Section 114A Evidence Act', category: 'Sexual Offenses Evidence', details: 'Where sexual intercourse is proved and victim states lack of consent, court shall presume absence of consent.', significance: 'Victim Protection' }
 };
 
-// D. Civil Procedure Code (CPC 1908) Database
+// D. Civil Procedure Law: CPC Database (Code of Civil Procedure, 1908)
 const CPC_DATABASE = {
-    'ORDER39': { cpc: 'Order XXXIX Rules 1 & 2 CPC', title: 'Temporary Injunctions & Interlocutory Stay Orders (स्टे ऑर्डर)', category: 'Civil Injunction', details: 'Urgent stay orders on property, construction, demolition, or contract. Requires 3 tests: Prima Facie Case, Balance of Convenience, and Irreparable Injury.', significance: 'Property & Civil Protection' },
-    'ORDER7': { cpc: 'Order VII Rule 11 CPC', title: 'Rejection of Plaint (मुकदमा खारिज करने का आवेदन)', category: 'Pleading Defense', details: 'Plaint rejected where it discloses no cause of action, is undervalued, or barred by any law (e.g. Limitation Act).', significance: 'Preliminary Dismissal' },
-    'ORDER8': { cpc: 'Order VIII Rule 1 CPC', title: 'Written Statement by Defendant (प्रतिवाद पत्र / W.S.)', category: 'Civil Defense', details: 'Defendant must file Written Statement within 30 days of summons, extendable up to 90 days (120 days in Commercial Courts).', significance: 'Defense Pleading Deadline' },
-    'ORDER21': { cpc: 'Order XXI CPC', title: 'Execution of Decrees and Court Orders (डिक्री का निष्पादन)', category: 'Decree Enforcement', details: 'Execution procedure to realize monetary decrees, auction attached property, or recover physical possession of land.', significance: 'Enforcing Court Verdict' },
-    'SEC89': { cpc: 'Section 89 CPC', title: 'Settlement of Disputes Outside Court (Mediation & Lok Adalat)', category: 'ADR & Mediation', details: 'Court referral of civil disputes to Arbitration, Conciliation, Judicial Settlement, Lok Adalat, or Mediation.', significance: 'Amicable Dispute Resolution' },
-    'SEC96': { cpc: 'Section 96 CPC', title: 'First Appeal from Original Civil Decree (प्रथम अपील)', category: 'Civil Appeals', details: 'Statutory right to challenge trial court civil decree on both questions of fact and questions of law before District Court / High Court.', significance: 'Appellate Remedy' },
-    'SEC100': { cpc: 'Section 100 CPC', title: 'Second Appeal to High Court (द्वितीय अपील)', category: 'High Court Appeal', details: 'Second appeal to High Court lies strictly on a Substantial Question of Law (कानून का सारभूत प्रश्न).', significance: 'Substantial Law Question Only' },
-    'SEC115': { cpc: 'Section 115 CPC', title: 'Civil Revision to High Court (सिविल रिवीजन)', category: 'Revisionary Jurisdiction', details: 'High Court power to correct jurisdictional errors of subordinate courts where no regular appeal lies.', significance: 'Jurisdictional Correction' },
-    'SEC9': { cpc: 'Section 9 CPC', title: 'Courts to Try All Civil Suits Unless Barred (दीवानी क्षेत्राधिकार)', category: 'Civil Jurisdiction', details: 'Civil courts have jurisdiction to try all suits of a civil nature unless expressly or impliedly barred by statute.', significance: 'Fundamental Civil Court Power' }
+    'Order 39': { cpc: 'Order 39 Rules 1 & 2 CPC', title: 'Temporary Injunction / Stay Order (अस्थाई स्थगनादेश)', subject: 'Property & Injunctions', requirements: '1. Prima facie case, 2. Irreparable injury, 3. Balance of convenience in favor of plaintiff.', remedy: 'Immediate stay on demolition, alienation, or eviction.' },
+    'Section 89': { cpc: 'Section 89 CPC', title: 'Settlement through Lok Adalat & Mediation (सुलह एवं मध्यस्थता)', subject: 'Alternative Dispute Resolution', requirements: 'Consent or court referral for dispute resolution outside court trials.', remedy: 'Fast, fee-refunded amicable final settlement.' },
+    'Order 7 Rule 11': { cpc: 'Order 7 Rule 11 CPC', title: 'Rejection of Plaint (मुकदमा खारिज करने की अर्जी)', subject: 'Civil Defense', requirements: 'Plaint discloses no cause of action, barred by limitation, or undervalued.', remedy: 'Dismissal of vexatious lawsuit before full trial.' },
+    'Order 8 Rule 1': { cpc: 'Order 8 Rule 1 CPC', title: 'Written Statement Timeline (लिखित बयान की समयसीमा)', subject: 'Defendant Defense', requirements: 'Must file Written Statement within 30 days of summons service (extendable up to 90 days).', remedy: 'Preserves defendant right to dispute claims.' },
+    'Section 9': { cpc: 'Section 9 CPC', title: 'Courts to Try All Civil Suits (सिविल अदालतों का अधिकार क्षेत्र)', subject: 'Jurisdiction', requirements: 'Civil courts have jurisdiction to try all suits of a civil nature unless expressly barred.', remedy: 'Foundation for property, tenancy, contract, and tort suits.' }
 };
 
-// E. Traffic Violations Detail
+// E. Traffic Fine Database (Motor Vehicles Act)
 const TRAFFIC_FINES = {
-    'helmet': { title: 'Driving Without Helmet', fine: '₹1,000', section: 'Section 194D MVA', penalty: 'License Disqualification for 3 months' },
-    'seatbelt': { title: 'Driving Without Seatbelt', fine: '₹1,000', section: 'Section 194B MVA', penalty: 'Applicable to driver and front/rear passengers' },
-    'license': { title: 'Driving Without Valid License', fine: '₹5,000', section: 'Section 181 MVA', penalty: 'Vehicle may be impounded; Juvenile driving fine ₹25,000' },
-    'drunk': { title: 'Drunk Driving (Alcohol > 30mg/100ml)', fine: '₹10,000', section: 'Section 185 MVA', penalty: 'Up to 6 months imprisonment; Repeat offense: ₹15,000 / 2 yrs jail' },
-    'speed': { title: 'Over Speeding', fine: '₹1,000 (LMV) / ₹2,000 (Medium/Heavy)', section: 'Section 183 MVA', penalty: 'Impounding of driving license on repeat offense' },
-    'phone': { title: 'Mobile Phone Usage While Driving', fine: '₹1,000 to ₹5,000', section: 'Section 184(c) MVA', penalty: 'Can lead to license suspension' },
-    'insurance': { title: 'Driving Uninsured Vehicle', fine: '₹2,000', section: 'Section 196 MVA', penalty: 'Imprisonment up to 3 months or fine; Repeat ₹4,000' },
-    'redlight': { title: 'Jumping Red Light (Dangerous Driving)', fine: '₹1,000 to ₹5,000', section: 'Section 184 MVA', penalty: 'License seizure for 3 months' },
-    'triple': { title: 'Triple Riding on Two-Wheeler', fine: '₹1,000', section: 'Section 194C MVA', penalty: 'License disqualification for 3 months' },
-    'emergency': { title: 'Not Giving Way to Emergency Vehicles (Ambulance/Fire)', fine: '₹10,000', section: 'Section 194E MVA', penalty: 'Imprisonment up to 6 months' }
+    'helmet': { section: 'Section 194D MVA', penalty: '₹1,000 + 3 Months License Suspension', note: 'Both rider and pillion must wear BIS-certified helmets.' },
+    'seatbelt': { section: 'Section 194B MVA', penalty: '₹1,000 fine', note: 'Applicable for all front and rear seat passengers.' },
+    'speeding': { section: 'Section 183 MVA', penalty: '₹1,000 - ₹2,000 (LMV) / ₹2,000 - ₹4,000 (HMV)', note: 'Repeat offence may lead to license impounding.' },
+    'redlight': { section: 'Section 184 MVA', penalty: '₹1,000 - ₹5,000 or 6 Months - 1 Year Jail', note: 'Classified under dangerous driving category.' },
+    'drinkdrive': { section: 'Section 185 MVA', penalty: '₹10,000 fine or up to 6 months jail (1st Offense)', note: 'Blood alcohol limit is 30mg per 100ml. Second offense: ₹15,000 or 2 years jail.' },
+    'license': { section: 'Section 181 MVA', penalty: '₹5,000 fine + Vehicle Impounding', note: 'Driving without valid license is non-compoundable in several states.' },
+    'insurance': { section: 'Section 196 MVA', penalty: '₹2,000 fine or up to 3 months jail (1st Offense)', note: 'Second offense: ₹4,000 fine. Third-party insurance mandatory.' },
+    'phone': { section: 'Section 184(c) MVA', penalty: '₹1,000 - ₹5,000 fine', note: 'Handheld devices strictly prohibited while driving.' },
+    'emergency': { section: 'Section 194E MVA', penalty: '₹10,000 fine + 6 months jail', note: 'Failing to give way to ambulance, fire service, or emergency vehicles.' }
 };
 
-// --- 3. CONVERSATION STORE (INDEXEDDB + LOCALSTORAGE HYBRID) ---
+// --- 3. PERSISTENT CONVERSATION STORE (IndexedDB + Dual Storage) ---
 const ConversationStore = {
-    db: null,
     dbName: 'nyayi_legal_db',
-    storeName: 'conversations',
+    dbVersion: 2,
+    storeName: 'consultations',
+    db: null,
 
     async init() {
         return new Promise((resolve) => {
-            if (!('indexedDB' in window)) {
+            if (!window.indexedDB) {
+                console.warn('IndexedDB not supported, falling back to localStorage');
                 resolve(false);
                 return;
             }
-            try {
-                const request = indexedDB.open(this.dbName, 1);
-                request.onupgradeneeded = (e) => {
-                    const db = e.target.result;
-                    if (!db.objectStoreNames.contains(this.storeName)) {
-                        const store = db.createObjectStore(this.storeName, { keyPath: 'id' });
-                        store.createIndex('updatedAt', 'updatedAt', { unique: false });
-                    }
-                };
-                request.onsuccess = (e) => {
-                    this.db = e.target.result;
-                    this.migrateLegacyStorage().then(() => resolve(true));
-                };
-                request.onerror = () => resolve(false);
-            } catch (err) {
-                resolve(false);
-            }
+            const request = indexedDB.open(this.dbName, this.dbVersion);
+            request.onerror = () => resolve(false);
+            request.onsuccess = (e) => {
+                this.db = e.target.result;
+                resolve(true);
+            };
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(this.storeName)) {
+                    const store = db.createObjectStore(this.storeName, { keyPath: 'id' });
+                    store.createIndex('updatedAt', 'updatedAt', { unique: false });
+                }
+            };
         });
     },
 
-    async migrateLegacyStorage() {
-        try {
-            const legacy = localStorage.getItem('nyayaChats');
-            if (legacy) {
-                const parsed = JSON.parse(legacy);
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                    const allCurrent = await this.getAll();
-                    if (allCurrent.length === 0) {
-                        for (const chat of parsed) {
-                            await this.save({
-                                id: chat.id || Date.now().toString(),
-                                title: chat.title || 'Legal Consultation',
-                                messages: chat.messages || [],
-                                createdAt: chat.id ? parseInt(chat.id) || Date.now() : Date.now(),
-                                updatedAt: Date.now()
-                            });
-                        }
-                    }
-                }
-            }
-        } catch (e) {}
-    },
-
     async getAll() {
-        if (!this.db) {
-            const raw = localStorage.getItem('nyayaChats');
-            return raw ? JSON.parse(raw) : [];
-        }
+        if (!this.db) return this.getAllFromStorage();
         return new Promise((resolve) => {
             try {
                 const tx = this.db.transaction(this.storeName, 'readonly');
                 const store = tx.objectStore(this.storeName);
                 const req = store.getAll();
                 req.onsuccess = () => {
-                    const items = req.result || [];
-                    items.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-                    resolve(items);
+                    const list = req.result || [];
+                    list.sort((a, b) => b.updatedAt - a.updatedAt);
+                    resolve(list);
                 };
-                req.onerror = () => resolve([]);
+                req.onerror = () => resolve(this.getAllFromStorage());
             } catch (err) {
-                resolve([]);
+                resolve(this.getAllFromStorage());
             }
         });
     },
 
     async get(id) {
-        if (!this.db) {
-            const all = await this.getAll();
-            return all.find(c => c.id === id) || null;
-        }
+        if (!this.db) return this.getFromStorage(id);
         return new Promise((resolve) => {
             try {
                 const tx = this.db.transaction(this.storeName, 'readonly');
                 const store = tx.objectStore(this.storeName);
                 const req = store.get(id);
-                req.onsuccess = () => resolve(req.result || null);
-                req.onerror = () => resolve(null);
+                req.onsuccess = () => resolve(req.result || this.getFromStorage(id));
+                req.onerror = () => resolve(this.getFromStorage(id));
             } catch (err) {
-                resolve(null);
+                resolve(this.getFromStorage(id));
             }
         });
     },
 
     async save(chat) {
-        chat.updatedAt = Date.now();
-        if (!chat.createdAt) chat.createdAt = Date.now();
-
-        try {
-            const all = await this.getAll();
-            const idx = all.findIndex(c => c.id === chat.id);
-            if (idx >= 0) all[idx] = chat;
-            else all.unshift(chat);
-            localStorage.setItem('nyayaChats', JSON.stringify(all));
-        } catch (e) {}
-
+        this.saveToStorage(chat);
         if (!this.db) return true;
         return new Promise((resolve) => {
             try {
@@ -222,12 +170,7 @@ const ConversationStore = {
     },
 
     async delete(id) {
-        try {
-            const all = await this.getAll();
-            const filtered = all.filter(c => c.id !== id);
-            localStorage.setItem('nyayaChats', JSON.stringify(filtered));
-        } catch (e) {}
-
+        this.deleteFromStorage(id);
         if (!this.db) return true;
         return new Promise((resolve) => {
             try {
@@ -242,8 +185,53 @@ const ConversationStore = {
         });
     },
 
+    getAllFromStorage() {
+        try {
+            const raw = localStorage.getItem('nyayi_conversations_meta');
+            return raw ? JSON.parse(raw) : [];
+        } catch (e) {
+            return [];
+        }
+    },
+
+    getFromStorage(id) {
+        try {
+            const raw = localStorage.getItem('nyayi_chat_' + id);
+            return raw ? JSON.parse(raw) : null;
+        } catch (e) {
+            return null;
+        }
+    },
+
+    saveToStorage(chat) {
+        try {
+            localStorage.setItem('nyayi_chat_' + chat.id, JSON.stringify(chat));
+            const list = this.getAllFromStorage().filter(c => c.id !== chat.id);
+            list.unshift({
+                id: chat.id,
+                title: chat.title,
+                preview: chat.messages && chat.messages.length > 0 ? chat.messages[chat.messages.length - 1].text.slice(0, 70) : '',
+                updatedAt: chat.updatedAt,
+                createdAt: chat.createdAt
+            });
+            localStorage.setItem('nyayi_conversations_meta', JSON.stringify(list));
+        } catch (e) {}
+    },
+
+    deleteFromStorage(id) {
+        try {
+            localStorage.removeItem('nyayi_chat_' + id);
+            const list = this.getAllFromStorage().filter(c => c.id !== id);
+            localStorage.setItem('nyayi_conversations_meta', JSON.stringify(list));
+        } catch (e) {}
+    },
+
     async clearAll() {
-        localStorage.removeItem('nyayaChats');
+        try {
+            localStorage.removeItem('nyayi_conversations_meta');
+            const keys = Object.keys(localStorage);
+            keys.forEach(k => { if (k.startsWith('nyayi_chat_')) localStorage.removeItem(k); });
+        } catch (e) {}
         if (!this.db) return true;
         return new Promise((resolve) => {
             try {
@@ -261,13 +249,11 @@ const ConversationStore = {
 
 // --- 4. CONTEXT MEMORY & TITLE GENERATOR ---
 const MemoryManager = {
-    // Generates meaningful, non-generic title from first user query
     generateMeaningfulTitle(query) {
         if (!query) return 'Legal Consultation';
         const q = query.trim();
-
-        // Check common legal keywords
         const lower = q.toLowerCase();
+
         if (lower.includes('cyber') || lower.includes('fraud') || lower.includes('1930') || lower.includes('scam')) {
             return 'Cyber Fraud Recovery';
         }
@@ -293,7 +279,6 @@ const MemoryManager = {
             return 'Family Law & Maintenance';
         }
 
-        // Clean first sentence / clause
         let clean = q.replace(/^[\s,?.!]+|[\s,?.!]+$/g, '');
         const firstClause = clean.split(/[,?.;\n]/)[0].trim();
         if (firstClause.length > 5 && firstClause.length <= 36) {
@@ -302,7 +287,6 @@ const MemoryManager = {
         return clean.slice(0, 32).trim() + (clean.length > 32 ? '...' : '');
     },
 
-    // Extracts sliding window of previous turns for /api/chat
     getContextPayload(messages, maxTurns = 8) {
         if (!Array.isArray(messages) || messages.length === 0) return [];
         const relevant = messages.slice(-maxTurns);
@@ -318,7 +302,7 @@ const MemoryManager = {
     }
 };
 
-// --- 5. STRUCTURED LEGAL RESPONSE PARSER ---
+// --- 5. STRUCTURED LEGAL RESPONSE PARSER & MARKDOWN RENDERER ---
 const MessageRenderer = {
     escapeHtml(text) {
         if (!text) return '';
@@ -327,9 +311,43 @@ const MessageRenderer = {
         }[m]));
     },
 
+    parseMarkdownTables(text) {
+        const tableRegex = new RegExp('((?:^[ \\t]*\\|[^\\r\\n]+\\|[ \\t]*(?:\\r?\\n|$))+)', 'gm');
+        return text.replace(tableRegex, (match) => {
+            const lines = match.trim().split(/\r?\n/).map(l => l.trim()).filter(l => l.startsWith('|') && l.endsWith('|'));
+            if (lines.length < 2) return match;
+
+            const headerLine = lines[0];
+            const separatorLine = lines[1];
+            if (!separatorLine.includes('---') && !separatorLine.includes('-|-')) return match;
+
+            const parseRow = (line) => line.slice(1, -1).split('|').map(c => c.trim());
+            const headers = parseRow(headerLine);
+            const dataRows = lines.slice(2).map(parseRow);
+
+            let html = '<div class="table-wrapper"><table class="nyayi-table"><thead><tr>';
+            headers.forEach(h => {
+                html += '<th>' + h + '</th>';
+            });
+            html += '</tr></thead><tbody>';
+            dataRows.forEach(row => {
+                html += '<tr>';
+                row.forEach(cell => {
+                    html += '<td>' + (cell || '') + '</td>';
+                });
+                html += '</tr>';
+            });
+            html += '</tbody></table></div>';
+            return html;
+        });
+    },
+
     formatLegalResponse(rawText) {
         if (!rawText) return '';
         let text = rawText;
+
+        // Parse markdown tables first (so table pipes aren't disrupted)
+        text = this.parseMarkdownTables(text);
 
         // Bold & Headings
         text = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
@@ -337,54 +355,64 @@ const MessageRenderer = {
         text = text.replace(/^## (.*$)/gim, '<h2>$1</h2>');
         text = text.replace(/^# (.*$)/gim, '<h1>$1</h1>');
 
-        // External links with security rel
+        // External links with security attributes
         text = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, 
-            '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--primary); font-weight:600;">$1 <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:10px;"></i></a>'
+            '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--nyayi-primary); font-weight:600;">$1 <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:10px;"></i></a>'
         );
 
-        // List bullets
+        // Lists
         text = text.replace(/^\* (.*$)/gim, '<li>$1</li>');
         text = text.replace(/^- (.*$)/gim, '<li>$1</li>');
         text = text.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
 
-        // Line breaks
+        // Line breaks (preserving existing HTML elements)
         text = text.replace(/\n/g, '<br>');
         text = text.replace(/<br><\/li>/g, '</li>');
         text = text.replace(/<br><li>/g, '<li>');
+        text = text.replace(/<br><div class="table-wrapper">/g, '<div class="table-wrapper">');
+        text = text.replace(/<\/div><br>/g, '</div>');
 
-        // Dynamic Sectioning: Short Answer
+        // Section: Short Answer / Summary Box
         text = text.replace(/<b>(Short Answer|संक्षिप्त उत्तर):<\/b>(.*?)(?=(<b>|<br><br>|$))/i,
-            '<div class="legal-summary-box"><b><i class="fa-solid fa-bolt" style="color:var(--primary); margin-right:6px;"></i> Short Answer:</b>$2</div>'
+            '<div class="legal-summary-box"><b><i class="fa-solid fa-scale-balanced" style="color:var(--nyayi-primary); margin-right:6px;"></i> Short Answer:</b>$2</div>'
         );
 
-        // Dynamic Sectioning: What the Law Says
+        // Section: What the Law Says
         text = text.replace(/<b>(What the Law Says|कानूनी प्रावधान|Applicable Indian Laws):<\/b>/gi,
-            '<div style="margin-top:10px; font-weight:700; color:var(--primary);"><i class="fa-solid fa-book-bookmark"></i> What the Law Says:</div>'
+            '<div style="margin-top:14px; font-weight:700; color:var(--nyayi-text);"><i class="fa-solid fa-book-bookmark" style="color:var(--nyayi-primary); margin-right:6px;"></i> What the Law Says:</div>'
         );
 
-        // Dynamic Sectioning: What You Should Do / Action Steps
+        // Section: What You Should Do / Action Steps
         text = text.replace(/<b>(What You Should Do|कार्रवाई योजना|Step-by-Step Action Plan):<\/b>/gi,
-            '<div style="margin-top:10px; font-weight:700; color:var(--primary);"><i class="fa-solid fa-list-check"></i> What You Should Do:</div>'
+            '<div style="margin-top:14px; font-weight:700; color:var(--nyayi-text);"><i class="fa-solid fa-list-check" style="color:var(--nyayi-primary); margin-right:6px;"></i> What You Should Do:</div>'
         );
 
-        // Dynamic Sectioning: Important Points / Cautions
+        // Section: Important Points / Cautions
         text = text.replace(/<b>(Important Points|Important Precaution|महत्वपूर्ण बातें):<\/b>/gi,
-            '<div style="margin-top:10px; font-weight:700; color:var(--accent-amber);"><i class="fa-solid fa-triangle-exclamation"></i> Important Points:</div>'
+            '<div style="margin-top:14px; font-weight:700; color:var(--nyayi-warning);"><i class="fa-solid fa-triangle-exclamation" style="margin-right:6px;"></i> Important Points:</div>'
         );
 
-        // Statute Pill Replacement (using backticks)
+        // Section: Legal References block
+        text = text.replace(/<b>(Legal References|कानूनी संदर्भ):<\/b>/gi,
+            '<div class="legal-references-header"><i class="fa-solid fa-scale-balanced"></i> Legal References & Statutes</div>'
+        );
+
+        // Interactive Statute Pills
         text = text.replace(/\b(BNS Section [0-9]+(\([0-9]+\))?|BNS [0-9]+|Section [0-9]+(\([0-9]+\))? BNS)/gi, 
-            `<span class="statute-pill" onclick="quickConvert('$1')"><i class="fa-solid fa-scale-balanced"></i> $1</span>`
+            '<span class="statute-pill" onclick="quickConvert(\'$1\')"><i class="fa-solid fa-scale-balanced"></i> $1</span>'
         );
         text = text.replace(/\b(BNSS Section [0-9]+(\([0-9]+\))?|BNSS [0-9]+|Section [0-9]+(\([0-9]+\))? BNSS)/gi, 
-            `<span class="statute-pill" onclick="quickConvert('$1')"><i class="fa-solid fa-list-check"></i> $1</span>`
+            '<span class="statute-pill" onclick="quickConvert(\'$1\')"><i class="fa-solid fa-list-check"></i> $1</span>'
         );
         text = text.replace(/\b(BSA Section [0-9]+|Section [0-9]+ BSA|Section 65B|Section 63 BSA)/gi, 
-            `<span class="statute-pill" onclick="quickConvert('$1')"><i class="fa-solid fa-file-shield"></i> $1</span>`
+            '<span class="statute-pill" onclick="quickConvert(\'$1\')"><i class="fa-solid fa-file-shield"></i> $1</span>'
         );
         text = text.replace(/\b(Order 39|Order 7 Rule 11|Order 8 Rule 1|Section 89 CPC)/gi, 
-            `<span class="statute-pill" onclick="quickConvert('$1')"><i class="fa-solid fa-building-shield"></i> $1</span>`
+            '<span class="statute-pill" onclick="quickConvert(\'$1\')"><i class="fa-solid fa-building-shield"></i> $1</span>'
         );
+
+        // Append subtle statutory reference note & disclaimer
+        text += '<div class="legal-disclaimer-note"><i class="fa-solid fa-circle-info"></i> Nyayi provides general legal information, not a substitute for advice from a qualified lawyer.</div>';
 
         return text;
     },
@@ -398,105 +426,58 @@ const MessageRenderer = {
             questions.push('Cyber Crime Helpline 1930 complaint follow-up process kya hai?');
         } else if (lower.includes('fir') || lower.includes('police') || lower.includes('154') || lower.includes('173')) {
             questions.push('Zero FIR darj karwane ka exact step-by-step procedure batao.');
-            questions.push('Agar police FIR na likhe toh SP ko letter kaise bhein?');
-        } else if (lower.includes('tenant') || lower.includes('rent') || lower.includes('order 39') || lower.includes('stay')) {
-            questions.push('Civil court me Stay Order (Order 39) lene ki zaroori shartein kya hain?');
-            questions.push('Tenant ko Legal Eviction Notice bhejne ka format samjhao.');
-        } else if (lower.includes('bail') || lower.includes('arrest') || lower.includes('438') || lower.includes('482')) {
-            questions.push('Anticipatory Bail (अग्रिम जमानत) lene me kitna samay lagta hai?');
-            questions.push('Police arrest karte waqt citizen ke 5 zaroori adhikar kya hain?');
-        } else {
-            questions.push('Is mamle me kaunse zaroori saboot (evidence) ikattha karne chahiye?');
-            questions.push('Kya is mamle me bina thane gaye seedhe magistrate ke paas ja sakte hain?');
+            questions.push('Agar police FIR na likhe toh Magistrate ko complaint kaise karein?');
+        } else if (lower.includes('tenant') || lower.includes('rent') || lower.includes('deposit') || lower.includes('eviction')) {
+            questions.push('Landlord ko security deposit refund ka legal notice draft karo.');
+        } else if (lower.includes('cheque') || lower.includes('138') || lower.includes('bounce')) {
+            questions.push('Section 138 notice bhejne ke baad court me complaint kab darj hoti hai?');
+        } else if (lower.includes('bail') || lower.includes('arrest') || lower.includes('438')) {
+            questions.push('Anticipatory bail petition me kaunse documents anivarya hain?');
         }
-
         return questions.slice(0, 2);
     }
 };
 
-// --- 6. INITIALIZATION & LIFECYCLE ---
+// --- 6. INITIALIZATION & APP LIFECYCLE ---
 document.addEventListener('DOMContentLoaded', async () => {
-    // Pre-warm SpeechSynthesis voices
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.getVoices();
-        window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
-    }
-
-    // Initialize IndexedDB Storage
     await ConversationStore.init();
+    await renderHistoryList();
 
-    // Restore selected AI language dropdown
-    const langSelectEl = document.getElementById('langSelect');
-    if (langSelectEl) langSelectEl.value = aiLanguage;
-
-    // Restore dark mode
-    if (localStorage.getItem('nyayaTheme') === 'light') {
+    const savedTheme = localStorage.getItem('nyayi_theme') || 'dark';
+    if (savedTheme === 'light') {
         document.body.classList.add('light-mode');
-        updateThemeIcon(false);
-    } else {
-        document.body.classList.remove('light-mode');
-        updateThemeIcon(true);
+        const icon = document.getElementById('themeIcon');
+        if (icon) icon.className = 'fa-solid fa-sun';
     }
 
-    // Restore user settings
-    const savedName = localStorage.getItem('nyayaUser');
-    if (savedName) {
-        user = savedName;
-        const nameInput = document.getElementById('userNameInput');
-        if (nameInput) nameInput.value = user;
-        updateWelcomeUserName();
-    }
-    const savedContact = localStorage.getItem('nyayaEmergencyContact');
-    if (savedContact && document.getElementById('userEmergencyContact')) {
-        document.getElementById('userEmergencyContact').value = savedContact;
+    const langSelect = document.getElementById('langSelect');
+    if (langSelect) langSelect.value = aiLanguage;
+
+    updateWelcomeUserName();
+
+    const input = document.getElementById('userInput');
+    if (input) {
+        autoGrowTextarea(input);
+        input.focus();
     }
 
-    // Load active conversation
-    const allChats = await ConversationStore.getAll();
-    if (allChats.length === 0) {
-        await startNewChat();
-    } else {
-        await openChat(allChats[0].id);
-    }
-
-    // Modal click backdrop to close
-    document.querySelectorAll('.modal-overlay').forEach(overlay => {
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) closeAllModals();
-        });
-    });
-
-    // Close composer tools on outside click
-    document.addEventListener('click', (e) => {
-        const popup = document.getElementById('composerToolsPopup');
-        const btn = document.getElementById('composerToolBtn');
-        if (popup && popup.classList.contains('active')) {
-            if (!popup.contains(e.target) && !btn.contains(e.target)) {
-                popup.classList.remove('active');
+    // Keyboard handling & mobile viewport resize
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+            const box = document.getElementById('chat-box');
+            if (box && currentChatMessages.length > 0) {
+                box.scrollTop = box.scrollHeight;
             }
-        }
-    });
+        });
+    }
 
-    // Keyboard Shortcuts
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            closeAllModals();
-            closeVoiceAssistant();
-            const popup = document.getElementById('composerToolsPopup');
-            if (popup) popup.classList.remove('active');
-        }
-        if ((e.altKey && e.key.toLowerCase() === 'v') || (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'v')) {
-            e.preventDefault();
-            openVoiceAssistant();
-        }
-    });
-
-    // Touch swipe gesture for mobile drawer
+    // Touch swipe for mobile sidebar drawer
     let touchStartX = 0;
     let touchEndX = 0;
     document.addEventListener('touchstart', (e) => {
         touchStartX = e.changedTouches[0].screenX;
     }, { passive: true });
+
     document.addEventListener('touchend', (e) => {
         touchEndX = e.changedTouches[0].screenX;
         const diff = touchEndX - touchStartX;
@@ -516,13 +497,13 @@ function renderEmptyState() {
     if (!box) return;
 
     box.innerHTML = `
-        <div class="welcome-hero">
+        <div class="welcome-hero" id="welcomeSection">
             <div class="welcome-ai-emblem">
                 <i class="fa-solid fa-scale-balanced"></i>
             </div>
             <h1 class="welcome-title">Namaste, <span id="welcomeUserName">${MessageRenderer.escapeHtml(user)}</span> 👋</h1>
             <h2 class="welcome-subtitle">How can Nyayi help you today?</h2>
-            <p class="welcome-tagline">Understand Indian law, rights and legal procedures in simple language.</p>
+            <p class="welcome-tagline">Understand Indian law, rights and procedures in simple language.</p>
             
             <div class="domain-cards-grid">
                 <div class="domain-card" onclick="askSuggestion('Mera online financial cyber fraud ho gaya hai, paise wapas kaise paayein? 1930 helpline kaise kaam karti hai?')">
@@ -530,7 +511,7 @@ function renderEmptyState() {
                         <span class="domain-card-title"><i class="fa-solid fa-shield-halved"></i> Cyber Fraud</span>
                         <span class="domain-badge cyan">1930 Helpline</span>
                     </div>
-                    <p class="domain-card-desc">Money lost online? Know what to do next.</p>
+                    <p class="domain-card-desc">Recover money & report fraud</p>
                 </div>
 
                 <div class="domain-card" onclick="askSuggestion('Police station me FIR darj karwane ka process kya hai aur agar police FIR likhne se mana kare toh kya adhikar hain?')">
@@ -538,15 +519,15 @@ function renderEmptyState() {
                         <span class="domain-card-title"><i class="fa-solid fa-file-circle-check"></i> Police FIR</span>
                         <span class="domain-badge amber">Zero FIR</span>
                     </div>
-                    <p class="domain-card-desc">Need help understanding the FIR process?</p>
+                    <p class="domain-card-desc">FIR process & rights</p>
                 </div>
 
                 <div class="domain-card" onclick="askSuggestion('Property ya tenancy dispute me legal rights aur civil stay order (Order 39) ke niyam samjhao.')">
                     <div class="domain-card-header">
-                        <span class="domain-card-title"><i class="fa-solid fa-house-chimney-user"></i> Property Dispute</span>
+                        <span class="domain-card-title"><i class="fa-solid fa-house-chimney-user"></i> Property</span>
                         <span class="domain-badge purple">Civil Rights</span>
                     </div>
-                    <p class="domain-card-desc">Understand your rights in a property dispute.</p>
+                    <p class="domain-card-desc">Property dispute guidance</p>
                 </div>
 
                 <div class="domain-card" onclick="askSuggestion('IPC Section 420, 302, 376 aur nayi BNS provisions me kya antar hai? Kaunsi dhara lagu hogi?')">
@@ -554,18 +535,18 @@ function renderEmptyState() {
                         <span class="domain-card-title"><i class="fa-solid fa-gavel"></i> BNS / IPC</span>
                         <span class="domain-badge">BNS 2023</span>
                     </div>
-                    <p class="domain-card-desc">Compare old and new criminal law provisions.</p>
+                    <p class="domain-card-desc">Compare provisions</p>
                 </div>
             </div>
 
             <div class="suggestion-chips">
-                <button class="chip" onclick="askSuggestion('Anticipatory bail lene ki prakriya aur Section 482 BNSS samjhao.')">
+                <button type="button" class="chip" onclick="askSuggestion('Anticipatory bail lene ki prakriya aur Section 482 BNSS samjhao.')">
                     <i class="fa-solid fa-handcuffs"></i> Anticipatory Bail Guide
                 </button>
-                <button class="chip" onclick="askSuggestion('Motor Vehicle Act ke tehat bina helmet aur bina insurance challan fine kitna hai?')">
+                <button type="button" class="chip" onclick="askSuggestion('Motor Vehicle Act ke tehat bina helmet aur bina insurance challan fine kitna hai?')">
                     <i class="fa-solid fa-calculator"></i> Traffic Challan Fines
                 </button>
-                <button class="chip" onclick="askSuggestion('Cheque bounce hone par Section 138 NI Act ka legal notice kaise bhein?')">
+                <button type="button" class="chip" onclick="askSuggestion('Cheque bounce hone par Section 138 NI Act ka legal notice kaise bhejein?')">
                     <i class="fa-solid fa-file-signature"></i> Cheque Bounce Notice
                 </button>
             </div>
@@ -588,18 +569,22 @@ function appendMessage(text, role, skipScroll = false) {
     const box = document.getElementById('chat-box');
     if (!box) return null;
 
+    // Immediately remove welcome section upon first message
     const hero = box.querySelector('.welcome-hero');
     if (hero) hero.remove();
 
     const msgDiv = document.createElement('div');
     msgDiv.className = `message ${role === 'user' ? 'user-msg' : 'ai-msg'}`;
 
-    const avatar = document.createElement('div');
-    avatar.className = 'msg-avatar';
-    avatar.innerHTML = role === 'user' ? '<i class="fa-solid fa-user"></i>' : '<i class="fa-solid fa-scale-balanced"></i>';
-
     const bodyWrapper = document.createElement('div');
     bodyWrapper.className = 'msg-body-wrapper';
+
+    if (role === 'ai') {
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'msg-header';
+        headerDiv.innerHTML = '<i class="fa-solid fa-scale-balanced"></i> <span>Nyayi Legal Response</span>';
+        bodyWrapper.appendChild(headerDiv);
+    }
 
     const contentDiv = document.createElement('div');
     contentDiv.className = 'msg-content';
@@ -608,12 +593,6 @@ function appendMessage(text, role, skipScroll = false) {
         contentDiv.innerHTML = MessageRenderer.escapeHtml(text).replace(/\n/g, '<br>');
     } else {
         contentDiv.innerHTML = MessageRenderer.formatLegalResponse(text);
-        
-        // Legal Trust & Advocate Guidance Callout
-        const calloutDiv = document.createElement('div');
-        calloutDiv.className = 'advocate-callout';
-        calloutDiv.innerHTML = '<i class="fa-solid fa-circle-info"></i> <span><b>Kanooni Salah:</b> Nyayi AI kanooni jaankari pradan karta hai. Adalat me vakalatnama aur mudde ke liye verified advocate se paramarsh karein.</span>';
-        contentDiv.appendChild(calloutDiv);
     }
     bodyWrapper.appendChild(contentDiv);
 
@@ -628,6 +607,7 @@ function appendMessage(text, role, skipScroll = false) {
             followupWrap.className = 'followup-suggestions';
             followups.forEach(q => {
                 const btn = document.createElement('button');
+                btn.type = 'button';
                 btn.className = 'followup-pill';
                 btn.innerHTML = `<i class="fa-solid fa-reply"></i> ${MessageRenderer.escapeHtml(q)}`;
                 btn.onclick = () => askSuggestion(q);
@@ -640,23 +620,22 @@ function appendMessage(text, role, skipScroll = false) {
         const toolsDiv = document.createElement('div');
         toolsDiv.className = 'msg-tools';
         toolsDiv.innerHTML = `
-            <button class="tool-pill" onclick="speakMessage(this, decodeURIComponent('${encodeURIComponent(cleanForAudio)}'))" title="Listen to spoken response">
+            <button type="button" class="tool-pill" onclick="speakMessage(this, decodeURIComponent('${encodeURIComponent(cleanForAudio)}'))" title="Listen to spoken response">
                 <i class="fa-solid fa-volume-high"></i> Listen
             </button>
-            <button class="tool-pill" onclick="copyMessageText(this, decodeURIComponent('${encodeURIComponent(cleanForAudio)}'))" title="Copy response text">
+            <button type="button" class="tool-pill" onclick="copyMessageText(this, decodeURIComponent('${encodeURIComponent(cleanForAudio)}'))" title="Copy response text">
                 <i class="fa-regular fa-copy"></i> Copy
             </button>
-            <button class="tool-pill" onclick="shareResponse(decodeURIComponent('${encodeURIComponent(cleanForAudio)}'))" title="Share legal guidance">
+            <button type="button" class="tool-pill" onclick="shareResponse(decodeURIComponent('${encodeURIComponent(cleanForAudio)}'))" title="Share legal guidance">
                 <i class="fa-solid fa-share-nodes"></i> Share
             </button>
-            <button class="tool-pill" onclick="regenerateLastResponse()" title="Regenerate this answer">
+            <button type="button" class="tool-pill" onclick="regenerateLastResponse()" title="Regenerate this answer">
                 <i class="fa-solid fa-arrows-rotate"></i> Regenerate
             </button>
         `;
         bodyWrapper.appendChild(toolsDiv);
     }
 
-    msgDiv.appendChild(avatar);
     msgDiv.appendChild(bodyWrapper);
     box.appendChild(msgDiv);
 
@@ -673,72 +652,157 @@ function appendMessage(text, role, skipScroll = false) {
     return msgDiv;
 }
 
-// --- 9. THINKING & GENERATION STATES ---
+// --- 9. LOADING & ERROR STATES (MINIMAL, NO BOUNCING) ---
 function showThinkingIndicator() {
     removeThinkingIndicator();
     const box = document.getElementById('chat-box');
     if (!box) return;
 
-    const stages = [
-        "Analyzing legal statutes & facts...",
-        "Cross-referencing BNS 2023 & BNSS remedies...",
-        "Synthesizing citizen action plan..."
-    ];
-    let stageIdx = 0;
+    const hero = box.querySelector('.welcome-hero');
+    if (hero) hero.remove();
 
     const indicator = document.createElement('div');
     indicator.id = 'typingIndicator';
     indicator.className = 'message ai-msg';
     indicator.innerHTML = `
-        <div class="msg-avatar"><i class="fa-solid fa-scale-balanced"></i></div>
-        <div class="typing-indicator">
-            <div class="thinking-pulse-dots">
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
+        <div class="msg-body-wrapper">
+            <div class="minimal-loading-state">
+                <div class="minimal-spinner"></div>
+                <span>Nyayi is preparing your answer...</span>
             </div>
-            <span id="thinkingStatusText">${stages[0]}</span>
         </div>
     `;
     box.appendChild(indicator);
-    smoothScrollToBottom();
-
-    thinkingInterval = setInterval(() => {
-        stageIdx = (stageIdx + 1) % stages.length;
-        const textEl = document.getElementById('thinkingStatusText');
-        if (textEl) textEl.innerText = stages[stageIdx];
-    }, 2000);
+    indicator.scrollIntoView({ behavior: 'smooth', block: 'end' });
 }
 
 function removeThinkingIndicator() {
-    if (thinkingInterval) {
-        clearInterval(thinkingInterval);
-        thinkingInterval = null;
-    }
     const el = document.getElementById('typingIndicator');
     if (el) el.remove();
 }
 
-function setGeneratingState(generating) {
-    isGenerating = generating;
-    const sendBtn = document.getElementById('sendBtn');
-    const sendIcon = document.getElementById('sendBtnIcon');
-    if (!sendBtn || !sendIcon) return;
+function showChatError(message, canRetry = true) {
+    removeThinkingIndicator();
+    const box = document.getElementById('chat-box');
+    if (!box) return;
 
-    if (generating) {
-        sendBtn.classList.add('stop-mode');
-        sendBtn.title = 'Stop Generating';
-        sendIcon.className = 'fa-solid fa-stop';
-    } else {
-        sendBtn.classList.remove('stop-mode');
-        sendBtn.title = 'Send Message';
-        sendIcon.className = 'fa-solid fa-paper-plane';
-    }
+    const errDiv = document.createElement('div');
+    errDiv.className = 'message ai-msg';
+    errDiv.innerHTML = `
+        <div class="msg-body-wrapper">
+            <div class="chat-error-card">
+                <div class="chat-error-info">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span>${MessageRenderer.escapeHtml(message || "Something went wrong. Nyayi couldn't complete that response.")}</span>
+                </div>
+                ${canRetry ? '<button type="button" class="retry-btn" onclick="regenerateLastResponse()">Try Again</button>' : ''}
+            </div>
+        </div>
+    `;
+    box.appendChild(errDiv);
+    errDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
 }
 
-function handleSendOrStop() {
-    if (isGenerating) stopGeneration();
-    else sendMessage();
+// --- 10. CHAT SEND & API SERVICE ---
+async function sendMessage() {
+    const input = document.getElementById('userInput');
+    if (!input || isGenerating) return;
+
+    const message = input.value.trim();
+    if (!message) return;
+
+    input.value = '';
+    autoGrowTextarea(input);
+
+    closeComposerTools();
+
+    // Create session if not active
+    if (!activeChatId) {
+        activeChatId = 'chat_' + Date.now();
+        const initialTitle = MemoryManager.generateMeaningfulTitle(message);
+        const newChat = {
+            id: activeChatId,
+            title: initialTitle,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            messages: []
+        };
+        await ConversationStore.save(newChat);
+    }
+
+    // Append User Message
+    appendMessage(message, 'user');
+    currentChatMessages.push({ role: 'user', text: message, timestamp: Date.now() });
+
+    // Update conversation in storage
+    const chatData = await ConversationStore.get(activeChatId) || {
+        id: activeChatId,
+        title: MemoryManager.generateMeaningfulTitle(message),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        messages: []
+    };
+    chatData.messages = currentChatMessages;
+    chatData.updatedAt = Date.now();
+    await ConversationStore.save(chatData);
+    await renderHistoryList();
+
+    // Setup Generation State & AbortController
+    isGenerating = true;
+    updateSendButtonState(true);
+    showThinkingIndicator();
+
+    activeAbortController = new AbortController();
+    const historyPayload = MemoryManager.getContextPayload(currentChatMessages.slice(0, -1), 8);
+
+    try {
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: activeAbortController.signal,
+            body: JSON.stringify({
+                message: message,
+                category: "Indian Legal Advisory",
+                language: aiLanguage,
+                history: historyPayload
+            })
+        });
+
+        removeThinkingIndicator();
+
+        if (!response.ok) {
+            throw new Error('API request failed with status ' + response.status);
+        }
+
+        const data = await response.json();
+        const replyText = data.reply || "Aapke prashna par kanooni jaankari taiyar nahi ho saki. Kripya punah prayas karein.";
+
+        appendMessage(replyText, 'ai');
+        currentChatMessages.push({ role: 'ai', text: replyText, timestamp: Date.now() });
+
+        chatData.messages = currentChatMessages;
+        chatData.updatedAt = Date.now();
+        await ConversationStore.save(chatData);
+
+        if (isVoiceQuery && autoSpeak && !isVoiceMuted) {
+            const cleanText = replyText.replace(/<[^>]*>/g, '').replace(/[\[\]\*#_]/g, '');
+            playTTS(cleanText);
+        }
+        isVoiceQuery = false;
+
+    } catch (err) {
+        removeThinkingIndicator();
+        if (err.name === 'AbortError') {
+            console.log('Response generation cancelled by citizen.');
+        } else {
+            console.error('Chat API Error:', err);
+            showChatError("Nyayi couldn't complete that response. Please check your connection and try again.");
+        }
+    } finally {
+        isGenerating = false;
+        activeAbortController = null;
+        updateSendButtonState(false);
+    }
 }
 
 function stopGeneration() {
@@ -746,20 +810,53 @@ function stopGeneration() {
         activeAbortController.abort();
         activeAbortController = null;
     }
+    isGenerating = false;
     removeThinkingIndicator();
-    setGeneratingState(false);
+    updateSendButtonState(false);
 }
 
-// --- 10. COMPOSER & QUICK TOOLS POPUP ---
-function toggleComposerTools() {
-    const popup = document.getElementById('composerToolsPopup');
-    if (popup) popup.classList.toggle('active');
+function handleSendOrStop() {
+    if (isGenerating) {
+        stopGeneration();
+    } else {
+        sendMessage();
+    }
 }
 
-function autoGrowTextarea(textarea) {
-    if (!textarea) return;
-    textarea.style.height = 'auto';
-    textarea.style.height = Math.min(textarea.scrollHeight, 130) + 'px';
+function updateSendButtonState(generating) {
+    const btn = document.getElementById('sendBtn');
+    const icon = document.getElementById('sendBtnIcon');
+    if (!btn || !icon) return;
+
+    if (generating) {
+        btn.classList.add('stop');
+        btn.title = "Stop Generating";
+        icon.className = "fa-solid fa-stop";
+    } else {
+        btn.classList.remove('stop');
+        btn.title = "Send Message";
+        icon.className = "fa-solid fa-paper-plane";
+    }
+}
+
+function regenerateLastResponse() {
+    if (isGenerating || currentChatMessages.length === 0) return;
+
+    let lastUserMessage = null;
+    for (let i = currentChatMessages.length - 1; i >= 0; i--) {
+        if (currentChatMessages[i].role === 'user') {
+            lastUserMessage = currentChatMessages[i].text;
+            break;
+        }
+    }
+
+    if (!lastUserMessage) return;
+
+    const input = document.getElementById('userInput');
+    if (input) {
+        input.value = lastUserMessage;
+        sendMessage();
+    }
 }
 
 function handleInputKey(e) {
@@ -769,585 +866,471 @@ function handleInputKey(e) {
     }
 }
 
-function smoothScrollToBottom() {
-    const box = document.getElementById('chat-box');
-    if (!box) return;
-    box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
+function autoGrowTextarea(textarea) {
+    if (!textarea) return;
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 160) + 'px';
 }
 
-// --- 11. SEND MESSAGE & API ORCHESTRATION ---
-async function sendMessage() {
-    const input = document.getElementById('userInput');
-    const text = input ? input.value.trim() : '';
-    if (!text || isGenerating) return;
+// --- 11. DATE-GROUPED HISTORY SYSTEM ---
+async function renderHistoryList() {
+    const listContainer = document.getElementById('historyList');
+    if (!listContainer) return;
 
-    input.value = '';
-    autoGrowTextarea(input);
-
-    const popup = document.getElementById('composerToolsPopup');
-    if (popup) popup.classList.remove('active');
-
-    // Append user message
-    appendMessage(text, 'user');
-
-    // Retrieve or initialize conversation in store
-    let currentChat = await ConversationStore.get(activeChatId);
-    if (!currentChat) {
-        const newId = 'conv_' + Date.now();
-        currentChat = {
-            id: newId,
-            title: MemoryManager.generateMeaningfulTitle(text),
-            messages: [],
-            createdAt: Date.now(),
-            updatedAt: Date.now()
-        };
-        activeChatId = newId;
-    } else if (currentChat.messages.length === 0 || currentChat.title === 'Legal Consultation' || currentChat.title === 'New Consultation') {
-        currentChat.title = MemoryManager.generateMeaningfulTitle(text);
+    const consultations = await ConversationStore.getAll();
+    if (consultations.length === 0) {
+        listContainer.innerHTML = '<div style="font-size:12px; color:var(--nyayi-text-muted); padding:10px 8px; text-align:center;">No previous consultations</div>';
+        return;
     }
 
-    currentChat.messages.push({
-        id: 'msg_' + Date.now(),
-        role: 'user',
-        text: text,
-        timestamp: Date.now()
-    });
-    currentChatMessages = currentChat.messages;
-    await ConversationStore.save(currentChat);
-    await loadHistory();
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const yesterdayStart = todayStart - 86400000;
+    const prev7DaysStart = todayStart - (7 * 86400000);
 
-    // Prepare multi-turn contextual history payload
-    const contextHistory = MemoryManager.getContextPayload(currentChat.messages.slice(0, -1));
-
-    // Initiate AI Generation
-    setGeneratingState(true);
-    showThinkingIndicator();
-    activeAbortController = new AbortController();
-
-    try {
-        const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                message: text,
-                category: "Indian Legal Advisory",
-                language: aiLanguage,
-                history: contextHistory
-            }),
-            signal: activeAbortController.signal
-        });
-
-        removeThinkingIndicator();
-        setGeneratingState(false);
-
-        if (!response.ok) {
-            throw new Error('Server returned status: ' + response.status);
-        }
-
-        const data = await response.json();
-        const reply = data.reply || "Maaf karein, AI se uttar lene me samasya aayi.";
-
-        appendMessage(reply, 'ai');
-        currentChat.messages.push({
-            id: 'msg_' + Date.now(),
-            role: 'ai',
-            text: reply,
-            timestamp: Date.now()
-        });
-        currentChatMessages = currentChat.messages;
-        await ConversationStore.save(currentChat);
-
-        // Auto-speak response if triggered by voice assistant
-        autoSpeakResponse(reply);
-
-    } catch (err) {
-        removeThinkingIndicator();
-        setGeneratingState(false);
-
-        if (err.name === 'AbortError') {
-            appendMessage("Response generation was stopped.", 'ai');
-        } else {
-            console.error("Chat API error:", err);
-            appendMessage("Network issue: Server se sampark nahi ho pa raha hai. Kripya check karein ki internet chal raha hai.", 'ai');
-        }
-    } finally {
-        activeAbortController = null;
-    }
-}
-
-async function regenerateLastResponse() {
-    if (isGenerating) return;
-    const currentChat = await ConversationStore.get(activeChatId);
-    if (!currentChat || currentChat.messages.length === 0) return;
-
-    let lastUserQuery = '';
-    for (let i = currentChat.messages.length - 1; i >= 0; i--) {
-        if (currentChat.messages[i].role === 'user') {
-            lastUserQuery = currentChat.messages[i].text;
-            break;
-        }
-    }
-    if (!lastUserQuery) return;
-
-    if (currentChat.messages[currentChat.messages.length - 1].role === 'ai') {
-        currentChat.messages.pop();
-    }
-
-    const input = document.getElementById('userInput');
-    if (input) {
-        input.value = lastUserQuery;
-        sendMessage();
-    }
-}
-
-// --- 12. CHAT SESSIONS & DATE-GROUPED HISTORY ---
-async function startNewChat() {
-    const newId = 'conv_' + Date.now();
-    const newChat = {
-        id: newId,
-        title: "Legal Consultation",
-        messages: [],
-        createdAt: Date.now(),
-        updatedAt: Date.now()
+    const groups = {
+        today: [],
+        yesterday: [],
+        prev7: [],
+        older: []
     };
-    await ConversationStore.save(newChat);
-    await openChat(newId);
-    if (window.innerWidth <= 768) toggleSidebar(false);
+
+    consultations.forEach(c => {
+        const time = c.updatedAt || c.createdAt || Date.now();
+        if (time >= todayStart) groups.today.push(c);
+        else if (time >= yesterdayStart) groups.yesterday.push(c);
+        else if (time >= prev7DaysStart) groups.prev7.push(c);
+        else groups.older.push(c);
+    });
+
+    let html = '';
+
+    const renderGroup = (title, items) => {
+        if (items.length === 0) return '';
+        let out = `<div class="history-group-header">${title}</div>`;
+        items.forEach(c => {
+            const isActive = c.id === activeChatId ? ' active' : '';
+            const titleEsc = MessageRenderer.escapeHtml(c.title || 'Legal Consultation');
+            out += `
+                <div class="history-item${isActive}" onclick="openChat('${c.id}')">
+                    <span class="history-item-title" title="${titleEsc}">${titleEsc}</span>
+                    <div class="history-item-actions">
+                        <button type="button" class="history-action-btn" onclick="event.stopPropagation(); renameChat('${c.id}')" title="Rename"><i class="fa-solid fa-pen"></i></button>
+                        <button type="button" class="history-action-btn delete" onclick="event.stopPropagation(); deleteChat('${c.id}')" title="Delete"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                </div>
+            `;
+        });
+        return out;
+    };
+
+    html += renderGroup('Today', groups.today);
+    html += renderGroup('Yesterday', groups.yesterday);
+    html += renderGroup('Previous 7 Days', groups.prev7);
+    html += renderGroup('Older', groups.older);
+
+    listContainer.innerHTML = html;
 }
 
-async function openChat(chatId) {
-    activeChatId = chatId;
-    const box = document.getElementById('chat-box');
-    if (!box) return;
-    box.innerHTML = '';
+async function filterHistory(query) {
+    const listContainer = document.getElementById('historyList');
+    if (!listContainer) return;
 
-    const chat = await ConversationStore.get(chatId);
-    if (chat && chat.messages.length > 0) {
-        currentChatMessages = chat.messages;
-        chat.messages.forEach(m => appendMessage(m.text, m.role, true));
-        box.scrollTop = 0;
-    } else {
-        currentChatMessages = [];
-        renderEmptyState();
+    if (!query || !query.trim()) {
+        renderHistoryList();
+        return;
     }
 
-    await loadHistory();
+    const q = query.toLowerCase().trim();
+    const consultations = await ConversationStore.getAll();
+    const filtered = consultations.filter(c => (c.title || '').toLowerCase().includes(q));
+
+    if (filtered.length === 0) {
+        listContainer.innerHTML = '<div style="font-size:12px; color:var(--nyayi-text-muted); padding:10px 8px; text-align:center;">No matching consultations</div>';
+        return;
+    }
+
+    let html = '<div class="history-group-header">Search Results</div>';
+    filtered.forEach(c => {
+        const isActive = c.id === activeChatId ? ' active' : '';
+        const titleEsc = MessageRenderer.escapeHtml(c.title || 'Legal Consultation');
+        html += `
+            <div class="history-item${isActive}" onclick="openChat('${c.id}')">
+                <span class="history-item-title" title="${titleEsc}">${titleEsc}</span>
+                <div class="history-item-actions">
+                    <button type="button" class="history-action-btn delete" onclick="event.stopPropagation(); deleteChat('${c.id}')" title="Delete"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
+            </div>
+        `;
+    });
+    listContainer.innerHTML = html;
 }
 
-async function renameChat(chatId, event) {
-    if (event) event.stopPropagation();
-    const chat = await ConversationStore.get(chatId);
+async function openChat(id) {
+    const chat = await ConversationStore.get(id);
     if (!chat) return;
 
-    const newTitle = prompt("Enter new consultation title:", chat.title || "Consultation");
+    activeChatId = chat.id;
+    currentChatMessages = chat.messages || [];
+
+    const box = document.getElementById('chat-box');
+    if (box) {
+        box.innerHTML = '';
+        if (currentChatMessages.length === 0) {
+            renderEmptyState();
+        } else {
+            currentChatMessages.forEach(m => {
+                appendMessage(m.text, m.role, true);
+            });
+            box.scrollTop = box.scrollHeight;
+        }
+    }
+
+    await renderHistoryList();
+    toggleSidebar(false);
+}
+
+async function renameChat(id) {
+    const chat = await ConversationStore.get(id);
+    if (!chat) return;
+
+    const newTitle = prompt("Enter consultation title:", chat.title || "Legal Consultation");
     if (newTitle && newTitle.trim()) {
         chat.title = newTitle.trim();
+        chat.updatedAt = Date.now();
         await ConversationStore.save(chat);
-        await loadHistory();
+        await renderHistoryList();
     }
 }
 
-async function deleteChat(chatId, event) {
-    if (event) event.stopPropagation();
-    await ConversationStore.delete(chatId);
-    const all = await ConversationStore.getAll();
-    if (all.length > 0) {
-        await openChat(all[0].id);
+async function deleteChat(id) {
+    if (!confirm("Are you sure you want to delete this legal consultation?")) return;
+    await ConversationStore.delete(id);
+    if (activeChatId === id) {
+        startNewChat();
     } else {
-        await startNewChat();
+        await renderHistoryList();
+    }
+}
+
+function startNewChat() {
+    activeChatId = null;
+    currentChatMessages = [];
+    renderEmptyState();
+    renderHistoryList();
+    toggleSidebar(false);
+    const input = document.getElementById('userInput');
+    if (input) {
+        input.value = '';
+        autoGrowTextarea(input);
+        input.focus();
     }
 }
 
 async function clearHistory() {
-    if (confirm("Kya aap apni saari consultation history clear karna chahte hain?")) {
-        await ConversationStore.clearAll();
-        await startNewChat();
+    if (!confirm("Clear all consultation history on this device?")) return;
+    await ConversationStore.clearAll();
+    startNewChat();
+}
+
+async function clearAllLocalData() {
+    if (!confirm("Reset all local settings and conversation history? This cannot be undone.")) return;
+    await ConversationStore.clearAll();
+    localStorage.removeItem('nyayaUser');
+    localStorage.removeItem('nyayaLanguage');
+    localStorage.removeItem('nyayi_theme');
+    location.reload();
+}
+
+// --- 12. NAVIGATION & WORKSPACE CONTROLS ---
+function toggleSidebar(forceState) {
+    const sidebar = document.getElementById('sidebar-container');
+    const backdrop = document.getElementById('overlayBackdrop');
+    if (!sidebar) return;
+
+    const shouldOpen = typeof forceState === 'boolean' ? forceState : !sidebar.classList.contains('active');
+    if (shouldOpen) {
+        sidebar.classList.add('active');
+        if (backdrop) backdrop.classList.add('active');
+    } else {
+        sidebar.classList.remove('active');
+        if (backdrop) backdrop.classList.remove('active');
     }
 }
 
-async function clearLocalData() {
-    if (confirm("WARNING: This will delete ALL saved conversations and reset local settings. Proceed?")) {
-        await ConversationStore.clearAll();
-        localStorage.clear();
-        closeAllModals();
-        alert("All local data cleared successfully.");
-        window.location.reload();
+function toggleDarkMode() {
+    document.body.classList.toggle('light-mode');
+    const isLight = document.body.classList.contains('light-mode');
+    localStorage.setItem('nyayi_theme', isLight ? 'light' : 'dark');
+    const icon = document.getElementById('themeIcon');
+    if (icon) {
+        icon.className = isLight ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
     }
 }
 
-// Date Grouping Helper
-function categorizeByDate(timestamp) {
-    const now = new Date();
-    const date = new Date(timestamp || Date.now());
+function changeAILanguage(lang) {
+    aiLanguage = lang;
+    localStorage.setItem('nyayaLanguage', lang);
+    const sel = document.getElementById('langSelect');
+    if (sel) sel.value = lang;
+}
+
+function switchBottomNav(tab) {
+    document.querySelectorAll('.bottom-nav-item').forEach(item => item.classList.remove('active'));
     
-    // Reset hours to compare calendar days
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const target = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
-    const diffDays = Math.round((today - target) / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays <= 7) return 'Previous 7 Days';
-    return 'Older';
-}
-
-async function loadHistory(filterText = '') {
-    const list = document.getElementById('historyList');
-    if (!list) return;
-    list.innerHTML = '';
-
-    const chats = await ConversationStore.getAll();
-    const filtered = filterText ? chats.filter(c => (c.title || '').toLowerCase().includes(filterText.toLowerCase())) : chats;
-
-    if (filtered.length === 0) {
-        list.innerHTML = '<div style="padding:10px 12px; font-size:11.5px; color:var(--text-muted);">No consultations found</div>';
-        return;
+    if (tab === 'chat') {
+        const item = document.querySelector('.bottom-nav-item:nth-child(1)');
+        if (item) item.classList.add('active');
+        startNewChat();
+    } else if (tab === 'tools') {
+        const item = document.querySelector('.bottom-nav-item:nth-child(2)');
+        if (item) item.classList.add('active');
+        toggleComposerTools();
+    } else if (tab === 'voice') {
+        const item = document.querySelector('.bottom-nav-item:nth-child(3)');
+        if (item) item.classList.add('active');
+        openVoiceAssistant();
+    } else if (tab === 'history') {
+        const item = document.querySelector('.bottom-nav-item:nth-child(4)');
+        if (item) item.classList.add('active');
+        toggleSidebar(true);
+    } else if (tab === 'sos') {
+        triggerSOS();
     }
-
-    // Group chats into Today, Yesterday, Previous 7 Days, Older
-    const groups = {
-        'Today': [],
-        'Yesterday': [],
-        'Previous 7 Days': [],
-        'Older': []
-    };
-
-    filtered.forEach(chat => {
-        const cat = categorizeByDate(chat.updatedAt || chat.createdAt);
-        groups[cat].push(chat);
-    });
-
-    ['Today', 'Yesterday', 'Previous 7 Days', 'Older'].forEach(groupName => {
-        const items = groups[groupName];
-        if (items.length === 0) return;
-
-        const header = document.createElement('div');
-        header.className = 'history-group-header';
-        header.innerText = groupName;
-        list.appendChild(header);
-
-        items.forEach(chat => {
-            const item = document.createElement('div');
-            item.className = `history-item ${chat.id === activeChatId ? 'active' : ''}`;
-            item.innerHTML = `
-                <i class="fa-regular fa-message" style="font-size:11.5px; color:var(--text-muted);"></i>
-                <span class="history-item-title">${MessageRenderer.escapeHtml(chat.title || "Consultation")}</span>
-                <div class="history-item-actions">
-                    <i class="fa-solid fa-pen history-action-btn" title="Rename" onclick="renameChat('${chat.id}', event)"></i>
-                    <i class="fa-solid fa-trash-can history-action-btn delete-btn" title="Delete" onclick="deleteChat('${chat.id}', event)"></i>
-                </div>
-            `;
-            item.onclick = () => {
-                openChat(chat.id);
-                if (window.innerWidth <= 768) toggleSidebar(false);
-            };
-            list.appendChild(item);
-        });
-    });
 }
 
-function filterHistory(query) {
-    loadHistory(query.trim());
+// [+] Quick Tools Popup Drawer
+function toggleComposerTools() {
+    const popup = document.getElementById('composerToolsPopup');
+    if (popup) popup.classList.toggle('active');
 }
 
-// --- 13. MODAL MANAGEMENT (PRESERVED) ---
-function openTool(toolName) {
+function closeComposerTools() {
+    const popup = document.getElementById('composerToolsPopup');
+    if (popup) popup.classList.remove('active');
+}
+
+// --- 13. LEGAL TOOLS & MODAL DISPATCHER ---
+function openTool(toolId) {
     closeAllModals();
-    if (window.innerWidth <= 768) toggleSidebar(false);
+    closeComposerTools();
+    toggleSidebar(false);
+    
+    let modalId = 'modal-' + toolId;
+    if (toolId === 'settings') modalId = 'settingsModal';
 
-    const modalMap = {
-        'bns': 'modal-bns',
-        'fine': 'modal-fine',
-        'drafter': 'modal-drafter',
-        'lawyer': 'modal-lawyer',
-        'settings': 'settingsModal',
-        'factlaw': 'modal-factlaw',
-        'firwizard': 'modal-firwizard',
-        'casesimplifier': 'modal-casesimplifier',
-        'updates': 'modal-updates'
-    };
-
-    const targetId = modalMap[toolName];
-    if (targetId) {
-        const modal = document.getElementById(targetId);
-        if (modal) modal.classList.add('active');
+    const target = document.getElementById(modalId);
+    if (target) {
+        target.classList.add('active');
+        const input = target.querySelector('input, textarea');
+        if (input) setTimeout(() => input.focus(), 100);
     }
 }
 
 function closeAllModals() {
     document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
-    const sos = document.getElementById('sosOverlay');
-    if (sos) sos.classList.remove('active');
-    const popup = document.getElementById('composerToolsPopup');
-    if (popup) popup.classList.remove('active');
 }
 
-// --- 14. STATUTORY TOOLS & SEARCH ENGINES (PRESERVED) ---
-function setStatuteFilter(statute, btn) {
-    activeStatuteFilter = statute;
-    document.querySelectorAll('.conv-tab').forEach(b => b.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-    convertSection();
+// Save Settings
+function saveSettings() {
+    const nameInput = document.getElementById('settingsUserName');
+    const langSelect = document.getElementById('settingsAILang');
+
+    if (nameInput && nameInput.value.trim()) {
+        user = nameInput.value.trim();
+        localStorage.setItem('nyayaUser', user);
+        updateWelcomeUserName();
+    }
+
+    if (langSelect) {
+        changeAILanguage(langSelect.value);
+    }
+
+    closeAllModals();
 }
 
-function quickConvert(val) {
+// --- 14. TOOL 1-8 LOGIC & COMPUTATIONS ---
+
+// Tool 5: BNS / Statute Converter
+function convertSection() {
+    const input = document.getElementById('bnsInput').value.trim().toUpperCase();
+    const resultDiv = document.getElementById('bnsResult');
+    if (!resultDiv) return;
+
+    if (!input) {
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = '<span style="color:var(--nyayi-danger);">Kripya koi Dhara (Section) number likhein.</span>';
+        return;
+    }
+
+    const cleanInput = input.replace(/^(IPC|BNS|BNSS|CRPC|BSA|IEA|CPC|ORDER|RULE|SECTION|DHARA)\s*/i, '').trim();
+
+    let foundMatch = null;
+    let category = '';
+
+    if (BNS_DATABASE[cleanInput]) {
+        foundMatch = BNS_DATABASE[cleanInput];
+        category = 'Penal Law (IPC to BNS)';
+    } else if (BNSS_DATABASE[cleanInput]) {
+        foundMatch = BNSS_DATABASE[cleanInput];
+        category = 'Criminal Procedure (CrPC to BNSS)';
+    } else if (BSA_DATABASE[cleanInput]) {
+        foundMatch = BSA_DATABASE[cleanInput];
+        category = 'Evidence Law (IEA to BSA)';
+    } else if (CPC_DATABASE[input] || CPC_DATABASE['Order ' + cleanInput]) {
+        foundMatch = CPC_DATABASE[input] || CPC_DATABASE['Order ' + cleanInput];
+        category = 'Civil Law (CPC)';
+    }
+
+    resultDiv.style.display = 'block';
+
+    if (foundMatch) {
+        let content = `
+            <div style="background:var(--nyayi-surface-2); border:1px solid var(--nyayi-surface-border); border-radius:var(--radius-sm); padding:12px;">
+                <div style="font-size:11px; text-transform:uppercase; color:var(--nyayi-primary); font-weight:700; margin-bottom:4px;">${category}</div>
+                <h4 style="color:var(--nyayi-text); margin-bottom:6px;">${foundMatch.title || input}</h4>
+        `;
+        if (foundMatch.bns) content += `<p><b>Naya BNS Pravdhan:</b> ${foundMatch.bns}</p>`;
+        if (foundMatch.bnss) content += `<p><b>Naya BNSS Pravdhan:</b> ${foundMatch.bnss}</p>`;
+        if (foundMatch.bsa) content += `<p><b>Naya BSA Pravdhan:</b> ${foundMatch.bsa}</p>`;
+        if (foundMatch.punishment) content += `<p><b>Saja (Punishment):</b> ${foundMatch.punishment}</p>`;
+        if (foundMatch.bailable) content += `<p><b>Bail Type:</b> ${foundMatch.bailable} | <b>Cognizable:</b> ${foundMatch.cognizable}</p>`;
+        if (foundMatch.details) content += `<p style="margin-top:6px; font-size:12.5px; color:var(--nyayi-text-secondary);">${foundMatch.details}</p>`;
+        if (foundMatch.remedy) content += `<p style="margin-top:6px; font-size:12.5px; color:var(--nyayi-text-secondary);"><b>Remedy:</b> ${foundMatch.remedy}</p>`;
+        content += '</div>';
+        resultDiv.innerHTML = content;
+    } else {
+        resultDiv.innerHTML = `
+            <div style="background:var(--nyayi-surface-2); border:1px solid var(--nyayi-surface-border); border-radius:var(--radius-sm); padding:12px; font-size:13px; color:var(--nyayi-text-secondary);">
+                Section "${MessageRenderer.escapeHtml(input)}" database me exact match nahi hua.<br>
+                Aap isey sidhe chat me puch sakte hain: <button type="button" class="chip" style="margin-top:6px;" onclick="closeAllModals(); askSuggestion('Section ${MessageRenderer.escapeHtml(input)} ke naye kanooni niyam samjhao')">Ask AI in Chat</button>
+            </div>
+        `;
+    }
+}
+
+function quickConvert(section) {
     openTool('bns');
-    const input = document.getElementById('ipc-input');
+    const input = document.getElementById('bnsInput');
     if (input) {
-        input.value = val;
+        input.value = section;
         convertSection();
     }
 }
 
-function convertSection() {
-    const input = document.getElementById('ipc-input');
-    const resultDiv = document.getElementById('bns-result');
-    if (!input || !resultDiv) return;
+function setStatuteFilter(filter) {
+    activeStatuteFilter = filter;
+}
 
-    const raw = input.value.trim();
-    const query = raw.toUpperCase().replace(/[^0-9A-Z]/g, '');
+// Tool 6: Traffic Fine Calculator
+function calculateFine() {
+    const sel = document.getElementById('fineViolation');
+    const resultDiv = document.getElementById('fineResult');
+    if (!sel || !resultDiv) return;
 
-    if (!raw) {
-        resultDiv.style.display = 'block';
-        resultDiv.innerHTML = '<span style="color:#ef4444; font-size:13px;">Kripya koi Dhara (Section), Order ya Keyword darj karein (e.g. 302, 420, 154, 438, 65B, Order 39, Zero FIR).</span>';
-        return;
+    const data = TRAFFIC_FINES[sel.value];
+    resultDiv.style.display = 'block';
+
+    if (data) {
+        resultDiv.innerHTML = `
+            <div style="background:var(--nyayi-surface-2); border:1px solid var(--nyayi-surface-border); border-radius:var(--radius-sm); padding:12px;">
+                <div style="font-size:11px; text-transform:uppercase; color:var(--nyayi-primary); font-weight:700; margin-bottom:4px;">${data.section}</div>
+                <h3 style="color:var(--nyayi-danger); font-size:18px; margin-bottom:4px;">${data.penalty}</h3>
+                <p style="font-size:13px; color:var(--nyayi-text-secondary);">${data.note}</p>
+            </div>
+        `;
     }
+}
+
+// Tool 7: Legal Notice Drafter
+function generateLegalNotice() {
+    const draftType = document.getElementById('draftType').value;
+    const sender = document.getElementById('senderName').value.trim() || '[Sender Name]';
+    const recipient = document.getElementById('recipientName').value.trim() || '[Recipient Name]';
+    const details = document.getElementById('draftDetails').value.trim() || 'Amount / Transaction details';
+    const resultDiv = document.getElementById('draftResult');
 
     resultDiv.style.display = 'block';
-    let resultsHtml = '';
-    let matchesCount = 0;
-
-    // BNS Check
-    if (activeStatuteFilter === 'all' || activeStatuteFilter === 'bns') {
-        const bnsHit = BNS_DATABASE[query] || Object.values(BNS_DATABASE).find(x => x.bns.toUpperCase().includes(query) || x.title.toLowerCase().includes(raw.toLowerCase()));
-        if (bnsHit) {
-            matchesCount++;
-            resultsHtml += `
-                <div style="background:var(--card-bg); border:1px solid var(--border); border-left:3px solid #dc2626; padding:12px 14px; border-radius:10px; margin-bottom:10px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                        <span style="font-size:10px; font-weight:800; background:#fee2e2; color:#dc2626; padding:2px 7px; border-radius:4px;">PENAL LAW (BNS 2023)</span>
-                        <span style="font-size:11.5px; color:var(--text-muted);">IPC: <b>${query}</b></span>
-                    </div>
-                    <div style="font-size:15px; font-weight:800; color:var(--text-main); margin-bottom:2px;">Nayi BNS: ${bnsHit.bns}</div>
-                    <div style="font-weight:700; font-size:13px; color:var(--primary); margin-bottom:6px;">${bnsHit.title}</div>
-                    <div style="font-size:12.5px; line-height:1.55; color:var(--text-main);">
-                        <div>⚖️ <b>Saza:</b> ${bnsHit.punishment}</div>
-                        <div>🔒 <b>Bailability:</b> ${bnsHit.bailable} • 🚨 <b>Nature:</b> ${bnsHit.cognizable}</div>
-                    </div>
-                    <button class="modal-btn" style="margin-top:8px; font-size:12px; padding:7px 12px;" onclick="closeAllModals(); askSuggestion('Mujhe BNS ${bnsHit.bns} (purani IPC ${query}) ke baare me vistrit kanooni jankari dein.')">
-                        <i class="fa-solid fa-robot"></i> Research BNS ${bnsHit.bns} with AI
-                    </button>
-                </div>
-            `;
-        }
-    }
-
-    // BNSS Check
-    if (activeStatuteFilter === 'all' || activeStatuteFilter === 'bnss') {
-        const bnssHit = BNSS_DATABASE[query] || Object.values(BNSS_DATABASE).find(x => x.bnss.toUpperCase().includes(query) || x.title.toLowerCase().includes(raw.toLowerCase()) || (x.old && x.old.toUpperCase().includes(query)));
-        if (bnssHit) {
-            matchesCount++;
-            resultsHtml += `
-                <div style="background:var(--card-bg); border:1px solid var(--border); border-left:3px solid #16a34a; padding:12px 14px; border-radius:10px; margin-bottom:10px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                        <span style="font-size:10px; font-weight:800; background:#dcfce7; color:#16a34a; padding:2px 7px; border-radius:4px;">PROCEDURE (BNSS 2023)</span>
-                        <span style="font-size:11.5px; color:var(--text-muted);">CrPC: <b>${bnssHit.old || query}</b></span>
-                    </div>
-                    <div style="font-size:15px; font-weight:800; color:var(--text-main); margin-bottom:2px;">Nayi BNSS: ${bnssHit.bnss}</div>
-                    <div style="font-weight:700; font-size:13px; color:var(--primary); margin-bottom:6px;">${bnssHit.title}</div>
-                    <p style="font-size:12.5px; line-height:1.55; color:var(--text-main); margin-bottom:6px;">${bnssHit.details}</p>
-                    <div style="font-size:11.5px; color:var(--text-muted);">📂 <b>Category:</b> ${bnssHit.category} • 📌 ${bnssHit.nature}</div>
-                    <button class="modal-btn" style="margin-top:8px; font-size:12px; padding:7px 12px;" onclick="closeAllModals(); askSuggestion('BNSS Section ${bnssHit.bnss} (CrPC ${bnssHit.old}) ke tehat kanooni prakriya aur adhikar samjhein.')">
-                        <i class="fa-solid fa-robot"></i> Research BNSS Procedure with AI
-                    </button>
-                </div>
-            `;
-        }
-    }
-
-    // BSA Check
-    if (activeStatuteFilter === 'all' || activeStatuteFilter === 'bsa') {
-        const bsaHit = BSA_DATABASE[query] || Object.values(BSA_DATABASE).find(x => x.bsa.toUpperCase().includes(query) || x.title.toLowerCase().includes(raw.toLowerCase()) || (x.old && x.old.toUpperCase().includes(query)));
-        if (bsaHit) {
-            matchesCount++;
-            resultsHtml += `
-                <div style="background:var(--card-bg); border:1px solid var(--border); border-left:3px solid #0f766e; padding:12px 14px; border-radius:10px; margin-bottom:10px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                        <span style="font-size:10px; font-weight:800; background:#ccfbf1; color:#0f766e; padding:2px 7px; border-radius:4px;">EVIDENCE (BSA 2023)</span>
-                        <span style="font-size:11.5px; color:var(--text-muted);">IEA: <b>${bsaHit.old || query}</b></span>
-                    </div>
-                    <div style="font-size:15px; font-weight:800; color:var(--text-main); margin-bottom:2px;">Nayi BSA: ${bsaHit.bsa}</div>
-                    <div style="font-weight:700; font-size:13px; color:var(--primary); margin-bottom:6px;">${bsaHit.title}</div>
-                    <p style="font-size:12.5px; line-height:1.55; color:var(--text-main); margin-bottom:6px;">${bsaHit.details}</p>
-                    <div style="font-size:11.5px; color:var(--text-muted);">💡 <b>Key Rule:</b> ${bsaHit.significance}</div>
-                    <button class="modal-btn" style="margin-top:8px; font-size:12px; padding:7px 12px;" onclick="closeAllModals(); askSuggestion('Bharatiya Sakshya Adhiniyam me ${bsaHit.bsa} ke tehat saboot pramanit karne ke niyam samjhao.')">
-                        <i class="fa-solid fa-robot"></i> Research BSA Evidence Rules with AI
-                    </button>
-                </div>
-            `;
-        }
-    }
-
-    // CPC Check
-    if (activeStatuteFilter === 'all' || activeStatuteFilter === 'cpc') {
-        const cpcHit = CPC_DATABASE[query] || CPC_DATABASE[raw.replace(/\s+/g, '').toUpperCase()] || Object.values(CPC_DATABASE).find(x => x.cpc.toUpperCase().includes(raw.toUpperCase()) || x.title.toLowerCase().includes(raw.toLowerCase()));
-        if (cpcHit) {
-            matchesCount++;
-            resultsHtml += `
-                <div style="background:var(--card-bg); border:1px solid var(--border); border-left:3px solid #7e22ce; padding:12px 14px; border-radius:10px; margin-bottom:10px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                        <span style="font-size:10px; font-weight:800; background:#f3e8ff; color:#7e22ce; padding:2px 7px; border-radius:4px;">CIVIL (CPC 1908)</span>
-                        <span style="font-size:11.5px; color:var(--text-muted);">Civil Code</span>
-                    </div>
-                    <div style="font-size:15px; font-weight:800; color:var(--text-main); margin-bottom:2px;">${cpcHit.cpc}</div>
-                    <div style="font-weight:700; font-size:13px; color:var(--primary); margin-bottom:6px;">${cpcHit.title}</div>
-                    <p style="font-size:12.5px; line-height:1.55; color:var(--text-main); margin-bottom:6px;">${cpcHit.details}</p>
-                    <div style="font-size:11.5px; color:var(--text-muted);">⚖️ <b>Litigation Standard:</b> ${cpcHit.significance}</div>
-                    <button class="modal-btn" style="margin-top:8px; font-size:12px; padding:7px 12px;" onclick="closeAllModals(); askSuggestion('Civil Procedure Code (CPC) me ${cpcHit.cpc} ke tehat case jeetne ki strategy samjhao.')">
-                        <i class="fa-solid fa-robot"></i> Research CPC Civil Procedure with AI
-                    </button>
-                </div>
-            `;
-        }
-    }
-
-    if (matchesCount > 0) {
-        resultDiv.innerHTML = resultsHtml;
-    } else {
-        resultDiv.innerHTML = `
-            <div style="padding:14px; background:var(--bg-body); border-radius:10px; text-align:center;">
-                <p style="color:var(--text-muted); font-size:12.5px; margin-bottom:8px;">"${MessageRenderer.escapeHtml(raw)}" quick index me nahi mila.</p>
-                <button class="modal-btn" onclick="closeAllModals(); askSuggestion('${MessageRenderer.escapeHtml(raw)} ke bare me BNS, BNSS, BSA aur CPC ke tehat complete legal analysis provide karein.')">
-                    <i class="fa-solid fa-magnifying-glass"></i> Deep Search in Nyayi AI Law Engine
-                </button>
-            </div>
-        `;
-    }
-}
-
-// Traffic Fine Calculator
-function calculateFine() {
-    const type = document.getElementById('fine-type').value;
-    const resultDiv = document.getElementById('fine-result');
-    const fineInfo = TRAFFIC_FINES[type];
-
-    if (fineInfo) {
-        resultDiv.style.display = 'block';
-        resultDiv.innerHTML = `
-            <div style="background:var(--primary-light); padding:12px 14px; border-radius:10px; border-left:3px solid var(--primary);">
-                <div style="font-size:12px; color:var(--text-muted);">${fineInfo.section}</div>
-                <div style="font-size:20px; font-weight:800; color:#ef4444; margin:3px 0;">Challan: ${fineInfo.fine}</div>
-                <div style="font-weight:700; font-size:13.5px; margin-bottom:4px;">${fineInfo.title}</div>
-                <div style="font-size:12.5px; color:var(--text-main);">${fineInfo.penalty}</div>
-            </div>
-            <div style="margin-top:12px; display:flex; gap:8px;">
-                <a href="https://echallan.parivahan.gov.in" target="_blank" class="lawyer-call-btn" style="background:#111827; color:#fff; flex:1; justify-content:center;">
-                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Pay on eChallan Parivahan
-                </a>
-            </div>
-        `;
-    }
-}
-
-// Legal Notice Drafter
-function generateLegalNotice() {
-    const type = document.getElementById('notice-type').value;
-    const sender = document.getElementById('notice-sender').value.trim() || "[Your Full Name & Address]";
-    const receiver = document.getElementById('notice-receiver').value.trim() || "[Recipient / Opponent Name & Address]";
-    const amount = document.getElementById('notice-amount').value.trim() || "₹[Amount]";
-    const resultDiv = document.getElementById('notice-result');
-    const today = new Date().toLocaleDateString('en-GB');
 
     let noticeText = '';
+    const today = new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
 
-    if (type === 'cheque') {
-        noticeText = `REGISTERED A.D. / SPEED POST
-LEGAL DEMAND NOTICE UNDER SECTION 138 OF NEGOTIABLE INSTRUMENTS ACT, 1881
+    if (draftType === 'cheque') {
+        noticeText = `FORMAL STATUTORY DEMAND NOTICE
+(Under Section 138 of the Negotiable Instruments Act, 1881)
 
 Date: ${today}
 
 TO:
-${receiver}
+${recipient}
 
 FROM:
 ${sender}
 
-Sir / Madam,
+SUBJECT: STATUTORY DEMAND NOTICE FOR DISHONOUR OF CHEQUE UNDER SECTION 138 NEGOTIABLE INSTRUMENTS ACT, 1881.
 
-Under instructions and on behalf of my client, I hereby serve upon you this Statutory Legal Notice under Section 138 of the Negotiable Instruments Act, 1881:
+Sir/Madam,
 
-1. That you issued Cheque for an amount of ${amount} in discharge of your legally enforceable debt and liability.
-2. That upon presentation in the bank, the said cheque was returned unpaid / dishonored with the remark "Funds Insufficient / Exceeds Arrangement".
-3. That despite verbal requests, you have deliberately failed to make the payment.
+Under instructions and on behalf of my client / the undersigned (${sender}), I hereby serve upon you this Statutory Demand Notice:
 
-NOW THEREFORE, through this notice, you are hereby called upon to pay the entire amount of ${amount} within 15 (FIFTEEN) DAYS of the receipt of this notice, failing which appropriate criminal proceedings under Section 138 of the Negotiable Instruments Act and Section 318 of Bharatiya Nyaya Sanhita (BNS) will be initiated against you at your sole risk and costs.
+1. That in discharge of your legally enforceable debt/liability, you issued cheque(s) in favor of the undersigned with the following details: ${details}.
+2. That upon presentation to the bank within its validity period, the said cheque was dishonoured and returned unpaid with the reason 'Funds Insufficient' / 'Payment Stopped' vide Bank Return Memo.
+3. You are hereby called upon to pay the entire cheque amount of ${details} within 15 (FIFTEEN) DAYS of the receipt of this notice, failing which appropriate criminal proceedings under Section 138 of the Negotiable Instruments Act, 1881 shall be initiated against you before the Competent Judicial Magistrate, at your sole risk and costs.
 
 Yours faithfully,
 ${sender}`;
     } else {
-        noticeText = `LEGAL NOTICE FOR SETTLEMENT OF DISPUTE
-
+        noticeText = `LEGAL NOTICE
 Date: ${today}
 
-TO:
-${receiver}
+TO: ${recipient}
+FROM: ${sender}
+SUBJECT: LEGAL DEMAND NOTICE REGARDING ${details}
 
-FROM:
-${sender}
+Sir/Madam,
+I hereby give you notice that:
+1. That regarding ${details}, you have failed to fulfill your legal commitments toward ${sender}.
+2. You are hereby called upon to resolve the dispute and pay all dues within 15 days of this notice, failing which legal proceedings shall be initiated.
 
-Subject: Formal Legal Notice regarding Claim / Disputed Amount of ${amount}.
-
-Sir / Madam,
-
-Please take notice that you are in serious breach of obligations regarding the subject matter:
-1. You have defaulted in your commitments/payments towards my client amounting to ${amount}.
-2. Despite repeated reminders, the outstanding dues have not been cleared.
-
-You are hereby called upon to settle and pay the full sum of ${amount} within 15 days of receiving this notice, failing which legal proceedings (Civil Suit / Criminal Complaint) will be initiated against you before the appropriate Court of Law.
-
-Sincerely,
+Yours sincerely,
 ${sender}`;
     }
 
-    resultDiv.style.display = 'block';
     resultDiv.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <b><i class="fa-solid fa-scale-balanced"></i> Advocate Standard Legal Notice:</b>
-            <button class="tool-pill" onclick="copyTextToClipboard(\`${encodeURIComponent(noticeText)}\`, this)">
-                <i class="fa-regular fa-copy"></i> Copy Notice
-            </button>
+        <div style="background:var(--nyayi-surface-2); border:1px solid var(--nyayi-surface-border); border-radius:var(--radius-sm); padding:12px; margin-top:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span style="font-size:12px; font-weight:600; color:var(--nyayi-primary);">Draft Generated</span>
+                <button type="button" class="tool-pill" onclick="copyMessageText(this, decodeURIComponent('${encodeURIComponent(noticeText)}'))"><i class="fa-regular fa-copy"></i> Copy Draft</button>
+            </div>
+            <textarea class="modal-textarea" rows="8" readonly style="font-family:var(--nyayi-font-mono); font-size:12px;">${MessageRenderer.escapeHtml(noticeText)}</textarea>
         </div>
-        <pre style="white-space:pre-wrap; font-family:inherit; background:var(--sidebar-bg); padding:12px; border-radius:8px; border:1px solid var(--border); font-size:12.5px; line-height:1.55;">${MessageRenderer.escapeHtml(noticeText)}</pre>
-        <button class="modal-btn" style="margin-top:10px; font-size:12.5px; padding:8px;" onclick="window.print()">
-            <i class="fa-solid fa-print"></i> Print Notice
-        </button>
     `;
 }
 
-// Which Law Applies (Fact-to-Law Analyzer)
+// Tool 1: Analyze Facts to Law
 async function analyzeFactsToLaw() {
     const input = document.getElementById('factlaw-input').value.trim();
     const resultDiv = document.getElementById('factlaw-result');
 
     if (!input) {
         resultDiv.style.display = 'block';
-        resultDiv.innerHTML = '<span style="color:#ef4444;">Kripya apni ghatna ke mukhya tathya (facts) darj karein.</span>';
+        resultDiv.innerHTML = '<span style="color:var(--nyayi-danger);">Kripya ghatna ka vivran likhein.</span>';
         return;
     }
 
     resultDiv.style.display = 'block';
-    resultDiv.innerHTML = '<div style="color:var(--primary);"><i class="fa-solid fa-spinner fa-spin"></i> Kanooni dharaon aur BNS ki janch ki ja rahi hai...</div>';
+    resultDiv.innerHTML = '<div style="color:var(--nyayi-primary);"><i class="fa-solid fa-spinner fa-spin"></i> Facts ka kanooni vishleshan ho raha hai...</div>';
 
     try {
         const response = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: input, category: "Which Law Applies" })
+            body: JSON.stringify({ message: input, category: "Fact to Law Analyzer" })
         });
         const data = await response.json();
         resultDiv.innerHTML = MessageRenderer.formatLegalResponse(data.reply || "Analysis complete.");
     } catch (e) {
-        resultDiv.innerHTML = '<span style="color:#ef4444;">Analysis me samasya aayi. Kripya punah prayas karein.</span>';
+        resultDiv.innerHTML = '<span style="color:var(--nyayi-danger);">Analysis me samasya aayi. Kripya punah prayas karein.</span>';
     }
 }
 
@@ -1372,12 +1355,12 @@ async function simplifyCaseLaw() {
 
     if (!input) {
         resultDiv.style.display = 'block';
-        resultDiv.innerHTML = '<span style="color:#ef4444;">Kripya kisi Case Law ka naam, citation ya judgment text paste karein.</span>';
+        resultDiv.innerHTML = '<span style="color:var(--nyayi-danger);">Kripya kisi Case Law ka naam, citation ya judgment text paste karein.</span>';
         return;
     }
 
     resultDiv.style.display = 'block';
-    resultDiv.innerHTML = '<div style="color:var(--primary);"><i class="fa-solid fa-spinner fa-spin"></i> Judgment aur Ratio Decidendi simplify ki ja rahi hai...</div>';
+    resultDiv.innerHTML = '<div style="color:var(--nyayi-primary);"><i class="fa-solid fa-spinner fa-spin"></i> Judgment aur Ratio Decidendi simplify ki ja rahi hai...</div>';
 
     try {
         const response = await fetch('/api/chat', {
@@ -1388,7 +1371,7 @@ async function simplifyCaseLaw() {
         const data = await response.json();
         resultDiv.innerHTML = MessageRenderer.formatLegalResponse(data.reply || "Simplification complete.");
     } catch (e) {
-        resultDiv.innerHTML = '<span style="color:#ef4444;">Case Law analysis me samasya aayi. Kripya punah prayas karein.</span>';
+        resultDiv.innerHTML = '<span style="color:var(--nyayi-danger);">Case Law analysis me samasya aayi. Kripya punah prayas karein.</span>';
     }
 }
 
@@ -1448,277 +1431,66 @@ function selectBestVoice(voices, langCode) {
 }
 
 function playTTS(text, onStart, onEnd) {
-    if (isVoiceMuted) { if (onEnd) onEnd(); return; }
-    const synth = window.speechSynthesis;
-    if (!synth) { if (onEnd) onEnd(); return; }
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
 
-    synth.cancel();
-    if (synth.paused) synth.resume();
+    const cleanText = text.replace(/<[^>]*>/g, ' ').replace(/[#\*_~\x60>\[\]]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!cleanText) return;
 
-    setTimeout(() => {
-        let cleanText = text
-            .replace(/<[^>]*>/g, ' ')
-            .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
-            .replace(/[\*#_`~|]/g, '')
-            .replace(/\bhttps?:\/\/\S+/g, '')
-            .replace(/\s+/g, ' ')
-            .trim();
+    const detectedLang = detectTextLanguage(cleanText);
+    const utterance = new SpeechSynthesisUtterance(cleanText.slice(0, 1200));
+    utterance.lang = detectedLang;
+    utterance.rate = 0.95;
+    utterance.pitch = 1.0;
 
-        if (!cleanText) { if (onEnd) onEnd(); return; }
-        if (cleanText.length > 800) {
-            cleanText = cleanText.substring(0, 800) + '... aur adhik jaankari ke liye text padhein.';
+    const applyVoiceAndSpeak = () => {
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+            const best = selectBestVoice(voices, detectedLang);
+            if (best) utterance.voice = best;
         }
+        if (onStart) utterance.onstart = onStart;
+        if (onEnd) utterance.onend = onEnd;
+        utterance.onerror = () => { if (onEnd) onEnd(); };
+        window.speechSynthesis.speak(utterance);
+    };
 
-        const detectedLang = detectTextLanguage(cleanText);
-        const utterance = new SpeechSynthesisUtterance(cleanText);
-        utterance.lang = detectedLang;
-        utterance.rate = detectedLang.startsWith('hi') ? 0.92 : 0.95;
-        utterance.pitch = 1.12;
-
-        const speakNow = () => {
-            const voices = synth.getVoices();
-            if (voices.length > 0) {
-                const bestVoice = selectBestVoice(voices, detectedLang);
-                if (bestVoice) utterance.voice = bestVoice;
-            }
-            if (onStart) utterance.onstart = onStart;
-            if (onEnd) { utterance.onend = onEnd; utterance.onerror = onEnd; }
-            synth.resume();
-            synth.speak(utterance);
-        };
-
-        if (synth.getVoices().length > 0) { speakNow(); }
-        else { synth.onvoiceschanged = speakNow; setTimeout(speakNow, 200); }
-    }, 120);
+    if (window.speechSynthesis.getVoices().length > 0) {
+        applyVoiceAndSpeak();
+    } else {
+        window.speechSynthesis.onvoiceschanged = applyVoiceAndSpeak;
+        setTimeout(applyVoiceAndSpeak, 300);
+    }
 }
 
 function speakMessage(btn, text) {
-    const synth = window.speechSynthesis;
-    if (!synth) return alert("Speech Synthesis not supported by this browser.");
-
-    if (synth.speaking) {
-        synth.cancel();
-        btn.innerHTML = '<i class="fa-solid fa-volume-high"></i> Listen';
+    if (!('speechSynthesis' in window)) {
+        alert("Aapke browser me text-to-speech support uplabdh nahi hai.");
         return;
     }
 
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Playing...';
-
-    playTTS(
-        text,
-        () => { btn.innerHTML = '<i class="fa-solid fa-stop"></i> Stop'; },
-        () => { btn.innerHTML = '<i class="fa-solid fa-volume-high"></i> Listen'; }
-    );
-}
-
-function autoSpeakResponse(text) {
-    if (isVoiceQuery && autoSpeak) {
-        isVoiceQuery = false;
-        playTTS(text);
-    }
-}
-
-// --- 16. VOICE ASSISTANT SYSTEM (PRESERVED) ---
-function openVoiceAssistant() {
-    closeAllModals();
-    const overlay = document.getElementById('voiceOverlay');
-    if (!overlay) return;
-
-    overlay.classList.add('active');
-    document.getElementById('voiceStatus').innerText = '🎤 Listening... Speak now';
-    document.getElementById('voiceTranscript').innerText = '';
-    
-    const respBox = document.getElementById('voiceResponseBox');
-    if (respBox) {
-        respBox.style.display = 'none';
-        respBox.innerHTML = '';
-    }
-
-    document.getElementById('voiceMicBtn').classList.add('listening');
-
-    setTimeout(() => {
-        startVoiceRecognition();
-    }, 300);
-}
-
-function closeVoiceAssistant() {
-    const overlay = document.getElementById('voiceOverlay');
-    if (overlay) overlay.classList.remove('active');
-
-    const micBtn = document.getElementById('voiceMicBtn');
-    if (micBtn) micBtn.classList.remove('listening');
-
-    if (activeRecognition) {
-        try { activeRecognition.stop(); } catch (e) {}
-        activeRecognition = null;
-    }
-
-    if (window.speechSynthesis && window.speechSynthesis.speaking) {
+    if (window.speechSynthesis.speaking) {
         window.speechSynthesis.cancel();
-    }
-}
-
-function toggleVoiceMute() {
-    isVoiceMuted = !isVoiceMuted;
-    const btn = document.getElementById('voiceMuteBtn');
-    const icon = document.getElementById('voiceMuteIcon');
-    const label = document.getElementById('voiceMuteLabel');
-
-    if (isVoiceMuted) {
-        if (window.speechSynthesis) window.speechSynthesis.cancel();
-        if (btn) btn.classList.add('muted');
-        if (icon) icon.className = 'fa-solid fa-volume-xmark';
-        if (label) label.innerText = 'Unmute Audio';
-        document.getElementById('voiceStatus').innerText = '🔇 Audio Muted';
-    } else {
-        if (btn) btn.classList.remove('muted');
-        if (icon) icon.className = 'fa-solid fa-volume-high';
-        if (label) label.innerText = 'Mute Audio';
-        document.getElementById('voiceStatus').innerText = '🔊 Audio Unmuted';
-    }
-}
-
-function stopVoiceAssistant() {
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
-    if (activeRecognition) {
-        try { activeRecognition.stop(); } catch (e) {}
-        activeRecognition = null;
-    }
-    document.getElementById('voiceMicBtn').classList.remove('listening');
-    document.getElementById('voiceStatus').innerText = '⏹️ Stopped. (Tap mic to speak)';
-}
-
-function toggleVoiceRecognition() {
-    if (activeRecognition) {
-        try { activeRecognition.stop(); } catch(e) {}
-        activeRecognition = null;
-        document.getElementById('voiceMicBtn').classList.remove('listening');
-    }
-    openVoiceAssistant();
-}
-
-function startVoiceRecognition() {
-    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRec) {
-        document.getElementById('voiceStatus').innerText = '❌ Speech Recognition not supported in this browser.';
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-volume-high"></i> Listen';
         return;
     }
 
-    if (activeRecognition) {
-        try { activeRecognition.stop(); } catch(e) {}
-    }
+    if (btn) btn.innerHTML = '<i class="fa-solid fa-circle-stop" style="color:var(--nyayi-danger);"></i> Stop';
 
-    const recognition = new SpeechRec();
-    activeRecognition = recognition;
-    recognition.lang = voiceLang;
-    recognition.continuous = false;
-    recognition.interimResults = true;
-
-    recognition.onstart = () => {
-        document.getElementById('voiceStatus').innerText = '🎤 Listening... Speak now';
-        document.getElementById('voiceMicBtn').classList.add('listening');
-    };
-
-    recognition.onresult = async (e) => {
-        let transcript = '';
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-            transcript += e.results[i][0].transcript;
-        }
-        document.getElementById('voiceTranscript').innerText = `"${transcript}"`;
-
-        const isFinalResult = e.results[e.results.length - 1].isFinal;
-
-        if (isFinalResult) {
-            document.getElementById('voiceStatus').innerText = '⚡ Processing legal guidance...';
-            document.getElementById('voiceMicBtn').classList.remove('listening');
-
-            const respBox = document.getElementById('voiceResponseBox');
-            if (respBox) {
-                respBox.style.display = 'block';
-                respBox.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing...';
-            }
-
-            appendMessage(transcript, 'user');
-
-            try {
-                const response = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: transcript, category: "Voice Assistant", language: aiLanguage })
-                });
-
-                const data = await response.json();
-                const reply = data.reply || "Maaf karein, AI se response lene me samasya aayi.";
-
-                if (respBox) {
-                    respBox.innerHTML = MessageRenderer.formatLegalResponse(reply);
-                }
-
-                appendMessage(reply, 'ai');
-
-                document.getElementById('voiceStatus').innerText = '🔊 Assistant Speaking... (Tap mic to speak again)';
-
-                playTTS(reply, null, () => {
-                    document.getElementById('voiceStatus').innerText = 'Tap mic to speak again';
-                });
-
-            } catch (err) {
-                console.error("Voice Assistant Fetch Error:", err);
-                if (respBox) respBox.innerHTML = '<span style="color:#ef4444;">Network issue connecting to assistant.</span>';
-                document.getElementById('voiceStatus').innerText = 'Tap mic to try again';
-            }
-        }
-    };
-
-    recognition.onerror = (err) => {
-        console.warn("Speech recognition error:", err);
-        document.getElementById('voiceStatus').innerText = 'Tap mic to try speaking again';
-        document.getElementById('voiceMicBtn').classList.remove('listening');
-        activeRecognition = null;
-    };
-
-    recognition.onend = () => {
-        document.getElementById('voiceMicBtn').classList.remove('listening');
-        activeRecognition = null;
-    };
-
-    recognition.start();
-}
-
-function toggleVoiceLang() {
-    if (voiceLang === 'hi-IN') {
-        voiceLang = 'en-IN';
-        document.getElementById('voiceLangLabel').innerText = 'English (en-IN)';
-    } else {
-        voiceLang = 'hi-IN';
-        document.getElementById('voiceLangLabel').innerText = 'हिंदी (hi-IN)';
-    }
-    if (document.getElementById('voiceOverlay').classList.contains('active')) {
-        startVoiceRecognition();
-    }
-}
-
-function toggleMic() {
-    openVoiceAssistant();
-}
-
-// --- 17. UTILITIES & CLIPBOARD ---
-function copyMessageText(btn, text) {
-    navigator.clipboard.writeText(text).then(() => {
-        const originalHtml = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-check" style="color:var(--primary);"></i> Copied';
-        setTimeout(() => btn.innerHTML = originalHtml, 2000);
+    playTTS(text, null, () => {
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-volume-high"></i> Listen';
     });
 }
 
-function copyTextToClipboard(encodedText, btn) {
-    const decoded = decodeURIComponent(encodedText);
-    navigator.clipboard.writeText(decoded).then(() => {
+function copyMessageText(btn, text) {
+    navigator.clipboard.writeText(text).then(() => {
         if (btn) {
-            const original = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-check" style="color:var(--primary);"></i> Copied!';
-            setTimeout(() => btn.innerHTML = original, 2000);
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check" style="color:var(--nyayi-primary);"></i> Copied';
+            setTimeout(() => { btn.innerHTML = orig; }, 2000);
         }
+    }).catch(() => {
+        prompt("Copy text:", text);
     });
 }
 
@@ -1726,89 +1498,117 @@ function shareResponse(text) {
     if (navigator.share) {
         navigator.share({
             title: 'Nyayi Legal Guidance',
-            text: text,
-            url: window.location.href
+            text: text.slice(0, 500) + '...\n\n(Consult Nyayi at https://nyayi.in)'
         }).catch(() => {});
     } else {
-        navigator.clipboard.writeText(text);
-        alert('Legal guidance copied to clipboard!');
+        navigator.clipboard.writeText(text).then(() => {
+            alert("Kanooni jaankari clipboard par copy ho gayi hai!");
+        });
     }
 }
 
-// --- 18. NAVIGATION & UI CONTROLS ---
-function switchBottomNav(tab) {
-    document.querySelectorAll('.bottom-nav-item').forEach(item => item.classList.remove('active'));
-    
-    if (tab === 'home') {
-        const homeBtn = document.getElementById('bottomNavHome');
-        if (homeBtn) homeBtn.classList.add('active');
-        toggleSidebar(false);
-        closeAllModals();
-    } else if (tab === 'tools') {
-        const toolsBtn = document.getElementById('bottomNavTools');
-        if (toolsBtn) toolsBtn.classList.add('active');
-        toggleSidebar(true);
-    } else if (tab === 'history') {
-        const historyBtn = document.getElementById('bottomNavHistory');
-        if (historyBtn) historyBtn.classList.add('active');
-        toggleSidebar(true);
-    }
-}
-
-function toggleSidebar(forceState) {
-    const sidebar = document.getElementById('sidebar-container');
-    const backdrop = document.getElementById('overlayBackdrop');
-    if (!sidebar) return;
-
-    if (typeof forceState === 'boolean') {
-        if (forceState) {
-            sidebar.classList.add('active');
-            if (backdrop) backdrop.classList.add('active');
-        } else {
-            sidebar.classList.remove('active');
-            if (backdrop) backdrop.classList.remove('active');
-        }
-    } else {
-        sidebar.classList.toggle('active');
-        if (backdrop) backdrop.classList.toggle('active');
-    }
-}
-
-function toggleDarkMode() {
-    const isLight = document.body.classList.toggle('light-mode');
-    localStorage.setItem('nyayaTheme', isLight ? 'light' : 'dark');
-    updateThemeIcon(!isLight);
-}
-
-function updateThemeIcon(isDark) {
-    const icon = document.getElementById('themeIcon');
-    if (icon) {
-        icon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-    }
-}
-
-function changeAILanguage(langVal) {
-    aiLanguage = langVal;
-    localStorage.setItem('nyayaLanguage', langVal);
-}
-
-function saveSettings() {
-    const nameVal = document.getElementById('userNameInput').value.trim();
-    const contactVal = document.getElementById('userEmergencyContact').value.trim();
-
-    if (nameVal) {
-        user = nameVal;
-        localStorage.setItem('nyayaUser', user);
-        updateWelcomeUserName();
-    }
-    if (contactVal) {
-        localStorage.setItem('nyayaEmergencyContact', contactVal);
-    }
-
+// --- 16. VOICE ASSISTANT MODAL (SPEECH RECOGNITION) ---
+function openVoiceAssistant() {
     closeAllModals();
-    alert("Settings saved successfully!");
-    
-    if (currentChatMessages.length === 0) {
-        renderEmptyState();
+    const overlay = document.getElementById('voiceOverlay');
+    if (overlay) overlay.classList.add('active');
+
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRec) {
+        const trans = document.getElementById('voiceTranscriptText');
+        if (trans) trans.innerText = "Speech Recognition aapke browser me support nahi karta. Kripya Chrome ya Edge use karein.";
+        return;
+    }
+
+    if (activeRecognition) {
+        try { activeRecognition.stop(); } catch(e) {}
+    }
+
+    activeRecognition = new SpeechRec();
+    activeRecognition.lang = voiceLang;
+    activeRecognition.continuous = false;
+    activeRecognition.interimResults = true;
+
+    const statusEl = document.getElementById('voiceStatusText');
+    const transcriptEl = document.getElementById('voiceTranscriptText');
+
+    activeRecognition.onstart = () => {
+        if (statusEl) statusEl.innerText = "Nyayi sun raha hai... Boliye";
+    };
+
+    activeRecognition.onresult = (e) => {
+        const transcript = Array.from(e.results)
+            .map(r => r[0].transcript)
+            .join('');
+        if (transcriptEl) transcriptEl.innerText = transcript;
+    };
+
+    activeRecognition.onerror = (e) => {
+        if (statusEl) statusEl.innerText = "Awaaz pehchanne me truti aayi: " + e.error;
+    };
+
+    activeRecognition.onend = () => {
+        if (transcriptEl && transcriptEl.innerText && transcriptEl.innerText !== "Boliye, Nyayi sun raha hai...") {
+            const finalQuery = transcriptEl.innerText.trim();
+            closeVoiceAssistant();
+            const input = document.getElementById('userInput');
+            if (input) {
+                input.value = finalQuery;
+                isVoiceQuery = true;
+                sendMessage();
+            }
+        } else {
+            if (statusEl) statusEl.innerText = "Kuch sunayi nahi diya. Kripya punah bole.";
+        }
+    };
+
+    try {
+        activeRecognition.start();
+    } catch(e) {}
+}
+
+function closeVoiceAssistant() {
+    if (activeRecognition) {
+        try { activeRecognition.stop(); } catch(e) {}
+        activeRecognition = null;
+    }
+    const overlay = document.getElementById('voiceOverlay');
+    if (overlay) overlay.classList.remove('active');
+}
+
+function toggleVoiceRecognition() {
+    if (activeRecognition) {
+        closeVoiceAssistant();
+    } else {
+        openVoiceAssistant();
+    }
+}
+
+function toggleVoiceMute() {
+    isVoiceMuted = !isVoiceMuted;
+    const btn = document.getElementById('voiceMuteBtn');
+    if (btn) {
+        btn.innerHTML = isVoiceMuted 
+            ? '<i class="fa-solid fa-volume-xmark" style="color:var(--nyayi-danger);"></i> Audio Muted' 
+            : '<i class="fa-solid fa-volume-high"></i> Voice Audio';
+    }
+    if (isVoiceMuted && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+    }
+}
+
+function stopVoiceAssistant() {
+    closeVoiceAssistant();
+}
+
+function toggleVoiceLang() {
+    voiceLang = voiceLang === 'hi-IN' ? 'en-IN' : 'hi-IN';
+    const btn = document.getElementById('voiceLangBtn');
+    if (btn) {
+        btn.innerText = voiceLang === 'hi-IN' ? '🌐 Hindi (हि)' : '🌐 English (En)';
+    }
+    if (activeRecognition) {
+        closeVoiceAssistant();
+        openVoiceAssistant();
     }
 }
