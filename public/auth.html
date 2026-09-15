@@ -10,13 +10,18 @@
 
       gtag('config', 'G-EVQN8MSMZE');
     </script>
-    <!-- Auto-redirect if already logged in (Persistent Session) -->
+    <!-- Clean URL Script & Auto-redirect if already logged in (Persistent Session) -->
     <script>
+        if (window.location.pathname.endsWith('.html')) {
+            var cleanPath = window.location.pathname.replace(/\/index\.html$/, '/').replace(/\.html$/, '');
+            if (!cleanPath) cleanPath = '/';
+            window.history.replaceState(null, '', cleanPath + window.location.search + window.location.hash);
+        }
         (function() {
             var isAuth = localStorage.getItem('nyayi_auth');
             var params = new URLSearchParams(window.location.search);
             if (isAuth === 'true' && !params.has('logout')) {
-                var target = params.get('redirect') || 'index.html';
+                var target = params.get('redirect') || '/';
                 window.location.replace(target);
             }
         })();
@@ -463,7 +468,7 @@
 </head>
 <body>
 
-    <a href="index.html" class="back-nav">
+    <a href="/" class="back-nav">
         <i class="fa-solid fa-arrow-left"></i> Home
     </a>
 
@@ -880,7 +885,7 @@
             
             setTimeout(() => {
                 const params = new URLSearchParams(window.location.search);
-                const target = params.get('redirect') || 'index.html';
+                const target = params.get('redirect') || '/';
                 window.location.href = target;
             }, 600);
         }
@@ -1301,7 +1306,7 @@
         function openGithubOAuth() {
             // Real GitHub OAuth redirect
             try {
-                const redirectUri = encodeURIComponent(window.location.origin + '/auth.html');
+                const redirectUri = encodeURIComponent(window.location.origin + '/auth');
                 window.location.href = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&scope=read:user,user:email&redirect_uri=${redirectUri}`;
             } catch (e) {
                 const overlay = document.getElementById('githubOverlay');

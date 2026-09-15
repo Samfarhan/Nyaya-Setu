@@ -2,7 +2,7 @@
   "name": "NYAYI - Indian Legal AI Assistant",
   "short_name": "NYAYI",
   "description": "India's AI Legal Guidance Assistant helping citizens understand Indian law, rights, and legal procedures.",
-  "start_url": "/index.html",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#07090e",
@@ -26,12 +26,12 @@
   "shortcuts": [
     {
       "name": "New Legal Consultation",
-      "url": "/index.html?action=new",
+      "url": "/?action=new",
       "icons": [{ "src": "/images/logo.png", "sizes": "192x192" }]
     },
     {
       "name": "Emergency Legal SOS",
-      "url": "/index.html?action=sos",
+      "url": "/?action=sos",
       "icons": [{ "src": "/images/logo.png", "sizes": "192x192" }]
     }
   ]

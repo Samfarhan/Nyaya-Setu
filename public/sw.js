@@ -1,8 +1,7 @@
-﻿// Nyayi AI - PWA Service Worker
+// Nyayi AI - PWA Service Worker
 const CACHE_NAME = 'nyayi-app-v2';
 const STATIC_ASSETS = [
   '/',
-  '/index.html',
   '/css/style.css',
   '/js/script.js',
   '/images/logo.png',
@@ -57,9 +56,9 @@ self.addEventListener('fetch', (event) => {
       }
       return fetch(event.request);
     }).catch(() => {
-      // Fallback to index.html for page navigation
+      // Fallback to / for page navigation
       if (event.request.mode === 'navigate') {
-        return caches.match('/index.html');
+        return caches.match('/');
       }
     })
   );

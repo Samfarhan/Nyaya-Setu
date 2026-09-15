@@ -13,12 +13,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <!-- Strict Authentication Gate for ai.nyayi.in -->
+    <!-- Clean URL Script & Strict Authentication Gate for ai.nyayi.in -->
     <script>
+        if (window.location.pathname.endsWith('.html')) {
+            var cleanPath = window.location.pathname.replace(/\/index\.html$/, '/').replace(/\.html$/, '');
+            if (!cleanPath) cleanPath = '/';
+            window.history.replaceState(null, '', cleanPath + window.location.search + window.location.hash);
+        }
         (function() {
             var isAuth = localStorage.getItem('nyayi_auth');
             if (!isAuth || isAuth !== 'true') {
-                window.location.replace('auth.html');
+                window.location.replace('auth');
             }
         })();
     </script>
@@ -755,9 +760,9 @@
                                 <strong>Platform:</strong> <a href="https://nyayi.in" target="_blank" style="color:#10b981; text-decoration:none;">nyayi.in</a>
                             </div>
                             <div class="about-links">
-                                <a href="https://nyayi.in/terms-of-use.html" target="_blank">Terms of Use</a>
-                                <a href="https://nyayi.in/privacy.html" target="_blank">Privacy Policy</a>
-                                <a href="https://nyayi.in/disclaimer.html" target="_blank">Disclaimer</a>
+                                <a href="https://nyayi.in/terms-of-use" target="_blank">Terms of Use</a>
+                                <a href="https://nyayi.in/privacy" target="_blank">Privacy Policy</a>
+                                <a href="https://nyayi.in/disclaimer" target="_blank">Disclaimer</a>
                             </div>
                         </div>
                     </div>
@@ -969,7 +974,7 @@
                 localStorage.removeItem('nyayi_auth');
                 localStorage.removeItem('nyayaUser');
                 localStorage.removeItem('nyayi_user_email');
-                window.location.replace('auth.html?logout=1');
+                window.location.replace('auth?logout=1');
             }
         }
 

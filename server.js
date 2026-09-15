@@ -66,8 +66,25 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // Static File Serving
+    // Static File Serving & 301 SEO Clean URL Redirects
     let cleanUrl = req.url.split('?')[0];
+    const queryPart = req.url.includes('?') ? '?' + req.url.split('?')[1] : '';
+
+    // 301 SEO Permanent Redirect for /index.html -> /
+    if (cleanUrl === '/index.html') {
+        res.writeHead(301, { 'Location': '/' + queryPart });
+        res.end();
+        return;
+    }
+
+    // 301 SEO Permanent Redirect for any .html URL -> extensionless clean URL (e.g. /auth.html -> /auth)
+    if (cleanUrl.endsWith('.html') && cleanUrl !== '/') {
+        const cleanPath = cleanUrl.slice(0, -5);
+        res.writeHead(301, { 'Location': cleanPath + queryPart });
+        res.end();
+        return;
+    }
+
     let fileTarget = cleanUrl === '/' ? 'index.html' : cleanUrl;
     if (cleanUrl === '/login' || cleanUrl === '/auth') fileTarget = 'auth.html';
     let filePath = path.join(__dirname, 'public', fileTarget);
@@ -218,14 +235,14 @@ YOUR IDENTITY & STYLE:
 OFFICIAL NYAYI WEB PORTAL CITATIONS & LINKS:
 Nyayi AI is integrated with the official citizen legal literacy network at https://nyayi.in.
 Whenever relevant to the citizen's query or category, provide helpful markdown links directly to the official resources on our main website:
-- Legal Terms, Maxims & Legal Definitions: [Nyayi Legal Dictionary](https://nyayi.in/dictionary.html)
-- Fundamental Rights, Police Arrest Safeguards & Citizen Rights: [Nyayi Know Your Rights](https://nyayi.in/rights.html)
-- Full Bare Acts & BNS / BNSS / BSA Explorer: [Nyayi Laws & Sanhitas Explorer](https://nyayi.in/laws.html)
-- Step-by-Step Legal Guides (Filing FIR, Bail, Consumer Forum, Eviction, Cyber Complaint): [Nyayi Legal Guides & Procedures](https://nyayi.in/guides.html)
-- Legal Articles, Landmark Judgments & Case Insights: [Nyayi Legal Articles](https://nyayi.in/articles.html)
-- Emergency Numbers & Official Legal Aid Helplines: [Nyayi Contact & Emergency Helplines](https://nyayi.in/contact.html)
+- Legal Terms, Maxims & Legal Definitions: [Nyayi Legal Dictionary](https://nyayi.in/dictionary)
+- Fundamental Rights, Police Arrest Safeguards & Citizen Rights: [Nyayi Know Your Rights](https://nyayi.in/rights)
+- Full Bare Acts & BNS / BNSS / BSA Explorer: [Nyayi Laws & Sanhitas Explorer](https://nyayi.in/laws)
+- Step-by-Step Legal Guides (Filing FIR, Bail, Consumer Forum, Eviction, Cyber Complaint): [Nyayi Legal Guides & Procedures](https://nyayi.in/guides)
+- Legal Articles, Landmark Judgments & Case Insights: [Nyayi Legal Articles](https://nyayi.in/articles)
+- Emergency Numbers & Official Legal Aid Helplines: [Nyayi Contact & Emergency Helplines](https://nyayi.in/contact)
 
-Provide 1-2 relevant links naturally when they add genuine value to the user (e.g., "आप [Nyayi Legal Dictionary](https://nyayi.in/dictionary.html) पर भी इस कानूनी शब्द की विस्तृत परिभाषा देख सकते हैं।" or "Detailed step-by-step procedural steps are also documented in [Nyayi Legal Guides](https://nyayi.in/guides.html)."). Do not overwhelm the response with repetitive links.`;
+Provide 1-2 relevant links naturally when they add genuine value to the user (e.g., "आप [Nyayi Legal Dictionary](https://nyayi.in/dictionary) पर भी इस कानूनी शब्द की विस्तृत परिभाषा देख सकते हैं।" or "Detailed step-by-step procedural steps are also documented in [Nyayi Legal Guides](https://nyayi.in/guides)."). Do not overwhelm the response with repetitive links.`;
 
             let systemPrompt = `${languageDirective}\n\n${identityBlock}\n${portalLinksGuide}${userMemoryBlock}`;
 
