@@ -60,7 +60,7 @@
     <link rel="apple-touch-icon" href="images/logo.png">
 
     <!-- CSS & Fonts -->
-    <link rel="stylesheet" href="css/style.css?v=30">
+    <link rel="stylesheet" href="css/style.css?v=31">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     
     <!-- Schema.org JSON-LD -->
@@ -113,12 +113,31 @@
                 <input type="text" id="historySearch" class="history-search-input" placeholder="Search consultations..." oninput="filterHistory(this.value)">
             </div>
 
-            <div class="sidebar-section-title">Quick Tools</div>
-            <div class="sidebar-tools-grid">
-                <div class="sidebar-tool-chip" onclick="openVoiceAssistant()">
-                    <i class="fa-solid fa-microphone" style="color:var(--nyayi-primary);"></i>
-                    <span>Voice AI</span>
+            <!-- Voice Assistant Direct Banner -->
+            <div class="sidebar-voice-banner" onclick="openVoiceAssistant()" style="margin:4px 12px 8px; padding:10px 14px; background:linear-gradient(135deg, rgba(16,185,129,0.15), rgba(14,165,233,0.1)); border:1px solid rgba(16,185,129,0.3); border-radius:var(--radius-md); cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:all 0.2s ease;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:30px; height:30px; border-radius:50%; background:var(--nyayi-primary); color:#07090e; display:flex; align-items:center; justify-content:center; font-size:14px; box-shadow:0 0 10px rgba(16,185,129,0.4);">
+                        <i class="fa-solid fa-microphone"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:13px; font-weight:600; color:var(--nyayi-text);">Voice Studio</div>
+                        <div style="font-size:11px; color:var(--nyayi-text-secondary);">Direct Voice Consultation</div>
+                    </div>
                 </div>
+                <span style="font-size:10px; font-weight:700; color:var(--nyayi-primary); background:rgba(16,185,129,0.2); padding:2px 6px; border-radius:4px;">LIVE</span>
+            </div>
+
+            <!-- Consolidated Single Legal AI Tools Hub Button -->
+            <div class="sidebar-tool-hub-btn" onclick="toggleToolsHub()" id="toolsHubToggle" style="margin:0 12px 8px; padding:10px 12px; background:var(--nyayi-surface); border:1px solid var(--nyayi-surface-border); border-radius:var(--radius-md); cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:all 0.2s ease;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-scale-balanced" style="color:var(--nyayi-primary); font-size:14px;"></i>
+                    <span style="font-size:13px; font-weight:600; color:var(--nyayi-text);">Legal AI Tools Hub (8)</span>
+                </div>
+                <i class="fa-solid fa-chevron-down" id="toolsHubChevron" style="font-size:11px; color:var(--nyayi-text-muted); transition:transform 0.2s ease;"></i>
+            </div>
+
+            <!-- Expandable Tools Grid -->
+            <div class="sidebar-tools-grid" id="sidebarToolsGrid" style="display:none; padding:4px 12px 10px; margin-bottom:4px;">
                 <div class="sidebar-tool-chip" onclick="openTool('factlaw')">
                     <i class="fa-solid fa-gavel"></i>
                     <span>Fact to Law</span>
@@ -195,17 +214,48 @@
                     </button>
                 </div>
                 
-                <div class="header-center" style="position:absolute; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:8px; cursor:pointer;" onclick="startNewChat()">
-                    <span class="brand-name" style="font-size:18px; font-weight:600; color:var(--nyayi-text);">Nyaya AI</span>
-                    <i class="fa-solid fa-chevron-down" style="font-size:12px; color:var(--nyayi-text-muted);"></i>
+                <div class="header-center" style="position:absolute; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:6px; cursor:pointer;" onclick="startNewChat()">
+                    <span class="brand-name" style="font-size:18px; font-weight:700; color:var(--nyayi-text);">Nyayi</span>
+                    <span style="font-size:10.5px; font-weight:700; color:var(--nyayi-primary); background:var(--nyayi-primary-subtle); padding:1px 6px; border-radius:4px;">2.0</span>
+                    <i class="fa-solid fa-chevron-down" style="font-size:11px; color:var(--nyayi-text-muted);"></i>
                 </div>
                 
-                <div class="nav-right">
+                <div class="nav-right" style="display:flex; align-items:center; gap:8px;">
                     <button type="button" class="nav-icon-btn" onclick="toggleDarkMode()" title="Toggle Dark/Light Mode">
                         <i class="fa-solid fa-moon" id="themeIcon"></i>
                     </button>
-                    <button type="button" class="nav-icon-btn" onclick="openTool('settings')" title="User Profile & Settings" style="width:32px; height:32px; border-radius:50%; background:var(--nyayi-primary); color:white; display:flex; align-items:center; justify-content:center; border:none; margin-left:8px;">
-                        <span id="headerAvatar" style="font-weight:600; font-size:14px;">U</span>
+                    
+                    <!-- Consultation Options Triple-Dot Menu -->
+                    <div class="chat-menu-wrapper" style="position:relative;">
+                        <button type="button" class="nav-icon-btn" id="chatMenuBtn" onclick="toggleChatMenu(event)" title="Consultation Options">
+                            <i class="fa-solid fa-ellipsis-vertical"></i>
+                        </button>
+                        <div class="chat-menu-dropdown" id="chatMenuDropdown" style="display:none; position:absolute; right:0; top:42px; width:220px; background:var(--nyayi-surface); border:1px solid var(--nyayi-surface-border); border-radius:var(--radius-md); box-shadow:0 12px 32px rgba(0,0,0,0.5); padding:6px; z-index:120;">
+                            <button type="button" class="chat-menu-item" onclick="shareActiveChat()">
+                                <i class="fa-solid fa-share-nodes"></i> <span>Share Conversation</span>
+                            </button>
+                            <button type="button" class="chat-menu-item" onclick="pinActiveChat()">
+                                <i class="fa-solid fa-thumbtack"></i> <span id="pinMenuText">Pin Consultation</span>
+                            </button>
+                            <button type="button" class="chat-menu-item" onclick="renameActiveChat()">
+                                <i class="fa-solid fa-pen-to-square"></i> <span>Rename Title</span>
+                            </button>
+                            <div style="height:1px; background:var(--nyayi-surface-border); margin:4px 0;"></div>
+                            <button type="button" class="chat-menu-item" onclick="openTool('factlaw')">
+                                <i class="fa-solid fa-circle-question"></i> <span>Legal Help & Guide</span>
+                            </button>
+                            <button type="button" class="chat-menu-item" onclick="openFeedbackModal()">
+                                <i class="fa-solid fa-comment-dots"></i> <span>Send Feedback</span>
+                            </button>
+                            <div style="height:1px; background:var(--nyayi-surface-border); margin:4px 0;"></div>
+                            <button type="button" class="chat-menu-item delete" onclick="deleteActiveChat()" style="color:var(--nyayi-danger);">
+                                <i class="fa-solid fa-trash-can"></i> <span>Delete Chat</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="button" class="nav-icon-btn" onclick="openTool('settings')" title="User Profile & Settings" style="width:34px; height:34px; border-radius:50%; background:var(--nyayi-primary); color:#07090e; display:flex; align-items:center; justify-content:center; border:none; font-weight:700;">
+                        <span id="headerAvatar" style="font-weight:700; font-size:14px;">U</span>
                     </button>
                 </div>
             </header>
@@ -223,16 +273,15 @@
             <!-- Persistent Chat Composer (Centered 650-820px) -->
             <div class="input-area">
                 <div class="composer-container">
-                    <!-- [+] Media Upload & Legal Tools Popup Drawer -->
+                    <!-- [+] Media & Document Upload Popup Drawer -->
                     <div class="composer-tools-popup" id="composerToolsPopup">
                         <div class="composer-popup-header">
-                            <span class="popup-title"><i class="fa-solid fa-paperclip"></i> Upload & Legal Tools</span>
+                            <span class="popup-title"><i class="fa-solid fa-paperclip"></i> Upload Media & Documents</span>
                             <button type="button" class="popup-close-btn" onclick="closeComposerTools()" title="Close">&times;</button>
                         </div>
 
-                        <!-- 1. Media & Document Upload Options (User requested) -->
+                        <!-- Media & Document Upload Options (User requested) -->
                         <div class="composer-popup-section">
-                            <div class="popup-section-label">Media & Case Documents</div>
                             <div class="composer-media-grid">
                                 <div class="composer-media-btn" onclick="triggerMediaPicker('document')">
                                     <div class="media-icon-box doc-icon"><i class="fa-solid fa-file-pdf"></i></div>
@@ -257,44 +306,13 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- 2. Quick Legal AI Tools -->
-                        <div class="composer-popup-section" style="border-top: 1px solid var(--nyayi-surface-border); padding-top: 8px; margin-top: 6px;">
-                            <div class="popup-section-label">Quick Legal Tools</div>
-                            <div class="composer-popup-grid">
-                                <div class="composer-popup-item" onclick="openTool('factlaw')">
-                                    <i class="fa-solid fa-gavel"></i>
-                                    <span>Fact to Law</span>
-                                </div>
-                                <div class="composer-popup-item" onclick="openTool('firwizard')">
-                                    <i class="fa-solid fa-list-check"></i>
-                                    <span>FIR Wizard</span>
-                                </div>
-                                <div class="composer-popup-item" onclick="openTool('casesimplifier')">
-                                    <i class="fa-solid fa-book-open-reader"></i>
-                                    <span>Case Law</span>
-                                </div>
-                                <div class="composer-popup-item" onclick="openTool('bns')">
-                                    <i class="fa-solid fa-scale-balanced"></i>
-                                    <span>BNS / IPC</span>
-                                </div>
-                                <div class="composer-popup-item" onclick="openTool('drafter')">
-                                    <i class="fa-solid fa-file-signature"></i>
-                                    <span>Notice Drafter</span>
-                                </div>
-                                <div class="composer-popup-item" onclick="openTool('fine')">
-                                    <i class="fa-solid fa-calculator"></i>
-                                    <span>Traffic Fine</span>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- Attachment Preview Tray (Shows above textarea when files are attached) -->
                     <div class="attachment-preview-tray" id="attachmentTray" style="display:none;"></div>
 
                     <div class="input-wrapper">
-                        <button type="button" class="composer-tool-btn" id="composerToolBtn" onclick="toggleComposerTools()" title="Upload Media / Legal Tools (+)">
+                        <button type="button" class="composer-tool-btn" id="composerToolBtn" onclick="toggleComposerTools()" title="Upload Media / Documents (+)">
                             <i class="fa-solid fa-plus"></i>
                         </button>
                         <textarea id="userInput" rows="1" placeholder="Ask Nyayi anything or attach documents..." onkeydown="handleInputKey(event)" oninput="autoGrowTextarea(this)"></textarea>
@@ -311,7 +329,7 @@
                     <input type="file" id="cameraUploadInput" accept="image/*" capture="environment" style="display:none;" onchange="handleMediaFilesSelected(event)">
 
                     <div class="composer-hint" style="text-align:center; padding-top:8px;">
-                        <span style="font-size:11px; color:var(--nyayi-text-muted);">Nyaya AI can make mistakes. Consider verifying important information.</span>
+                        <span style="font-size:11.5px; color:var(--nyayi-text-muted);">Nyayi is AI and can make mistakes...</span>
                     </div>
                 </div>
             </div>
@@ -537,7 +555,8 @@
                 <div class="settings-nav">
                     <button class="settings-tab active" onclick="switchSettingsTab('general')"><i class="fa-solid fa-user"></i> General</button>
                     <button class="settings-tab" onclick="switchSettingsTab('appearance')"><i class="fa-solid fa-palette"></i> Appearance</button>
-                    <button class="settings-tab" onclick="switchSettingsTab('voice')"><i class="fa-solid fa-microphone"></i> Voice & Chat</button>
+                    <button class="settings-tab" onclick="switchSettingsTab('voice')"><i class="fa-solid fa-microphone"></i> Voice & Audio</button>
+                    <button class="settings-tab" onclick="switchSettingsTab('security')"><i class="fa-solid fa-lock"></i> Security & Pass</button>
                     <button class="settings-tab" onclick="switchSettingsTab('privacy')"><i class="fa-solid fa-shield-halved"></i> Data & Privacy</button>
                     <button class="settings-tab" onclick="switchSettingsTab('about')"><i class="fa-solid fa-circle-info"></i> About</button>
                 </div>
@@ -561,7 +580,7 @@
                         <div class="settings-group">
                             <label>Account Status</label>
                             <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); color:#10b981; padding:8px 16px; border-radius:20px; font-size:12.5px; font-weight:600;">
-                                <i class="fa-solid fa-circle-check"></i> Verified Citizen Member
+                                <i class="fa-solid fa-circle-check"></i> Verified Citizen Member • Nyayi 2.0
                             </div>
                         </div>
                         <div class="settings-group">
@@ -596,13 +615,21 @@
                         </div>
                     </div>
 
-                    <!-- Voice & Chat Tab -->
+                    <!-- Voice & Audio Tab (User requested Male/Female voice) -->
                     <div class="settings-pane" id="settings-voice">
-                        <h4>Voice & Chat Preferences</h4>
+                        <h4>Voice & Audio Preferences</h4>
+                        <div class="settings-group">
+                            <label>AI Voice Persona (आवाज़ चयन)</label>
+                            <select id="settingsVoiceGender" class="modal-input" onchange="updateVoiceGender(this.value)">
+                                <option value="female" selected>👩 Female Voice (Priya / Swara - Natural & Clear)</option>
+                                <option value="male">👨 Male Voice (Arun / Madhur - Deep & Authoritative)</option>
+                            </select>
+                            <p class="settings-help">Select whether Nyayi Voice Assistant and spoken summaries use a female or male voice.</p>
+                        </div>
                         <div class="settings-group toggle-group">
                             <div>
-                                <label>Auto-Speak Voice Responses</label>
-                                <p class="settings-help">Automatically read aloud when you ask via voice.</p>
+                                <label>Auto-Speak Spoken Responses</label>
+                                <p class="settings-help">Automatically read aloud responses during Voice Studio sessions.</p>
                             </div>
                             <label class="switch">
                                 <input type="checkbox" id="settingsAutoSpeak" checked>
@@ -619,6 +646,31 @@
                                 <span class="slider round"></span>
                             </label>
                         </div>
+                    </div>
+
+                    <!-- Security & Password Tab (User requested change password) -->
+                    <div class="settings-pane" id="settings-security">
+                        <h4>Account Password & Security</h4>
+                        <p class="settings-help" style="margin-bottom:14px;">Update your password directly from here to keep your consultations secure.</p>
+                        
+                        <div class="settings-group">
+                            <label>Current Password</label>
+                            <input type="password" id="currentPassInput" class="modal-input" placeholder="Enter current password">
+                        </div>
+                        <div class="settings-group">
+                            <label>New Password (min. 6 characters)</label>
+                            <input type="password" id="newPassInput" class="modal-input" placeholder="Create new strong password">
+                        </div>
+                        <div class="settings-group">
+                            <label>Confirm New Password</label>
+                            <input type="password" id="confirmPassInput" class="modal-input" placeholder="Confirm new password">
+                        </div>
+                        
+                        <div id="changePassAlert" style="display:none; padding:10px 12px; border-radius:var(--radius-sm); font-size:13px; margin-bottom:12px;"></div>
+
+                        <button type="button" class="modal-btn" onclick="handleChangePassword()" id="changePassBtn" style="width:100%;">
+                            <i class="fa-solid fa-key"></i> Update Password
+                        </button>
                     </div>
 
                     <!-- Data & Privacy Tab -->
@@ -734,25 +786,98 @@
         </div>
     </div>
 
-    <!-- VOICE ASSISTANT OVERLAY -->
+    <!-- VOICE ASSISTANT 2.0 DEDICATED FULL-SCREEN STUDIO -->
     <div class="voice-overlay" id="voiceOverlay">
-        <div class="voice-content">
-            <div class="voice-mic-circle" id="voiceMicCircle">
-                <i class="fa-solid fa-microphone"></i>
+        <div class="voice-studio-container">
+            <!-- Studio Header -->
+            <div class="voice-studio-header">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="voice-live-dot"></span>
+                    <span style="font-weight:700; font-size:15px; color:var(--nyayi-text);">Nyayi Voice Studio 2.0</span>
+                </div>
+                <button type="button" class="voice-close-circle" onclick="closeVoiceAssistant()" title="Exit Voice Mode">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
-            <div class="voice-status" id="voiceStatusText">Listening to your query...</div>
-            <div class="voice-transcript" id="voiceTranscriptText">Boliye, Nyayi sun raha hai...</div>
+
+            <!-- Pulsing Voice Orb Visualizer -->
+            <div class="voice-orb-wrapper">
+                <div class="voice-orb-ring ring-3"></div>
+                <div class="voice-orb-ring ring-2"></div>
+                <div class="voice-orb-ring ring-1"></div>
+                <div class="voice-orb-core" id="voiceOrbCore" onclick="toggleVoiceMicState()">
+                    <i class="fa-solid fa-microphone" id="voiceOrbIcon"></i>
+                </div>
+            </div>
+
+            <!-- Dynamic State & Transcript -->
+            <div class="voice-status-badge" id="voiceStatusText">Nyayi is listening... Speak now</div>
             
-            <div style="display:flex; justify-content:center; gap:8px;">
-                <button type="button" class="chip" onclick="toggleVoiceLang()" id="voiceLangBtn">🌐 Hindi (हि)</button>
-                <button type="button" class="chip" onclick="toggleVoiceMute()" id="voiceMuteBtn"><i class="fa-solid fa-volume-high"></i> Voice Audio</button>
-                <button type="button" class="chip" onclick="closeVoiceAssistant()" style="color:var(--nyayi-danger);"><i class="fa-solid fa-xmark"></i> Close</button>
+            <div class="voice-live-card">
+                <div class="voice-live-label" id="voiceLiveSpeaker"><i class="fa-solid fa-user"></i> You said:</div>
+                <div class="voice-live-text" id="voiceTranscriptText">"Apna kanooni sawal Hindi, English ya Hinglish me boliye..."</div>
+            </div>
+
+            <div class="voice-response-card" id="voiceResponseCard" style="display:none;">
+                <div class="voice-live-label"><i class="fa-solid fa-scale-balanced" style="color:var(--nyayi-primary);"></i> Nyayi Response:</div>
+                <div class="voice-response-text" id="voiceResponseText"></div>
+            </div>
+
+            <!-- Bottom Control Tray -->
+            <div class="voice-studio-controls">
+                <button type="button" class="voice-ctrl-btn" onclick="toggleVoiceLang()" id="voiceLangBtn" title="Switch Language">
+                    <i class="fa-solid fa-language"></i> <span id="voiceLangLabel">Hindi</span>
+                </button>
+                <button type="button" class="voice-ctrl-btn" onclick="cycleVoiceGender()" id="voiceGenderBtn" title="Switch Voice Persona">
+                    <i class="fa-solid fa-user-astronaut"></i> <span id="voiceGenderLabel">Female Voice</span>
+                </button>
+                <button type="button" class="voice-ctrl-btn" onclick="toggleVoiceMute()" id="voiceMuteBtn" title="Mute/Unmute Audio">
+                    <i class="fa-solid fa-volume-high" id="voiceMuteIcon"></i>
+                </button>
+                <button type="button" class="voice-ctrl-btn end-btn" onclick="closeVoiceAssistant()" title="End Voice Session">
+                    <i class="fa-solid fa-phone-slash"></i>
+                </button>
             </div>
         </div>
     </div>
 
+    <!-- FEEDBACK MODAL -->
+    <div class="modal-overlay" id="feedbackModal">
+        <div class="modal-box" style="max-width:440px;">
+            <span class="modal-close" onclick="closeAllModals()">&times;</span>
+            <h3><i class="fa-solid fa-comment-dots" style="color:var(--nyayi-primary);"></i> Consultation Feedback</h3>
+            <p class="modal-desc">Nyayi 2.0 par aapka legal guidance anubhav kaisa raha?</p>
+            
+            <div style="display:flex; justify-content:center; gap:12px; margin:16px 0; font-size:26px; color:#f59e0b; cursor:pointer;" id="feedbackStars">
+                <i class="fa-solid fa-star" onclick="setFeedbackRating(1)"></i>
+                <i class="fa-solid fa-star" onclick="setFeedbackRating(2)"></i>
+                <i class="fa-solid fa-star" onclick="setFeedbackRating(3)"></i>
+                <i class="fa-solid fa-star" onclick="setFeedbackRating(4)"></i>
+                <i class="fa-solid fa-star" onclick="setFeedbackRating(5)"></i>
+            </div>
+            <textarea id="feedbackText" class="modal-textarea" rows="3" placeholder="Apna feedback ya sujhav yahan likhein..."></textarea>
+            <div id="feedbackAlert" style="display:none; padding:8px; border-radius:6px; font-size:12.5px; margin-bottom:10px;"></div>
+            <button type="button" class="modal-btn" onclick="submitFeedback()" style="width:100%;">
+                <i class="fa-solid fa-paper-plane"></i> Submit Feedback
+            </button>
+        </div>
+    </div>
+
+    <!-- RENAME CHAT MODAL -->
+    <div class="modal-overlay" id="renameModal">
+        <div class="modal-box" style="max-width:420px;">
+            <span class="modal-close" onclick="closeAllModals()">&times;</span>
+            <h3><i class="fa-solid fa-pen-to-square" style="color:var(--nyayi-primary);"></i> Rename Consultation</h3>
+            <p class="modal-desc">Iss legal consultation ka naya title enter karein:</p>
+            <input type="text" id="renameInput" class="modal-input" placeholder="e.g. Tenancy Agreement Dispute">
+            <button type="button" class="modal-btn" onclick="confirmRenameChat()" style="width:100%; margin-top:12px;">
+                <i class="fa-solid fa-check"></i> Save Title
+            </button>
+        </div>
+    </div>
+
     <!-- SCRIPTS -->
-    <script src="js/script.js?v=30"></script>
+    <script src="js/script.js?v=31"></script>
     <script>
         // Render authenticated user name
         (function() {

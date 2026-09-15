@@ -140,9 +140,16 @@ body, #app {
     flex-direction: column;
     flex-shrink: 0;
     z-index: 100;
-    transition: transform var(--transition-fast);
+    transition: margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1), transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
     overflow-y: auto;
     overflow-x: hidden;
+}
+
+/* Desktop Collapsed Sidebar */
+@media (min-width: 769px) {
+    #sidebar-container.collapsed {
+        margin-left: calc(-1 * var(--sidebar-width));
+    }
 }
 
 .sidebar-header {
@@ -229,27 +236,36 @@ body, #app {
 
 .history-item {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 10px;
-    border-radius: var(--radius-sm);
+    flex-direction: column;
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
     cursor: pointer;
-    color: var(--nyayi-text-secondary);
-    font-size: 13px;
-    transition: background var(--transition-fast), color var(--transition-fast);
+    color: var(--nyayi-text);
+    font-size: 14px;
+    margin-bottom: 4px;
+    background: transparent;
+    border: 1px solid transparent;
+    transition: all var(--transition-fast);
     position: relative;
 }
 
 .history-item:hover {
     background-color: var(--nyayi-surface);
-    color: var(--nyayi-text);
+    border-color: var(--nyayi-surface-border);
 }
 
 .history-item.active {
     background-color: var(--nyayi-surface-2);
+    border-color: rgba(16, 185, 129, 0.35);
     color: var(--nyayi-primary);
-    font-weight: 500;
-    border-left: 2px solid var(--nyayi-primary);
+    border-left: 3px solid var(--nyayi-primary);
+}
+
+.history-item-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
 }
 
 .history-item-title {
@@ -257,7 +273,19 @@ body, #app {
     overflow: hidden;
     text-overflow: ellipsis;
     flex: 1;
+    font-weight: 500;
+    font-size: 13.5px;
     margin-right: 6px;
+}
+
+.history-item-preview {
+    font-size: 11px;
+    color: var(--nyayi-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 3px;
+    line-height: 1.3;
 }
 
 .history-item-actions {
@@ -370,8 +398,8 @@ body, #app {
 #main-container {
     flex: 1 1 0%;
     min-width: 0;
-    width: calc(100vw - var(--sidebar-width));
-    max-width: calc(100vw - var(--sidebar-width));
+    width: 100%;
+    max-width: 100%;
     height: 100%;
     height: 100dvh;
     display: flex;
@@ -379,9 +407,10 @@ body, #app {
     overflow: hidden;
     position: relative;
     background-color: var(--nyayi-bg);
+    transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* --- 4. TOP HEADER (64px) --- */
+/* --- 4. TOP HEADER (56px) --- */
 #header-container {
     height: var(--header-height);
     min-height: var(--header-height);
@@ -402,18 +431,24 @@ body, #app {
 }
 
 .mobile-menu-btn {
-    display: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: transparent;
-    border: none;
+    border: 1px solid var(--nyayi-surface-border);
     color: var(--nyayi-text-secondary);
-    font-size: 18px;
+    font-size: 15px;
     cursor: pointer;
-    padding: 6px;
+    width: 36px;
+    height: 36px;
     border-radius: var(--radius-sm);
+    transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
 }
 
 .mobile-menu-btn:hover {
+    background-color: var(--nyayi-surface);
     color: var(--nyayi-text);
+    border-color: var(--nyayi-primary);
 }
 
 .brand-logo {
@@ -2382,68 +2417,305 @@ input:checked + .slider:before {
     overflow-wrap: anywhere;
 }
 
-/* --- VOICE ASSISTANT OVERLAY --- */
+/* --- TRIPLE-DOT CONSULTATION MENU --- */
+.chat-menu-wrapper {
+    position: relative;
+}
+
+.chat-menu-dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 42px;
+    width: 220px;
+    background-color: var(--nyayi-surface);
+    border: 1px solid var(--nyayi-surface-border);
+    border-radius: var(--radius-md);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    padding: 6px;
+    z-index: 150;
+    animation: fadeInMenu 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeInMenu {
+    from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.chat-menu-dropdown.active {
+    display: block;
+}
+
+.chat-menu-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--nyayi-text);
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.chat-menu-item:hover {
+    background-color: var(--nyayi-surface-2);
+    color: var(--nyayi-primary);
+}
+
+.chat-menu-item i {
+    width: 16px;
+    font-size: 13px;
+    color: var(--nyayi-text-muted);
+}
+
+.chat-menu-item:hover i {
+    color: var(--nyayi-primary);
+}
+
+.chat-menu-item.delete:hover {
+    background-color: rgba(239, 68, 68, 0.12);
+    color: var(--nyayi-danger);
+}
+
+.chat-menu-item.delete:hover i {
+    color: var(--nyayi-danger);
+}
+
+/* --- DEDICATED VOICE STUDIO 2.0 FULL-SCREEN --- */
 .voice-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.85);
-    
+    background: radial-gradient(circle at center, rgba(16, 23, 34, 0.96) 0%, rgba(7, 9, 14, 0.98) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     z-index: 9999;
     display: none;
     align-items: center;
     justify-content: center;
-    flex-direction: column;
+    padding: 20px;
 }
+
 .voice-overlay.active {
     display: flex;
-    animation: fadeInUp 0.3s ease;
+    animation: fadeIn 0.25s ease;
 }
-.voice-content {
+
+.voice-studio-container {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+}
+
+.voice-studio-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--nyayi-surface-border-subtle);
+}
+
+.voice-live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--nyayi-primary);
+    box-shadow: 0 0 10px var(--nyayi-primary);
+    animation: livePulse 1.5s infinite;
+}
+
+@keyframes livePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+.voice-close-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
     background: var(--nyayi-surface);
     border: 1px solid var(--nyayi-surface-border);
-    border-radius: 24px;
-    padding: 32px;
-    width: 90%;
-    max-width: 400px;
-    text-align: center;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    color: var(--nyayi-text-muted);
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
 }
-.voice-mic-circle {
-    width: 80px;
-    height: 80px;
+
+.voice-close-circle:hover {
+    background-color: var(--nyayi-surface-2);
+    color: var(--nyayi-danger);
+    border-color: var(--nyayi-danger);
+}
+
+/* Pulsing Voice Orb Visualizer */
+.voice-orb-wrapper {
+    position: relative;
+    width: 170px;
+    height: 170px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 8px 0;
+}
+
+.voice-orb-ring {
+    position: absolute;
     border-radius: 50%;
-    background: var(--nyayi-primary);
-    color: white;
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    animation: orbPulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.voice-orb-ring.ring-1 { width: 110px; height: 110px; animation-delay: 0s; }
+.voice-orb-ring.ring-2 { width: 140px; height: 140px; animation-delay: 0.7s; }
+.voice-orb-ring.ring-3 { width: 170px; height: 170px; animation-delay: 1.4s; }
+
+@keyframes orbPulse {
+    0% { transform: scale(0.85); opacity: 0.8; }
+    50% { transform: scale(1.05); opacity: 0.25; border-color: rgba(14, 165, 233, 0.5); }
+    100% { transform: scale(0.85); opacity: 0.8; }
+}
+
+.voice-orb-core {
+    width: 86px;
+    height: 86px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #34d399, #059669);
+    color: #07090e;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 32px;
-    margin: 0 auto 24px auto;
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-    animation: pulseMic 2s infinite;
+    z-index: 2;
+    cursor: pointer;
+    box-shadow: 0 0 35px rgba(16, 185, 129, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.4);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-@keyframes pulseMic {
-    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-    70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(16, 185, 129, 0); }
-    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+
+.voice-orb-core:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 45px rgba(16, 185, 129, 0.7);
 }
-.voice-status {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--nyayi-text);
-    margin-bottom: 12px;
+
+.voice-orb-core.thinking {
+    background: radial-gradient(circle at 35% 35%, #38bdf8, #0284c7);
+    box-shadow: 0 0 35px rgba(14, 165, 233, 0.6);
+    animation: thinkingSpin 2s linear infinite;
 }
-.voice-transcript {
-    font-size: 14px;
+
+.voice-orb-core.speaking {
+    background: radial-gradient(circle at 35% 35%, #a7f3d0, #10b981);
+    box-shadow: 0 0 50px rgba(16, 185, 129, 0.85);
+    animation: speakingPulse 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes speakingPulse {
+    from { transform: scale(0.96); }
+    to { transform: scale(1.08); }
+}
+
+.voice-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 16px;
+    background: var(--nyayi-surface);
+    border: 1px solid var(--nyayi-surface-border);
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 500;
     color: var(--nyayi-text-secondary);
-    min-height: 40px;
-    margin-bottom: 24px;
+}
+
+/* Voice Live Cards */
+.voice-live-card, .voice-response-card {
+    width: 100%;
+    background: var(--nyayi-surface);
+    border: 1px solid var(--nyayi-surface-border);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    text-align: left;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.voice-live-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--nyayi-text-muted);
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.voice-live-text {
+    font-size: 14px;
+    color: var(--nyayi-text);
+    line-height: 1.45;
+    max-height: 70px;
+    overflow-y: auto;
     font-style: italic;
 }
-/* ai-disclaimer text */
-.ai-disclaimer {
-    text-align: center;
-    padding-top: 8px;
-    font-size: 11px;
-    color: var(--nyayi-text-muted);
+
+.voice-response-text {
+    font-size: 13.5px;
+    color: var(--nyayi-text);
+    line-height: 1.5;
+    max-height: 100px;
+    overflow-y: auto;
+}
+
+/* Bottom Controls */
+.voice-studio-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 4px;
+    flex-wrap: wrap;
+}
+
+.voice-ctrl-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--nyayi-surface);
+    border: 1px solid var(--nyayi-surface-border);
+    border-radius: 100px;
+    color: var(--nyayi-text);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.voice-ctrl-btn:hover {
+    background: var(--nyayi-surface-2);
+    border-color: var(--nyayi-primary);
+    color: var(--nyayi-primary);
+}
+
+.voice-ctrl-btn.end-btn {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: var(--nyayi-danger);
+}
+
+.voice-ctrl-btn.end-btn:hover {
+    background: var(--nyayi-danger);
+    color: white;
 }

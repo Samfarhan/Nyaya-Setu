@@ -128,7 +128,11 @@ const ConversationStore = {
                 const req = store.getAll();
                 req.onsuccess = () => {
                     const list = req.result || [];
-                    list.sort((a, b) => b.updatedAt - a.updatedAt);
+                    list.sort((a, b) => {
+                        if (a.pinned && !b.pinned) return -1;
+                        if (!a.pinned && b.pinned) return 1;
+                        return (b.updatedAt || 0) - (a.updatedAt || 0);
+                    });
                     resolve(list);
                 };
                 req.onerror = () => resolve(this.getAllFromStorage());
@@ -188,7 +192,13 @@ const ConversationStore = {
     getAllFromStorage() {
         try {
             const raw = localStorage.getItem('nyayi_conversations_meta');
-            return raw ? JSON.parse(raw) : [];
+            const list = raw ? JSON.parse(raw) : [];
+            list.sort((a, b) => {
+                if (a.pinned && !b.pinned) return -1;
+                if (!a.pinned && b.pinned) return 1;
+                return (b.updatedAt || 0) - (a.updatedAt || 0);
+            });
+            return list;
         } catch (e) {
             return [];
         }
@@ -210,6 +220,7 @@ const ConversationStore = {
             list.unshift({
                 id: chat.id,
                 title: chat.title,
+                pinned: !!chat.pinned,
                 preview: chat.messages && chat.messages.length > 0 ? chat.messages[chat.messages.length - 1].text.slice(0, 70) : '',
                 updatedAt: chat.updatedAt,
                 createdAt: chat.createdAt
@@ -471,6 +482,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (icon) icon.className = 'fa-solid fa-sun';
     }
 
+    // Initialize Desktop Sidebar Collapse State
+    if (window.innerWidth > 768 && localStorage.getItem('nyayi_desktop_sidebar') === 'collapsed') {
+        const sb = document.getElementById('sidebar-container');
+        if (sb) sb.classList.add('collapsed');
+    }
+
+    // Initialize Voice Gender Persona
+    const gender = localStorage.getItem('nyayi_voice_gender') || 'female';
+    updateVoiceGender(gender);
+
+    // Initialize User Email in Settings
+    const userEmail = localStorage.getItem('nyayi_user_email') || '';
+    const emailInput = document.getElementById('settingsUserEmail');
+    if (emailInput && userEmail) emailInput.value = userEmail;
+
     const langSelect = document.getElementById('langSelect');
     if (langSelect) langSelect.value = aiLanguage;
     const settingsAILang = document.getElementById('settingsAILang');
@@ -480,7 +506,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     voiceLang = (aiLanguage === 'English') ? 'en-IN' : 'hi-IN';
     const voiceBtn = document.getElementById('voiceLangBtn');
     if (voiceBtn) {
-        voiceBtn.innerText = voiceLang === 'hi-IN' ? '🌐 Hindi (हि)' : '🌐 English (En)';
+        const label = document.getElementById('voiceLangLabel');
+        if (label) label.innerText = voiceLang === 'hi-IN' ? 'Hindi' : 'English';
     }
 
     updateWelcomeUserName();
@@ -966,13 +993,19 @@ async function renderHistoryList() {
         items.forEach(c => {
             const isActive = c.id === activeChatId ? ' active' : '';
             const titleEsc = MessageRenderer.escapeHtml(c.title || 'Legal Consultation');
+            const previewEsc = MessageRenderer.escapeHtml(c.preview || 'Legal inquiry...');
+            const pinIcon = c.pinned ? '<i class="fa-solid fa-thumbtack" style="color:#f59e0b; font-size:11px; margin-right:5px;" title="Pinned"></i>' : '';
             out += `
                 <div class="history-item${isActive}" onclick="openChat('${c.id}')">
-                    <span class="history-item-title" title="${titleEsc}">${titleEsc}</span>
-                    <div class="history-item-actions">
-                        <button type="button" class="history-action-btn" onclick="event.stopPropagation(); renameChat('${c.id}')" title="Rename"><i class="fa-solid fa-pen"></i></button>
-                        <button type="button" class="history-action-btn delete" onclick="event.stopPropagation(); deleteChat('${c.id}')" title="Delete"><i class="fa-solid fa-trash-can"></i></button>
+                    <div class="history-item-top">
+                        <span class="history-item-title" title="${titleEsc}">${pinIcon}${titleEsc}</span>
+                        <div class="history-item-actions">
+                            <button type="button" class="history-action-btn" onclick="event.stopPropagation(); togglePinChat('${c.id}')" title="Pin / Unpin"><i class="fa-solid fa-thumbtack"></i></button>
+                            <button type="button" class="history-action-btn" onclick="event.stopPropagation(); renameChat('${c.id}')" title="Rename"><i class="fa-solid fa-pen"></i></button>
+                            <button type="button" class="history-action-btn delete" onclick="event.stopPropagation(); deleteChat('${c.id}')" title="Delete"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
                     </div>
+                    <div class="history-item-preview">${previewEsc}</div>
                 </div>
             `;
         });
@@ -1103,13 +1136,188 @@ function toggleSidebar(forceState) {
     const backdrop = document.getElementById('overlayBackdrop');
     if (!sidebar) return;
 
-    const shouldOpen = typeof forceState === 'boolean' ? forceState : !sidebar.classList.contains('active');
-    if (shouldOpen) {
-        sidebar.classList.add('active');
-        if (backdrop) backdrop.classList.add('active');
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+        const shouldOpen = typeof forceState === 'boolean' ? forceState : !sidebar.classList.contains('active');
+        if (shouldOpen) {
+            sidebar.classList.add('active');
+            if (backdrop) backdrop.classList.add('active');
+        } else {
+            sidebar.classList.remove('active');
+            if (backdrop) backdrop.classList.remove('active');
+        }
     } else {
-        sidebar.classList.remove('active');
-        if (backdrop) backdrop.classList.remove('active');
+        // Desktop / Laptop: Smooth collapsible drawer
+        const shouldCollapse = typeof forceState === 'boolean' ? !forceState : !sidebar.classList.contains('collapsed');
+        if (shouldCollapse) {
+            sidebar.classList.add('collapsed');
+            localStorage.setItem('nyayi_desktop_sidebar', 'collapsed');
+        } else {
+            sidebar.classList.remove('collapsed');
+            localStorage.setItem('nyayi_desktop_sidebar', 'expanded');
+        }
+    }
+}
+
+function toggleToolsHub() {
+    const grid = document.getElementById('sidebarToolsGrid');
+    const chevron = document.getElementById('toolsHubChevron');
+    if (!grid) return;
+    const isHidden = grid.style.display === 'none' || !grid.style.display;
+    grid.style.display = isHidden ? 'grid' : 'none';
+    if (chevron) {
+        chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+}
+
+// Consultation Header Triple-Dot Options Menu
+function toggleChatMenu(event) {
+    if (event) event.stopPropagation();
+    const dropdown = document.getElementById('chatMenuDropdown');
+    if (!dropdown) return;
+    const isOpen = dropdown.classList.contains('active');
+    dropdown.classList.toggle('active', !isOpen);
+    dropdown.style.display = !isOpen ? 'block' : 'none';
+
+    const pinText = document.getElementById('pinMenuText');
+    if (pinText && activeChatId) {
+        ConversationStore.get(activeChatId).then(chat => {
+            if (chat && chat.pinned) {
+                pinText.innerText = "Unpin Consultation";
+            } else {
+                pinText.innerText = "Pin Consultation";
+            }
+        });
+    }
+}
+
+document.addEventListener('click', (e) => {
+    const menu = document.getElementById('chatMenuDropdown');
+    const btn = document.getElementById('chatMenuBtn');
+    if (menu && menu.classList.contains('active')) {
+        if (!menu.contains(e.target) && (!btn || !btn.contains(e.target))) {
+            menu.classList.remove('active');
+            menu.style.display = 'none';
+        }
+    }
+});
+
+async function shareActiveChat() {
+    toggleChatMenu();
+    let textToShare = "Nyayi 2.0 Legal Consultation:\n";
+    if (currentChatMessages.length > 0) {
+        const lastMsg = currentChatMessages[currentChatMessages.length - 1];
+        textToShare += `Summary: ${lastMsg.text.slice(0, 300)}...\n\nAccess on: https://ai.nyayi.in`;
+    } else {
+        textToShare = "Consult Indian Law, BNS 2023 & Citizen Rights on Nyayi AI: https://ai.nyayi.in";
+    }
+
+    if (navigator.share) {
+        try {
+            await navigator.share({ title: 'Nyayi Legal Consultation', text: textToShare, url: 'https://ai.nyayi.in' });
+            return;
+        } catch (err) {}
+    }
+    navigator.clipboard.writeText(textToShare).then(() => {
+        alert("Consultation summary link copied to clipboard!");
+    }).catch(() => {
+        prompt("Copy consultation link:", textToShare);
+    });
+}
+
+async function pinActiveChat() {
+    toggleChatMenu();
+    if (!activeChatId) {
+        alert("Pehle koi sawal poochkar consultation shuru karein!");
+        return;
+    }
+    const chat = await ConversationStore.get(activeChatId);
+    if (!chat) return;
+    chat.pinned = !chat.pinned;
+    await ConversationStore.save(chat);
+    await renderHistoryList();
+    alert(chat.pinned ? "📌 Consultation pinned to top!" : "Consultation unpinned.");
+}
+
+async function togglePinChat(id) {
+    const chat = await ConversationStore.get(id);
+    if (!chat) return;
+    chat.pinned = !chat.pinned;
+    await ConversationStore.save(chat);
+    await renderHistoryList();
+}
+
+function renameActiveChat() {
+    toggleChatMenu();
+    if (!activeChatId) {
+        alert("Pehle consultation shuru karein!");
+        return;
+    }
+    const modal = document.getElementById('renameModal');
+    const input = document.getElementById('renameInput');
+    if (modal && input) {
+        ConversationStore.get(activeChatId).then(chat => {
+            input.value = chat ? chat.title : '';
+            modal.classList.add('active');
+            input.focus();
+        });
+    }
+}
+
+async function confirmRenameChat() {
+    const input = document.getElementById('renameInput');
+    const modal = document.getElementById('renameModal');
+    if (!input || !activeChatId) return;
+    const newTitle = input.value.trim();
+    if (!newTitle) return;
+
+    const chat = await ConversationStore.get(activeChatId);
+    if (chat) {
+        chat.title = newTitle;
+        await ConversationStore.save(chat);
+        await renderHistoryList();
+    }
+    if (modal) modal.classList.remove('active');
+}
+
+function openFeedbackModal() {
+    toggleChatMenu();
+    const modal = document.getElementById('feedbackModal');
+    if (modal) modal.classList.add('active');
+}
+
+let selectedRating = 5;
+function setFeedbackRating(n) {
+    selectedRating = n;
+    const stars = document.querySelectorAll('#feedbackStars i');
+    stars.forEach((star, idx) => {
+        star.style.color = idx < n ? '#f59e0b' : '#64748b';
+    });
+}
+
+function submitFeedback() {
+    const alertBox = document.getElementById('feedbackAlert');
+    const text = document.getElementById('feedbackText');
+    if (alertBox) {
+        alertBox.style.display = 'block';
+        alertBox.style.background = 'rgba(16,185,129,0.15)';
+        alertBox.style.color = '#10b981';
+        alertBox.innerText = `Shukriya! Aapka ${selectedRating}-Star feedback aur sujhav save ho gaya hai.`;
+    }
+    setTimeout(() => {
+        const modal = document.getElementById('feedbackModal');
+        if (modal) modal.classList.remove('active');
+        if (text) text.value = '';
+        if (alertBox) alertBox.style.display = 'none';
+    }, 1200);
+}
+
+async function deleteActiveChat() {
+    toggleChatMenu();
+    if (!activeChatId) return;
+    if (confirm("Kya aap sach me yeh consultation delete karna chahte hain?")) {
+        await ConversationStore.delete(activeChatId);
+        startNewChat();
     }
 }
 
@@ -1605,17 +1813,33 @@ function detectTextLanguage(text) {
 }
 
 function selectBestVoice(voices, langCode) {
-    const hindiNames = ['google hindi', 'microsoft swara', 'swara', 'aditi', 'heera', 'lekha'];
-    const englishNames = ['google uk english female', 'microsoft zira', 'zira', 'samantha', 'karen', 'veena'];
-    const searchNames = langCode.startsWith('hi') ? hindiNames : englishNames;
+    const preferredGender = localStorage.getItem('nyayi_voice_gender') || 'female';
+    const isMale = preferredGender === 'male';
+
+    const hindiFemaleNames = ['google hindi', 'microsoft swara', 'swara', 'aditi', 'heera', 'lekha'];
+    const hindiMaleNames = ['google hindi male', 'microsoft madhur', 'madhur', 'neerja', 'ravi', 'hemant'];
+
+    const englishFemaleNames = ['google uk english female', 'microsoft zira', 'zira', 'samantha', 'karen', 'veena'];
+    const englishMaleNames = ['google uk english male', 'microsoft david', 'david', 'george', 'rishi', 'alex', 'guy'];
+
+    const searchNames = langCode.startsWith('hi') 
+        ? (isMale ? hindiMaleNames : hindiFemaleNames)
+        : (isMale ? englishMaleNames : englishFemaleNames);
     const langPrefix = langCode.startsWith('hi') ? 'hi' : 'en';
 
     for (const name of searchNames) {
         const found = voices.find(v => v.name.toLowerCase().includes(name));
         if (found) return found;
     }
-    const femaleVoice = voices.find(v => v.lang.startsWith(langPrefix) && !v.name.toLowerCase().includes('male'));
-    if (femaleVoice) return femaleVoice;
+
+    if (isMale) {
+        const maleVoice = voices.find(v => v.lang.startsWith(langPrefix) && v.name.toLowerCase().includes('male'));
+        if (maleVoice) return maleVoice;
+    } else {
+        const femaleVoice = voices.find(v => v.lang.startsWith(langPrefix) && (v.name.toLowerCase().includes('female') || !v.name.toLowerCase().includes('male')));
+        if (femaleVoice) return femaleVoice;
+    }
+
     const langVoice = voices.find(v => v.lang.startsWith(langPrefix));
     if (langVoice) return langVoice;
     return voices.find(v => v.lang.includes('IN')) || null;
@@ -1630,9 +1854,10 @@ function playTTS(text, onStart, onEnd) {
 
     const detectedLang = detectTextLanguage(cleanText);
     const utterance = new SpeechSynthesisUtterance(cleanText.slice(0, 1200));
+    const isMale = (localStorage.getItem('nyayi_voice_gender') || 'female') === 'male';
     utterance.lang = detectedLang;
     utterance.rate = 0.95;
-    utterance.pitch = 1.0;
+    utterance.pitch = isMale ? 0.9 : 1.05;
 
     const applyVoiceAndSpeak = () => {
         const voices = window.speechSynthesis.getVoices();
@@ -1698,12 +1923,50 @@ function shareResponse(text) {
     }
 }
 
-// --- 16. VOICE ASSISTANT MODAL (SPEECH RECOGNITION) ---
+// --- 16. VOICE STUDIO 2.0 (DEDICATED FULL-SCREEN INTERACTIVE VOICE) ---
+let isVoiceActive = false;
+let isVoiceThinking = false;
+let isVoiceSpeaking = false;
+
 function openVoiceAssistant() {
     closeAllModals();
     const overlay = document.getElementById('voiceOverlay');
     if (overlay) overlay.classList.add('active');
+    isVoiceActive = true;
 
+    // Sync gender label on button
+    const gender = localStorage.getItem('nyayi_voice_gender') || 'female';
+    const genderLabel = document.getElementById('voiceGenderLabel');
+    if (genderLabel) genderLabel.innerText = gender === 'female' ? '👩 Female' : '👨 Male';
+
+    startVoiceListening();
+}
+
+function closeVoiceAssistant() {
+    isVoiceActive = false;
+    isVoiceThinking = false;
+    isVoiceSpeaking = false;
+    if (activeRecognition) {
+        try { activeRecognition.stop(); } catch(e) {}
+        activeRecognition = null;
+    }
+    if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+    }
+    const overlay = document.getElementById('voiceOverlay');
+    if (overlay) overlay.classList.remove('active');
+    resetVoiceOrb();
+}
+
+function resetVoiceOrb() {
+    const core = document.getElementById('voiceOrbCore');
+    const icon = document.getElementById('voiceOrbIcon');
+    if (core) core.className = 'voice-orb-core';
+    if (icon) icon.className = 'fa-solid fa-microphone';
+}
+
+function startVoiceListening() {
+    if (!isVoiceActive) return;
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) {
         const trans = document.getElementById('voiceTranscriptText');
@@ -1715,13 +1978,15 @@ function openVoiceAssistant() {
         try { activeRecognition.stop(); } catch(e) {}
     }
 
-    activeRecognition = new SpeechRec();
-    activeRecognition.lang = voiceLang;
-    activeRecognition.continuous = false;
-    activeRecognition.interimResults = true;
-
+    resetVoiceOrb();
     const statusEl = document.getElementById('voiceStatusText');
     const transcriptEl = document.getElementById('voiceTranscriptText');
+    if (statusEl) statusEl.innerText = "Nyayi sun raha hai... Boliye";
+
+    activeRecognition = new SpeechRec();
+    activeRecognition.lang = voiceLang || 'hi-IN';
+    activeRecognition.continuous = false;
+    activeRecognition.interimResults = true;
 
     activeRecognition.onstart = () => {
         if (statusEl) statusEl.innerText = "Nyayi sun raha hai... Boliye";
@@ -1735,21 +2000,24 @@ function openVoiceAssistant() {
     };
 
     activeRecognition.onerror = (e) => {
-        if (statusEl) statusEl.innerText = "Awaaz pehchanne me truti aayi: " + e.error;
+        if (isVoiceActive && !isVoiceSpeaking && !isVoiceThinking) {
+            if (statusEl) statusEl.innerText = "Listening paused. Mic tap karein bolne ke liye.";
+        }
     };
 
     activeRecognition.onend = () => {
-        if (transcriptEl && transcriptEl.innerText && transcriptEl.innerText !== "Boliye, Nyayi sun raha hai...") {
-            const finalQuery = transcriptEl.innerText.trim();
-            closeVoiceAssistant();
-            const input = document.getElementById('userInput');
-            if (input) {
-                input.value = finalQuery;
-                isVoiceQuery = true;
-                sendMessage();
-            }
+        if (!isVoiceActive || isVoiceThinking || isVoiceSpeaking) return;
+        if (transcriptEl && transcriptEl.innerText && 
+            transcriptEl.innerText.length > 3 && 
+            !transcriptEl.innerText.includes("Apna kanooni sawal")) {
+            const query = transcriptEl.innerText.trim();
+            handleVoiceStudioQuery(query);
         } else {
-            if (statusEl) statusEl.innerText = "Kuch sunayi nahi diya. Kripya punah bole.";
+            setTimeout(() => {
+                if (isVoiceActive && !isVoiceThinking && !isVoiceSpeaking) {
+                    try { activeRecognition.start(); } catch(e) {}
+                }
+            }, 600);
         }
     };
 
@@ -1758,49 +2026,245 @@ function openVoiceAssistant() {
     } catch(e) {}
 }
 
-function closeVoiceAssistant() {
-    if (activeRecognition) {
-        try { activeRecognition.stop(); } catch(e) {}
-        activeRecognition = null;
+async function handleVoiceStudioQuery(userText) {
+    if (!userText || isVoiceThinking) return;
+    isVoiceThinking = true;
+
+    const core = document.getElementById('voiceOrbCore');
+    const icon = document.getElementById('voiceOrbIcon');
+    const statusEl = document.getElementById('voiceStatusText');
+    const responseCard = document.getElementById('voiceResponseCard');
+    const responseTextEl = document.getElementById('voiceResponseText');
+
+    if (core) core.className = 'voice-orb-core thinking';
+    if (icon) icon.className = 'fa-solid fa-spinner fa-spin';
+    if (statusEl) statusEl.innerText = "Nyayi soch raha hai... (Analyzing Law)";
+    if (responseCard) responseCard.style.display = 'none';
+
+    try {
+        const voicePrompt = `[Citizen Spoken Voice Query via Nyayi 2.0 Voice Studio. Give a clear, direct, and empathetic spoken legal answer in 2-3 short, conversational paragraphs in Hindi/English suitable for voice audio]: ${userText}`;
+        const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: voicePrompt,
+                history: currentChatMessages.slice(-4).map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.text })),
+                language: aiLanguage || 'Multilingual'
+            })
+        });
+
+        const data = await res.json().catch(() => ({}));
+        isVoiceThinking = false;
+
+        if (!isVoiceActive) return;
+
+        const aiReply = data.response || data.reply || "Aapke sawal par kanooni jaankari taiyar nahi ho saki. Kripya punah prayas karein.";
+
+        if (responseCard && responseTextEl) {
+            responseCard.style.display = 'block';
+            responseTextEl.innerText = aiReply.replace(/<[^>]*>/g, '').replace(/[#\*_]/g, '');
+        }
+
+        // Silently preserve in active chat session
+        if (!activeChatId) {
+            activeChatId = 'chat_' + Date.now();
+        }
+        currentChatMessages.push({ role: 'user', text: userText, time: Date.now() });
+        currentChatMessages.push({ role: 'ai', text: aiReply, time: Date.now() });
+        await ConversationStore.save({
+            id: activeChatId,
+            title: MemoryManager.generateMeaningfulTitle(userText),
+            messages: currentChatMessages,
+            updatedAt: Date.now(),
+            createdAt: Date.now()
+        });
+        renderHistoryList();
+
+        // Speak the legal response
+        speakSpokenVoiceAnswer(aiReply);
+
+    } catch (err) {
+        isVoiceThinking = false;
+        if (statusEl) statusEl.innerText = "Network error. Mic tap karein dubara bolne ke liye.";
+        resetVoiceOrb();
     }
-    const overlay = document.getElementById('voiceOverlay');
-    if (overlay) overlay.classList.remove('active');
 }
 
-function toggleVoiceRecognition() {
-    if (activeRecognition) {
-        closeVoiceAssistant();
-    } else {
-        openVoiceAssistant();
+function speakSpokenVoiceAnswer(text) {
+    if (!isVoiceActive) return;
+    isVoiceSpeaking = true;
+
+    const core = document.getElementById('voiceOrbCore');
+    const icon = document.getElementById('voiceOrbIcon');
+    const statusEl = document.getElementById('voiceStatusText');
+
+    if (core) core.className = 'voice-orb-core speaking';
+    if (icon) icon.className = 'fa-solid fa-volume-high';
+    if (statusEl) statusEl.innerText = "Nyayi bol raha hai... (Speaking)";
+
+    playTTS(text, () => {}, () => {
+        isVoiceSpeaking = false;
+        if (!isVoiceActive) return;
+        resetVoiceOrb();
+        if (statusEl) statusEl.innerText = "Nyayi sun raha hai... Agla sawal boliye";
+        const trans = document.getElementById('voiceTranscriptText');
+        if (trans) trans.innerText = "Aap agla sawal pooch sakte hain...";
+        setTimeout(() => {
+            if (isVoiceActive && !isVoiceSpeaking && !isVoiceThinking) {
+                startVoiceListening();
+            }
+        }, 500);
+    });
+}
+
+function toggleVoiceMicState() {
+    if (isVoiceSpeaking) {
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        isVoiceSpeaking = false;
+        resetVoiceOrb();
+        startVoiceListening();
+        return;
     }
+    if (isVoiceThinking) return;
+
+    if (activeRecognition) {
+        try { activeRecognition.stop(); } catch(e) {}
+    }
+    startVoiceListening();
+}
+
+function cycleVoiceGender() {
+    const current = localStorage.getItem('nyayi_voice_gender') || 'female';
+    const next = current === 'female' ? 'male' : 'female';
+    updateVoiceGender(next);
+}
+
+function updateVoiceGender(val) {
+    localStorage.setItem('nyayi_voice_gender', val);
+    const genderLabel = document.getElementById('voiceGenderLabel');
+    if (genderLabel) genderLabel.innerText = val === 'female' ? '👩 Female' : '👨 Male';
+    const select = document.getElementById('settingsVoiceGender');
+    if (select) select.value = val;
 }
 
 function toggleVoiceMute() {
     isVoiceMuted = !isVoiceMuted;
-    const btn = document.getElementById('voiceMuteBtn');
-    if (btn) {
-        btn.innerHTML = isVoiceMuted 
-            ? '<i class="fa-solid fa-volume-xmark" style="color:var(--nyayi-danger);"></i> Audio Muted' 
-            : '<i class="fa-solid fa-volume-high"></i> Voice Audio';
+    const icon = document.getElementById('voiceMuteIcon');
+    if (icon) {
+        icon.className = isVoiceMuted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high';
+        icon.style.color = isVoiceMuted ? 'var(--nyayi-danger)' : '';
     }
     if (isVoiceMuted && window.speechSynthesis) {
         window.speechSynthesis.cancel();
     }
 }
 
-function stopVoiceAssistant() {
-    closeVoiceAssistant();
-}
-
 function toggleVoiceLang() {
     voiceLang = voiceLang === 'hi-IN' ? 'en-IN' : 'hi-IN';
-    const btn = document.getElementById('voiceLangBtn');
-    if (btn) {
-        btn.innerText = voiceLang === 'hi-IN' ? '🌐 Hindi (हि)' : '🌐 English (En)';
+    const label = document.getElementById('voiceLangLabel');
+    if (label) label.innerText = voiceLang === 'hi-IN' ? 'Hindi' : 'English';
+    if (activeRecognition && isVoiceActive && !isVoiceThinking && !isVoiceSpeaking) {
+        try { activeRecognition.stop(); } catch(e) {}
+        startVoiceListening();
     }
-    if (activeRecognition) {
-        closeVoiceAssistant();
-        openVoiceAssistant();
+}
+
+// --- 17. ACCOUNT PASSWORD CHANGE HANDLER ---
+async function handleChangePassword() {
+    const current = document.getElementById('currentPassInput');
+    const newP = document.getElementById('newPassInput');
+    const confirmP = document.getElementById('confirmPassInput');
+    const alertBox = document.getElementById('changePassAlert');
+    const btn = document.getElementById('changePassBtn');
+
+    const email = localStorage.getItem('nyayi_user_email') || '';
+    if (!email) {
+        if (alertBox) {
+            alertBox.style.display = 'block';
+            alertBox.style.background = 'rgba(239,68,68,0.15)';
+            alertBox.style.color = '#ef4444';
+            alertBox.innerText = 'Email nahi mila. Kripya logout karke login karein.';
+        }
+        return;
+    }
+
+    if (!current.value || !newP.value || !confirmP.value) {
+        if (alertBox) {
+            alertBox.style.display = 'block';
+            alertBox.style.background = 'rgba(239,68,68,0.15)';
+            alertBox.style.color = '#ef4444';
+            alertBox.innerText = 'Sabhi fields bharna zaroori hai.';
+        }
+        return;
+    }
+
+    if (newP.value.length < 6) {
+        if (alertBox) {
+            alertBox.style.display = 'block';
+            alertBox.style.background = 'rgba(239,68,68,0.15)';
+            alertBox.style.color = '#ef4444';
+            alertBox.innerText = 'Naya password kam se kam 6 aksharon ka hona chahiye.';
+        }
+        return;
+    }
+
+    if (newP.value !== confirmP.value) {
+        if (alertBox) {
+            alertBox.style.display = 'block';
+            alertBox.style.background = 'rgba(239,68,68,0.15)';
+            alertBox.style.color = '#ef4444';
+            alertBox.innerText = 'Naya password aur confirm password match nahi ho rahe.';
+        }
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating Password...';
+
+    try {
+        const res = await fetch('/api/auth/change-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email,
+                currentPassword: current.value,
+                newPassword: newP.value
+            })
+        });
+        const data = await res.json().catch(() => ({}));
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-key"></i> Update Password';
+
+        if (!res.ok || !data.success) {
+            if (alertBox) {
+                alertBox.style.display = 'block';
+                alertBox.style.background = 'rgba(239,68,68,0.15)';
+                alertBox.style.color = '#ef4444';
+                alertBox.innerText = data.error || 'Password update karne me truti aayi.';
+            }
+            return;
+        }
+
+        if (alertBox) {
+            alertBox.style.display = 'block';
+            alertBox.style.background = 'rgba(16,185,129,0.15)';
+            alertBox.style.color = '#10b981';
+            alertBox.innerText = 'Aapka password safaltapoorvak update ho gaya hai!';
+        }
+        current.value = '';
+        newP.value = '';
+        confirmP.value = '';
+        setTimeout(() => { if (alertBox) alertBox.style.display = 'none'; }, 3000);
+
+    } catch(e) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-key"></i> Update Password';
+        if (alertBox) {
+            alertBox.style.display = 'block';
+            alertBox.style.background = 'rgba(239,68,68,0.15)';
+            alertBox.style.color = '#ef4444';
+            alertBox.innerText = 'Network error: Server se jud nahi sake.';
+        }
     }
 }
 

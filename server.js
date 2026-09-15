@@ -784,7 +784,37 @@ function handleAuthAPI(req, res) {
             return sendJSON(200, { success: true, message: 'Password updated successfully! Please login.' });
         }
 
-        // 5. GitHub OAuth Exchange
+        // 5. Change Password from Settings
+        if (url === '/api/auth/change-password' && req.method === 'POST') {
+            const email = (json.email || '').trim().toLowerCase();
+            const currentPassword = json.currentPassword || '';
+            const newPassword = json.newPassword || '';
+
+            if (!email || !currentPassword || !newPassword) {
+                return sendJSON(400, { error: 'Current and new password are required.' });
+            }
+            if (newPassword.length < 6) {
+                return sendJSON(400, { error: 'New password must be at least 6 characters long.' });
+            }
+
+            const users = getUsers();
+            const user = users.find(u => u.email === email);
+            if (!user) {
+                return sendJSON(404, { error: 'User account not found.' });
+            }
+            if (user.password && user.password !== currentPassword) {
+                return sendJSON(400, { error: 'Current password does not match.' });
+            }
+
+            user.password = newPassword;
+            user.updatedAt = new Date().toISOString();
+            saveUsers(users);
+
+            console.log(`[PASSWORD CHANGE] User ${user.email} updated password via Settings.`);
+            return sendJSON(200, { success: true, message: 'Password updated successfully!' });
+        }
+
+        // 6. GitHub OAuth Exchange
         if (url === '/api/auth/github' && req.method === 'POST') {
             const code = (json.code || '').trim();
             if (!code) return sendJSON(400, { error: 'OAuth code is required' });
