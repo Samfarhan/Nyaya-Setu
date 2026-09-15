@@ -846,7 +846,8 @@ async function sendMessage() {
                 message: promptPayload,
                 category: "Indian Legal Advisory",
                 language: aiLanguage,
-                history: historyPayload
+                history: historyPayload,
+                email: localStorage.getItem('nyayi_user_email') || ''
             })
         });
 
@@ -1204,7 +1205,7 @@ document.addEventListener('click', (e) => {
 
 async function shareActiveChat() {
     toggleChatMenu();
-    let textToShare = "Nyayi 2.0 Legal Consultation:\n";
+    let textToShare = "Nyayi Legal Consultation:\n";
     if (currentChatMessages.length > 0) {
         const lastMsg = currentChatMessages[currentChatMessages.length - 1];
         textToShare += `Summary: ${lastMsg.text.slice(0, 300)}...\n\nAccess on: https://ai.nyayi.in`;
@@ -1849,15 +1850,35 @@ function playTTS(text, onStart, onEnd) {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
 
-    const cleanText = text.replace(/<[^>]*>/g, ' ').replace(/[#\*_~\x60>\[\]]/g, ' ').replace(/\s+/g, ' ').trim();
+    // Clean text: strip markdown links to just anchor text, remove markdown symbols
+    let cleanText = text
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
+        .replace(/[#\*_~\x60>]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
     if (!cleanText) return;
 
     const detectedLang = detectTextLanguage(cleanText);
+
+    // Phonetic legal acronym expansion for natural Hindi enunciation
+    if (detectedLang.startsWith('hi')) {
+        cleanText = cleanText
+            .replace(/\bFIR\b/gi, 'एफ.आई.आर.')
+            .replace(/\bBNS\b/gi, 'बी.एन.एस.')
+            .replace(/\bBNSS\b/gi, 'बी.एन.एस.एस.')
+            .replace(/\bBSA\b/gi, 'बी.एस.ए.')
+            .replace(/\bIPC\b/gi, 'आई.पी.सी.')
+            .replace(/\bCrPC\b/gi, 'सी.आर.पी.सी.')
+            .replace(/\bCPC\b/gi, 'सी.पी.सी.');
+    }
+
     const utterance = new SpeechSynthesisUtterance(cleanText.slice(0, 1200));
     const isMale = (localStorage.getItem('nyayi_voice_gender') || 'female') === 'male';
     utterance.lang = detectedLang;
-    utterance.rate = 0.95;
-    utterance.pitch = isMale ? 0.9 : 1.05;
+    // 0.88 rate is crisp, human, and avoids syllable slurring in Hindi TTS engines
+    utterance.rate = detectedLang.startsWith('hi') ? 0.88 : 0.95;
+    utterance.pitch = isMale ? 0.92 : 1.02;
 
     const applyVoiceAndSpeak = () => {
         const voices = window.speechSynthesis.getVoices();
@@ -1923,7 +1944,7 @@ function shareResponse(text) {
     }
 }
 
-// --- 16. VOICE STUDIO 2.0 (DEDICATED FULL-SCREEN INTERACTIVE VOICE) ---
+// --- 16. VOICE STUDIO (DEDICATED FULL-SCREEN INTERACTIVE VOICE) ---
 let isVoiceActive = false;
 let isVoiceThinking = false;
 let isVoiceSpeaking = false;
@@ -2042,14 +2063,20 @@ async function handleVoiceStudioQuery(userText) {
     if (responseCard) responseCard.style.display = 'none';
 
     try {
-        const voicePrompt = `[Citizen Spoken Voice Query via Nyayi 2.0 Voice Studio. Give a clear, direct, and empathetic spoken legal answer in 2-3 short, conversational paragraphs in Hindi/English suitable for voice audio]: ${userText}`;
+        const isHindi = voiceLang === 'hi-IN';
+        const voicePrompt = isHindi
+            ? `[Citizen Voice Query in HINDI. Reply 100% strictly in clear, respectful spoken HINDI in Devanagari script. Maximum 2-3 short, spoken sentences for speech audio. Zero English words]: ${userText}`
+            : `[Citizen Voice Query in ENGLISH. Reply 100% strictly in clear spoken ENGLISH. Maximum 2-3 short, spoken sentences for speech audio]: ${userText}`;
+
         const res = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 message: voicePrompt,
+                category: "Voice Assistant",
                 history: currentChatMessages.slice(-4).map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.text })),
-                language: aiLanguage || 'Multilingual'
+                language: isHindi ? 'Hindi' : 'English',
+                email: localStorage.getItem('nyayi_user_email') || ''
             })
         });
 
@@ -2058,7 +2085,7 @@ async function handleVoiceStudioQuery(userText) {
 
         if (!isVoiceActive) return;
 
-        const aiReply = data.response || data.reply || "Aapke sawal par kanooni jaankari taiyar nahi ho saki. Kripya punah prayas karein.";
+        const aiReply = data.response || data.reply || (isHindi ? "माफ करें, आपके प्रश्न पर जानकारी प्राप्त नहीं हो सकी। कृपया दोबारा बोलें।" : "Could not retrieve legal response. Please try speaking again.");
 
         if (responseCard && responseTextEl) {
             responseCard.style.display = 'block';
@@ -2085,7 +2112,7 @@ async function handleVoiceStudioQuery(userText) {
 
     } catch (err) {
         isVoiceThinking = false;
-        if (statusEl) statusEl.innerText = "Network error. Mic tap karein dubara bolne ke liye.";
+        if (statusEl) statusEl.innerText = voiceLang === 'hi-IN' ? "त्रुटि। माइक पर टैप करके दोबारा बोलें।" : "Error. Tap mic to speak again.";
         resetVoiceOrb();
     }
 }
@@ -2100,15 +2127,15 @@ function speakSpokenVoiceAnswer(text) {
 
     if (core) core.className = 'voice-orb-core speaking';
     if (icon) icon.className = 'fa-solid fa-volume-high';
-    if (statusEl) statusEl.innerText = "Nyayi bol raha hai... (Speaking)";
+    if (statusEl) statusEl.innerText = voiceLang === 'hi-IN' ? "न्यायी बोल रहा है..." : "Nyayi is speaking...";
 
     playTTS(text, () => {}, () => {
         isVoiceSpeaking = false;
         if (!isVoiceActive) return;
         resetVoiceOrb();
-        if (statusEl) statusEl.innerText = "Nyayi sun raha hai... Agla sawal boliye";
+        if (statusEl) statusEl.innerText = voiceLang === 'hi-IN' ? "न्यायी सुन रहा है... अगला सवाल बोलिए" : "Nyayi is listening... Speak next question";
         const trans = document.getElementById('voiceTranscriptText');
-        if (trans) trans.innerText = "Aap agla sawal pooch sakte hain...";
+        if (trans) trans.innerText = voiceLang === 'hi-IN' ? "आप अगला सवाल पूछ सकते हैं..." : "You can ask your next question...";
         setTimeout(() => {
             if (isVoiceActive && !isVoiceSpeaking && !isVoiceThinking) {
                 startVoiceListening();
@@ -2142,7 +2169,7 @@ function cycleVoiceGender() {
 function updateVoiceGender(val) {
     localStorage.setItem('nyayi_voice_gender', val);
     const genderLabel = document.getElementById('voiceGenderLabel');
-    if (genderLabel) genderLabel.innerText = val === 'female' ? '👩 Female' : '👨 Male';
+    if (genderLabel) genderLabel.innerText = val === 'female' ? '👩 Female Voice' : '👨 Male Voice';
     const select = document.getElementById('settingsVoiceGender');
     if (select) select.value = val;
 }
@@ -2162,10 +2189,28 @@ function toggleVoiceMute() {
 function toggleVoiceLang() {
     voiceLang = voiceLang === 'hi-IN' ? 'en-IN' : 'hi-IN';
     const label = document.getElementById('voiceLangLabel');
-    if (label) label.innerText = voiceLang === 'hi-IN' ? 'Hindi' : 'English';
-    if (activeRecognition && isVoiceActive && !isVoiceThinking && !isVoiceSpeaking) {
+    if (label) label.innerText = voiceLang === 'hi-IN' ? '🌐 हिन्दी' : '🌐 English';
+
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    isVoiceSpeaking = false;
+
+    const statusEl = document.getElementById('voiceStatusText');
+    const trans = document.getElementById('voiceTranscriptText');
+    if (voiceLang === 'hi-IN') {
+        if (statusEl) statusEl.innerText = "भाषा बदली: हिन्दी। सुन रहा हूँ... बोलिए";
+        if (trans) trans.innerText = "अपना कानूनी सवाल हिन्दी में पूछें...";
+    } else {
+        if (statusEl) statusEl.innerText = "Language switched: English. Listening... Speak";
+        if (trans) trans.innerText = "Ask your legal question in English...";
+    }
+
+    if (activeRecognition) {
         try { activeRecognition.stop(); } catch(e) {}
-        startVoiceListening();
+    }
+    if (isVoiceActive && !isVoiceThinking) {
+        setTimeout(() => {
+            startVoiceListening();
+        }, 200);
     }
 }
 
@@ -2322,6 +2367,10 @@ function switchSettingsTab(tabName) {
     
     const targetPane = document.getElementById('settings-' + tabName);
     if (targetPane) targetPane.classList.add('active');
+
+    if (tabName === 'memory') {
+        loadUserMemories();
+    }
 }
 
 function setSpecificTheme(theme) {
@@ -2372,6 +2421,7 @@ openTool = function(toolId) {
         const sendEnter = document.getElementById("settingsSendOnEnter");
         if (sendEnter) sendEnter.checked = localStorage.getItem("nyayi_send_enter") !== "false";
         
+        loadUserMemories();
         switchSettingsTab("general");
     }
 };
@@ -2434,4 +2484,150 @@ if (chatBox && window.ResizeObserver) {
         }
     }).observe(chatBox);
 }
+
+// --- 18. USER PERSISTENT MEMORY CONTROLLER ---
+let currentUserMemories = [];
+
+async function loadUserMemories() {
+    const email = localStorage.getItem('nyayi_user_email') || '';
+    if (!email) {
+        renderUserMemories([]);
+        return;
+    }
+    try {
+        const res = await fetch(`/api/user/memories?email=${encodeURIComponent(email)}`);
+        const data = await res.json().catch(() => ({}));
+        if (data && Array.isArray(data.memories)) {
+            currentUserMemories = data.memories;
+        } else {
+            currentUserMemories = [];
+        }
+    } catch (e) {
+        currentUserMemories = [];
+    }
+    renderUserMemories(currentUserMemories);
+}
+
+function renderUserMemories(memories) {
+    const container = document.getElementById('userMemoryList');
+    if (!container) return;
+
+    if (!Array.isArray(memories) || memories.length === 0) {
+        container.innerHTML = `
+            <div style="color:var(--nyayi-text-muted); font-size:13px; font-style:italic; padding:14px; background:var(--nyayi-surface); border:1px dashed var(--nyayi-surface-border); border-radius:var(--radius-sm); text-align:center;">
+                No active memories saved yet. Add your legal profile, city/state, or preferences above so Nyayi remembers them.
+            </div>
+        `;
+        return;
+    }
+
+    let html = '';
+    memories.forEach((mem, idx) => {
+        html += `
+            <div class="memory-item-card">
+                <div class="memory-item-text">
+                    <i class="fa-solid fa-brain"></i>
+                    <span>${MessageRenderer.escapeHtml(mem)}</span>
+                </div>
+                <button type="button" class="memory-del-btn" onclick="handleDeleteUserMemory(${idx})" title="Delete this memory">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+async function handleAddUserMemory() {
+    const input = document.getElementById('newMemoryInput');
+    if (!input) return;
+    const text = input.value.trim();
+    if (!text) return;
+
+    const email = localStorage.getItem('nyayi_user_email') || '';
+    if (!email) {
+        alert('Please log in to save AI memories.');
+        return;
+    }
+
+    input.value = '';
+    try {
+        const res = await fetch('/api/user/memories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, memory: text })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (data && Array.isArray(data.memories)) {
+            currentUserMemories = data.memories;
+            renderUserMemories(currentUserMemories);
+        }
+    } catch (e) {
+        console.warn('Failed to add memory', e);
+    }
+}
+
+async function handleDeleteUserMemory(idx) {
+    const email = localStorage.getItem('nyayi_user_email') || '';
+    if (!email) return;
+
+    try {
+        const res = await fetch('/api/user/memories', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, index: idx })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (data && Array.isArray(data.memories)) {
+            currentUserMemories = data.memories;
+            renderUserMemories(currentUserMemories);
+        }
+    } catch (e) {
+        console.warn('Failed to delete memory', e);
+    }
+}
+
+async function handleClearAllMemories() {
+    if (!confirm('Are you sure you want to delete all stored AI memories for your account?')) return;
+    const email = localStorage.getItem('nyayi_user_email') || '';
+    if (!email) return;
+
+    try {
+        await fetch('/api/user/memories', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, clearAll: true })
+        });
+        currentUserMemories = [];
+        renderUserMemories([]);
+    } catch (e) {
+        console.warn('Failed to clear memories', e);
+    }
+}
+
+// --- 19. APP SPLASH OVERLAY DISMISS ---
+function dismissAppSplash() {
+    const splash = document.getElementById('appSplashOverlay');
+    if (!splash) return;
+    const justLoggedIn = sessionStorage.getItem('nyayi_just_logged_in');
+    if (justLoggedIn) {
+        sessionStorage.removeItem('nyayi_just_logged_in');
+        const sub = document.getElementById('splashSubText');
+        const user = localStorage.getItem('nyayaUser') || 'Citizen';
+        if (sub) sub.innerText = `Welcome back, ${user}! Initializing Nyayi...`;
+    }
+    setTimeout(() => {
+        splash.classList.add('fade-out');
+        setTimeout(() => {
+            splash.style.display = 'none';
+        }, 500);
+    }, justLoggedIn ? 900 : 650);
+}
+
+if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', dismissAppSplash);
+} else {
+    dismissAppSplash();
+}
+
 

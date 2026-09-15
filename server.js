@@ -61,6 +61,11 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    if (req.url.startsWith('/api/user/')) {
+        handleUserAPI(req, res);
+        return;
+    }
+
     // Static File Serving
     let cleanUrl = req.url.split('?')[0];
     let fileTarget = cleanUrl === '/' ? 'index.html' : cleanUrl;
@@ -198,17 +203,46 @@ YOUR IDENTITY & STYLE:
 - Tone: Empathetic, polite, respectful and caring.`;
             }
 
-            let systemPrompt = `${languageDirective}\n\n${identityBlock}`;
+            // User Persistent Memory Lookup
+            let userMemoryBlock = "";
+            const userEmail = (parsedData.email || '').trim().toLowerCase();
+            if (userEmail) {
+                const users = getUsers();
+                const matchedUser = users.find(u => u.email.toLowerCase() === userEmail);
+                if (matchedUser && Array.isArray(matchedUser.memories) && matchedUser.memories.length > 0) {
+                    userMemoryBlock = `\n\nUSER PERSISTENT PROFILE & MEMORY (Facts established across consultations):\n${matchedUser.memories.map(m => `- ${m}`).join('\n')}\n(Apply these background facts to personalize your guidance naturally without reciting them.)`;
+                }
+            }
+
+            const portalLinksGuide = `
+OFFICIAL NYAYI WEB PORTAL CITATIONS & LINKS:
+Nyayi AI is integrated with the official citizen legal literacy network at https://nyayi.in.
+Whenever relevant to the citizen's query or category, provide helpful markdown links directly to the official resources on our main website:
+- Legal Terms, Maxims & Legal Definitions: [Nyayi Legal Dictionary](https://nyayi.in/dictionary.html)
+- Fundamental Rights, Police Arrest Safeguards & Citizen Rights: [Nyayi Know Your Rights](https://nyayi.in/rights.html)
+- Full Bare Acts & BNS / BNSS / BSA Explorer: [Nyayi Laws & Sanhitas Explorer](https://nyayi.in/laws.html)
+- Step-by-Step Legal Guides (Filing FIR, Bail, Consumer Forum, Eviction, Cyber Complaint): [Nyayi Legal Guides & Procedures](https://nyayi.in/guides.html)
+- Legal Articles, Landmark Judgments & Case Insights: [Nyayi Legal Articles](https://nyayi.in/articles.html)
+- Emergency Numbers & Official Legal Aid Helplines: [Nyayi Contact & Emergency Helplines](https://nyayi.in/contact.html)
+
+Provide 1-2 relevant links naturally when they add genuine value to the user (e.g., "आप [Nyayi Legal Dictionary](https://nyayi.in/dictionary.html) पर भी इस कानूनी शब्द की विस्तृत परिभाषा देख सकते हैं।" or "Detailed step-by-step procedural steps are also documented in [Nyayi Legal Guides](https://nyayi.in/guides.html)."). Do not overwhelm the response with repetitive links.`;
+
+            let systemPrompt = `${languageDirective}\n\n${identityBlock}\n${portalLinksGuide}${userMemoryBlock}`;
 
             // DISTINCT VOICE ASSISTANT ROLE
             if (category === "Voice Assistant") {
-                systemPrompt = `${languageDirective}\n\nYou are Nyayi Voice (${selectedLanguage === 'English' ? 'Nyayi Voice' : 'न्यायी वॉइस / Nyayi Sathi'}), a warm, conversational Indian female voice companion developed by Farhan Khan (BCA Student).
+                const isHindi = selectedLanguage === 'Hindi';
+                systemPrompt = `${languageDirective}\n\nYou are Nyayi Voice (${isHindi ? 'न्यायी वॉइस' : 'Nyayi Voice'}), a warm, conversational Indian voice companion developed by Farhan Khan (BCA Student).
 
-CRITICAL VOICE ROLE & SPOKEN RULES:
-1. You are a conversational female voice assistant for quick spoken legal answers.
+CRITICAL VOICE SPOKEN RULES:
+1. You are a conversational voice assistant for quick spoken legal answers.
 2. STRICT LENGTH: Give SHORT, SPOKEN answers (Maximum 2 to 3 simple sentences).
 3. NO MARKDOWN: Do NOT use markdown bullets (*), hashes (#), or long headers. Speak naturally as if on a phone call.
-4. ${selectedLanguage === 'English' ? 'Speak 100% in fluent English only.' : selectedLanguage === 'Hindi' ? 'Speak 100% in Hindi.' : 'Speak in natural conversational Hinglish or English based on user query language.'}\n\n${languageDirective}`;
+4. ABSOLUTE LANGUAGE ENFORCEMENT: ${isHindi 
+    ? 'The user selected HINDI. You MUST speak 100% in pure, polite, natural spoken Hindi in Devanagari script. Zero English sentences.' 
+    : selectedLanguage === 'English' 
+        ? 'Speak 100% in fluent English only.' 
+        : 'Speak in natural conversational Hinglish or English based on user query language.'}\n\n${languageDirective}`;
             } else if (category === "Case Law Simplifier") {
                 const h1 = selectedLanguage === "English" ? "1. **Case Name & Citation:** Name, Court (Supreme Court/High Court), and Citation." : "1. **Case Name & Citation (मामले का नाम एवं उद्धरण):** Name, Court (Supreme Court/High Court), and Citation.";
                 const h2 = selectedLanguage === "English" ? "2. **Core Facts:** Simple summary of what actually happened." : "2. **Core Facts (मामले के मुख्य तथ्य):** Simple summary of what actually happened.";
@@ -255,7 +289,9 @@ RESPONSE RULES:
 
             // Prepend directive to user query for unbreakable adherence
             let taggedUserMessage = userMessage;
-            if (selectedLanguage === "English") {
+            if (category === "Voice Assistant" && selectedLanguage === "Hindi") {
+                taggedUserMessage = `[System Directive: User speaking in Hindi. 100% शुद्ध एवं सरल हिंदी में 2-3 वाक्यों में बोलकर उत्तर दें। No English sentences.]\n\n${userMessage}`;
+            } else if (selectedLanguage === "English") {
                 taggedUserMessage = `[System Directive: User explicitly selected ENGLISH. Respond 100% in English only. Zero Hindi or Devanagari script.]\n\n${userMessage}`;
             } else if (selectedLanguage === "Hindi") {
                 taggedUserMessage = `[System Directive: User selected HINDI. 100% हिंदी (Devanagari script) में ही उत्तर दें।]\n\n${userMessage}`;
@@ -599,7 +635,7 @@ function handleAuthAPI(req, res) {
         if (url === '/api/auth/send-otp' && req.method === 'POST') {
             const email = (json.email || '').trim().toLowerCase();
             const name = (json.name || '').trim();
-            const pass = json.pass || '';
+            const pass = (json.pass || json.password || '').trim();
 
             if (!email || !email.includes('@')) {
                 return sendJSON(400, { error: 'Please enter a valid email address.' });
@@ -607,7 +643,7 @@ function handleAuthAPI(req, res) {
 
             // Check if user already exists
             const users = getUsers();
-            const existing = users.find(u => u.email === email);
+            const existing = users.find(u => u.email.toLowerCase() === email);
             if (existing) {
                 return sendJSON(400, { error: 'An account with this email already exists. Please log in or use Forgot Password.' });
             }
@@ -621,7 +657,7 @@ function handleAuthAPI(req, res) {
                 expiresAt: Date.now() + 15 * 60 * 1000
             });
 
-            console.log(`[SIGNUP OTP] Generated code ${code} for ${email}`);
+            console.log(`[SIGNUP OTP] Generated code ${code} for ${email} with password configured.`);
             await sendAuthEmail(email, '', code, false);
 
             return sendJSON(200, { success: true, message: 'Verification code sent to your email.' });
@@ -639,15 +675,17 @@ function handleAuthAPI(req, res) {
 
             // Save user ONLY after OTP is confirmed
             const users = getUsers();
-            const existingIdx = users.findIndex(u => u.email === email);
-            const userName = stored.name || json.name || email.split('@')[0];
-            const userPass = stored.pass || json.pass || 'Nyayi@2026';
+            const existingIdx = users.findIndex(u => u.email.toLowerCase() === email);
+            const userName = (stored && stored.name) || json.name || email.split('@')[0];
+            const userPass = (stored && stored.pass) || json.pass || json.password || 'Nyayi@2026';
 
             const userData = {
                 name: userName,
                 email: email,
                 password: userPass,
-                createdAt: new Date().toISOString()
+                memories: (existingIdx >= 0 && Array.isArray(users[existingIdx].memories)) ? users[existingIdx].memories : [],
+                createdAt: (existingIdx >= 0 && users[existingIdx].createdAt) ? users[existingIdx].createdAt : new Date().toISOString(),
+                lastLogin: new Date().toISOString()
             };
 
             if (existingIdx >= 0) {
@@ -658,28 +696,32 @@ function handleAuthAPI(req, res) {
             saveUsers(users);
             otpStore.delete(email);
 
-            console.log(`[USER REGISTERED] User ${userName} (${email}) created successfully.`);
+            console.log(`[USER REGISTERED] User ${userName} (${email}) created and password stored. Total users: ${users.length}`);
             return sendJSON(200, { success: true, name: userName, email });
         }
 
         // 3. Login - Strictly authenticate registered users
         if (url === '/api/auth/login' && req.method === 'POST') {
             const email = (json.email || '').trim().toLowerCase();
-            const pass = json.password || '';
+            const pass = (json.password || json.pass || '').trim();
 
             if (!email || !pass) {
                 return sendJSON(400, { error: 'Email and password are required.' });
             }
 
             const users = getUsers();
-            const user = users.find(u => u.email === email);
+            const user = users.find(u => u.email.toLowerCase() === email);
 
             if (!user) {
                 return sendJSON(400, { error: 'No registered account found with this email. Please sign up first.' });
             }
 
-            if (user.password !== pass) {
+            const storedPass = user.password || user.pass || '';
+            if (storedPass && storedPass !== pass) {
                 return sendJSON(400, { error: 'Incorrect password. Please verify and try again, or reset your password.' });
+            }
+            if (!storedPass) {
+                user.password = pass;
             }
 
             user.lastLogin = new Date().toISOString();
@@ -996,6 +1038,81 @@ function handleAuthAPI(req, res) {
         }
 
         sendJSON(404, { error: 'Not found' });
+    });
+}
+
+// --- USER PROFILE & PERSISTENT MEMORY API ---
+function handleUserAPI(req, res) {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+        let json = {};
+        try { if (body) json = JSON.parse(body); } catch (e) {}
+
+        const sendJSON = (statusCode, data) => {
+            res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(data));
+        };
+
+        const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+        const pathname = parsedUrl.pathname;
+
+        // GET /api/user/memories?email=...
+        if (pathname === '/api/user/memories' && req.method === 'GET') {
+            const email = (parsedUrl.searchParams.get('email') || '').trim().toLowerCase();
+            if (!email) return sendJSON(400, { error: 'Email is required' });
+            const users = getUsers();
+            const user = users.find(u => u.email.toLowerCase() === email);
+            if (!user) return sendJSON(200, { success: true, memories: [] });
+            return sendJSON(200, { success: true, memories: Array.isArray(user.memories) ? user.memories : [] });
+        }
+
+        // POST /api/user/memories (Add memory)
+        if (pathname === '/api/user/memories' && req.method === 'POST') {
+            const email = (json.email || '').trim().toLowerCase();
+            const memory = (json.memory || '').trim();
+            if (!email || !memory) return sendJSON(400, { error: 'Email and memory text are required' });
+
+            const users = getUsers();
+            let user = users.find(u => u.email.toLowerCase() === email);
+            if (!user) {
+                user = { email, name: email.split('@')[0], memories: [memory], createdAt: new Date().toISOString() };
+                users.push(user);
+            } else {
+                if (!Array.isArray(user.memories)) user.memories = [];
+                if (!user.memories.includes(memory)) {
+                    user.memories.push(memory);
+                }
+            }
+            saveUsers(users);
+            console.log(`[USER MEMORY ADDED] Stored for ${email}: "${memory}"`);
+            return sendJSON(200, { success: true, memories: user.memories });
+        }
+
+        // DELETE /api/user/memories (Delete one or clear all)
+        if (pathname === '/api/user/memories' && req.method === 'DELETE') {
+            const email = (json.email || '').trim().toLowerCase();
+            if (!email) return sendJSON(400, { error: 'Email is required' });
+
+            const users = getUsers();
+            const user = users.find(u => u.email.toLowerCase() === email);
+            if (!user) return sendJSON(200, { success: true, memories: [] });
+
+            if (!Array.isArray(user.memories)) user.memories = [];
+
+            if (json.clearAll) {
+                user.memories = [];
+            } else if (typeof json.index === 'number' && json.index >= 0 && json.index < user.memories.length) {
+                user.memories.splice(json.index, 1);
+            } else if (typeof json.memory === 'string') {
+                user.memories = user.memories.filter(m => m !== json.memory);
+            }
+            saveUsers(users);
+            console.log(`[USER MEMORY UPDATED] Removed memory for ${email}. Remaining: ${user.memories.length}`);
+            return sendJSON(200, { success: true, memories: user.memories });
+        }
+
+        return sendJSON(404, { error: 'User endpoint not found' });
     });
 }
 

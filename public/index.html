@@ -60,7 +60,7 @@
     <link rel="apple-touch-icon" href="images/logo.png">
 
     <!-- CSS & Fonts -->
-    <link rel="stylesheet" href="css/style.css?v=31">
+    <link rel="stylesheet" href="css/style.css?v=32">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     
     <!-- Schema.org JSON-LD -->
@@ -95,6 +95,21 @@
     </script>
 </head>
 <body>
+
+    <!-- APP ENTRANCE SPLASH ANIMATION OVERLAY -->
+    <div id="appSplashOverlay" class="app-splash-overlay">
+        <div class="splash-content">
+            <div class="splash-logo-wrap">
+                <img src="images/logo.png" alt="Nyayi Logo" class="splash-logo">
+                <div class="splash-glow"></div>
+            </div>
+            <h2 class="splash-brand">Nyayi</h2>
+            <p class="splash-sub" id="splashSubText">AI Legal Intelligence Assistant</p>
+            <div class="splash-spinner">
+                <div class="splash-spin-bar"></div>
+            </div>
+        </div>
+    </div>
 
     <!-- Mobile Drawer Backdrop -->
     <div class="overlay-backdrop" id="overlayBackdrop" onclick="toggleSidebar(false)"></div>
@@ -216,7 +231,6 @@
                 
                 <div class="header-center" style="position:absolute; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:6px; cursor:pointer;" onclick="startNewChat()">
                     <span class="brand-name" style="font-size:18px; font-weight:700; color:var(--nyayi-text);">Nyayi</span>
-                    <span style="font-size:10.5px; font-weight:700; color:var(--nyayi-primary); background:var(--nyayi-primary-subtle); padding:1px 6px; border-radius:4px;">2.0</span>
                     <i class="fa-solid fa-chevron-down" style="font-size:11px; color:var(--nyayi-text-muted);"></i>
                 </div>
                 
@@ -254,8 +268,8 @@
                         </div>
                     </div>
 
-                    <button type="button" class="nav-icon-btn" onclick="openTool('settings')" title="User Profile & Settings" style="width:34px; height:34px; border-radius:50%; background:var(--nyayi-primary); color:#07090e; display:flex; align-items:center; justify-content:center; border:none; font-weight:700;">
-                        <span id="headerAvatar" style="font-weight:700; font-size:14px;">U</span>
+                    <button type="button" class="nav-icon-btn" onclick="openTool('settings')" title="Settings & Profile">
+                        <i class="fa-solid fa-gear"></i>
                     </button>
                 </div>
             </header>
@@ -554,6 +568,7 @@
                 <!-- Settings Sidebar for Desktop / Top Nav for Mobile -->
                 <div class="settings-nav">
                     <button class="settings-tab active" onclick="switchSettingsTab('general')"><i class="fa-solid fa-user"></i> General</button>
+                    <button class="settings-tab" onclick="switchSettingsTab('memory')"><i class="fa-solid fa-brain"></i> AI Memory</button>
                     <button class="settings-tab" onclick="switchSettingsTab('appearance')"><i class="fa-solid fa-palette"></i> Appearance</button>
                     <button class="settings-tab" onclick="switchSettingsTab('voice')"><i class="fa-solid fa-microphone"></i> Voice & Audio</button>
                     <button class="settings-tab" onclick="switchSettingsTab('security')"><i class="fa-solid fa-lock"></i> Security & Pass</button>
@@ -580,7 +595,7 @@
                         <div class="settings-group">
                             <label>Account Status</label>
                             <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); color:#10b981; padding:8px 16px; border-radius:20px; font-size:12.5px; font-weight:600;">
-                                <i class="fa-solid fa-circle-check"></i> Verified Citizen Member • Nyayi 2.0
+                                <i class="fa-solid fa-circle-check"></i> Verified Citizen Member • Nyayi Legal AI
                             </div>
                         </div>
                         <div class="settings-group">
@@ -597,10 +612,45 @@
                             <button type="button" class="modal-btn" onclick="saveSettings()" style="width:100%;">
                                 <i class="fa-solid fa-floppy-disk"></i> Save Profile & Preferences
                             </button>
-                            <button type="button" class="reset-app-btn" onclick="logoutUser()" style="width:100%; color:#ef4444; border-color:rgba(239,68,68,0.3); background:rgba(239,68,68,0.08);">
-                                <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out of Nyayi AI
+                            
+                            <!-- Executive Sign Out Card -->
+                            <div class="account-session-card" style="margin-top:10px; padding:14px 16px; border-radius:12px; background:rgba(239, 68, 68, 0.05); border:1px solid rgba(239, 68, 68, 0.18); display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <div style="width:36px; height:36px; border-radius:8px; background:rgba(239,68,68,0.12); color:#ef4444; display:flex; align-items:center; justify-content:center; font-size:15px;">
+                                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight:600; font-size:13px; color:var(--nyayi-text);">Account Session</div>
+                                        <div style="font-size:11px; color:var(--nyayi-text-muted);">Sign out on this device</div>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="logoutUser()" style="padding:6px 14px; border-radius:8px; background:rgba(239,68,68,0.12); color:#ef4444; border:1px solid rgba(239,68,68,0.25); font-weight:600; font-size:12px; cursor:pointer; transition:all 0.2s; white-space:nowrap;">
+                                    Sign Out
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Memory Tab (Persistent User Memory) -->
+                    <div class="settings-pane" id="settings-memory">
+                        <h4>Nyayi AI Memory (स्मृति)</h4>
+                        <p class="settings-help" style="margin-bottom:14px;">Nyayi remembers your legal profile, disputes, and preferences across consultations to personalize answers.</p>
+                        
+                        <div class="memory-input-group" style="display:flex; gap:8px; margin-bottom:16px;">
+                            <input type="text" id="newMemoryInput" class="modal-input" placeholder="e.g., Living in Delhi NCR, Ongoing rental agreement dispute..." style="flex:1;">
+                            <button type="button" class="modal-btn" onclick="handleAddUserMemory()" style="white-space:nowrap; padding:0 18px;">
+                                <i class="fa-solid fa-plus"></i> Remember
                             </button>
                         </div>
+
+                        <div style="font-size:12px; font-weight:700; color:var(--nyayi-text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Active Memory Entries</div>
+                        <div id="userMemoryList" class="user-memory-list" style="display:flex; flex-direction:column; gap:8px; min-height:80px; margin-bottom:16px;">
+                            <div style="color:var(--nyayi-text-muted); font-size:13px; font-style:italic; padding:12px 0;">Loading memory items...</div>
+                        </div>
+
+                        <button type="button" class="reset-app-btn" onclick="handleClearAllMemories()" style="width:100%; color:var(--nyayi-text-muted); border-color:var(--nyayi-surface-border);">
+                            <i class="fa-solid fa-trash-can"></i> Clear All AI Memories
+                        </button>
                     </div>
 
                     <!-- Appearance Tab -->
@@ -786,14 +836,14 @@
         </div>
     </div>
 
-    <!-- VOICE ASSISTANT 2.0 DEDICATED FULL-SCREEN STUDIO -->
+    <!-- VOICE ASSISTANT DEDICATED FULL-SCREEN STUDIO -->
     <div class="voice-overlay" id="voiceOverlay">
         <div class="voice-studio-container">
             <!-- Studio Header -->
             <div class="voice-studio-header">
                 <div style="display:flex; align-items:center; gap:8px;">
                     <span class="voice-live-dot"></span>
-                    <span style="font-weight:700; font-size:15px; color:var(--nyayi-text);">Nyayi Voice Studio 2.0</span>
+                    <span style="font-weight:700; font-size:15px; color:var(--nyayi-text);">Nyayi Voice Studio</span>
                 </div>
                 <button type="button" class="voice-close-circle" onclick="closeVoiceAssistant()" title="Exit Voice Mode">
                     <i class="fa-solid fa-xmark"></i>
@@ -846,7 +896,7 @@
         <div class="modal-box" style="max-width:440px;">
             <span class="modal-close" onclick="closeAllModals()">&times;</span>
             <h3><i class="fa-solid fa-comment-dots" style="color:var(--nyayi-primary);"></i> Consultation Feedback</h3>
-            <p class="modal-desc">Nyayi 2.0 par aapka legal guidance anubhav kaisa raha?</p>
+            <p class="modal-desc">Nyayi par aapka legal guidance anubhav kaisa raha?</p>
             
             <div style="display:flex; justify-content:center; gap:12px; margin:16px 0; font-size:26px; color:#f59e0b; cursor:pointer;" id="feedbackStars">
                 <i class="fa-solid fa-star" onclick="setFeedbackRating(1)"></i>
@@ -877,7 +927,7 @@
     </div>
 
     <!-- SCRIPTS -->
-    <script src="js/script.js?v=31"></script>
+    <script src="js/script.js?v=32"></script>
     <script>
         // Render authenticated user name
         (function() {

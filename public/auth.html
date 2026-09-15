@@ -873,6 +873,7 @@
             localStorage.setItem('nyayaUser', username || email.split('@')[0]);
             localStorage.setItem('nyayi_auth', 'true');
             localStorage.setItem('nyayi_user_email', email || '');
+            sessionStorage.setItem('nyayi_just_logged_in', 'true');
             if (isNewSignup) {
                 localStorage.removeItem('nyayi_onboarded');
             }
@@ -900,7 +901,7 @@
                 const res = await fetch(`${AUTH_API_BASE}/api/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password: pass })
+                    body: JSON.stringify({ email, password: pass, pass: pass })
                 });
 
                 const data = await res.json().catch(() => ({}));
@@ -941,14 +942,14 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-paper-plane fa-fade"></i> Sending Verification Code...';
 
-            pendingSignupData = { name, email, pass };
+            pendingSignupData = { name, email, pass, password: pass };
             currentAuthEmail = email;
 
             try {
                 const res = await fetch(`${AUTH_API_BASE}/api/auth/send-otp`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, email, pass, type: 'signup' })
+                    body: JSON.stringify({ name, email, pass, password: pass, type: 'signup' })
                 });
 
                 const data = await res.json().catch(() => ({}));
