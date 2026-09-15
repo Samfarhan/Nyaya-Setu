@@ -60,7 +60,7 @@
     <link rel="apple-touch-icon" href="images/logo.png">
 
     <!-- CSS & Fonts -->
-    <link rel="stylesheet" href="css/style.css?v=27">
+    <link rel="stylesheet" href="css/style.css?v=30">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     
     <!-- Schema.org JSON-LD -->
@@ -115,6 +115,10 @@
 
             <div class="sidebar-section-title">Quick Tools</div>
             <div class="sidebar-tools-grid">
+                <div class="sidebar-tool-chip" onclick="openVoiceAssistant()">
+                    <i class="fa-solid fa-microphone" style="color:var(--nyayi-primary);"></i>
+                    <span>Voice AI</span>
+                </div>
                 <div class="sidebar-tool-chip" onclick="openTool('factlaw')">
                     <i class="fa-solid fa-gavel"></i>
                     <span>Fact to Law</span>
@@ -158,6 +162,18 @@
                 </button>
                 <span style="font-size:11px; color:var(--nyayi-text-muted); font-family:var(--nyayi-font-mono);">v3.0 • BNS</span>
             </div>
+
+            <!-- ChatGPT Style User Account Drawer Footer -->
+            <div class="sidebar-user-footer" onclick="openTool('settings')" style="padding:12px 14px; border-top:1px solid var(--nyayi-surface-border); display:flex; align-items:center; justify-content:space-between; cursor:pointer; background:var(--nyayi-surface);">
+                <div style="display:flex; align-items:center; gap:10px; overflow:hidden;">
+                    <div style="width:34px; height:34px; border-radius:50%; background:var(--nyayi-primary); color:#07090e; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;" id="sidebarAvatar">U</div>
+                    <div style="display:flex; flex-direction:column; overflow:hidden;">
+                        <span id="sidebarUserName" style="font-size:13.5px; font-weight:600; color:var(--nyayi-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Citizen</span>
+                        <span style="font-size:11px; color:var(--nyayi-text-muted);">Settings & Profile</span>
+                    </div>
+                </div>
+                <i class="fa-solid fa-gear" style="color:var(--nyayi-text-muted); font-size:14px;"></i>
+            </div>
         </aside>
 
         <!-- MAIN CHAT CONTAINER -->
@@ -174,89 +190,33 @@
       gtag('config', 'G-EVQN8MSMZE');
     </script>
                 <div class="header-left">
-                    <button type="button" class="mobile-menu-btn" onclick="toggleSidebar()" title="Toggle Navigation">
+                    <button type="button" class="mobile-menu-btn" onclick="toggleSidebar()" title="Toggle Navigation" style="display:flex;">
                         <i class="fa-solid fa-bars"></i>
                     </button>
-                    <div class="brand-logo" onclick="startNewChat()" title="Start New Consultation">
-                        <i class="fa-solid fa-scale-balanced brand-icon"></i>
-                        <span class="brand-name">Nyayi</span>
-                        <span class="brand-badge">PRO</span>
-                    </div>
-                    <div class="brand-status-badge">
-                        <span class="status-dot"></span>
-                        <span>AI Online • BNS 2023</span>
-                    </div>
+                </div>
+                
+                <div class="header-center" style="position:absolute; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:8px; cursor:pointer;" onclick="startNewChat()">
+                    <span class="brand-name" style="font-size:18px; font-weight:600; color:var(--nyayi-text);">Nyaya AI</span>
+                    <i class="fa-solid fa-chevron-down" style="font-size:12px; color:var(--nyayi-text-muted);"></i>
                 </div>
                 
                 <div class="nav-right">
-                    <button type="button" id="pwaInstallBtn" class="pwa-install-pill" style="display:none;" onclick="triggerPwaInstall()" title="Install Nyayi App on Device">
-                        <i class="fa-solid fa-download"></i> <span>Install App</span>
-                    </button>
-                    <div id="authHeaderWidget" style="display:flex; align-items:center; gap:8px;">
-                        <span id="userDisplayName" style="font-size:13px; font-weight:600; color:var(--nyayi-primary); max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
-                        <button type="button" class="nav-icon-btn" onclick="logoutUser()" title="Logout of Nyayi AI" style="color:#ef4444;">
-                            <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                        </button>
-                    </div>
-                    <select id="langSelect" class="lang-select-dropdown" onchange="changeAILanguage(this.value)" title="Select AI Response Language">
-                        <option value="Multilingual">🌐 Multilingual</option>
-                        <option value="Hindi">🇮🇳 हिंदी (Hindi)</option>
-                        <option value="English">🇬🇧 English</option>
-                        <option value="Hinglish">🗣️ Hinglish</option>
-                    </select>
-                    <button type="button" class="sos-btn" onclick="triggerSOS()" title="Emergency SOS Alert">
-                        <i class="fa-solid fa-bell"></i> <span>SOS</span>
-                    </button>
                     <button type="button" class="nav-icon-btn" onclick="toggleDarkMode()" title="Toggle Dark/Light Mode">
                         <i class="fa-solid fa-moon" id="themeIcon"></i>
                     </button>
-                    <button type="button" class="nav-icon-btn" onclick="openTool('settings')" title="User Profile & Settings">
-                        <i class="fa-solid fa-gear"></i>
+                    <button type="button" class="nav-icon-btn" onclick="openTool('settings')" title="User Profile & Settings" style="width:32px; height:32px; border-radius:50%; background:var(--nyayi-primary); color:white; display:flex; align-items:center; justify-content:center; border:none; margin-left:8px;">
+                        <span id="headerAvatar" style="font-weight:600; font-size:14px;">U</span>
                     </button>
                 </div>
             </header>
 
             <!-- Chat messages workspace -->
             <div id="chat-box">
-                <!-- Compact Welcome Area (25-30% initial viewport) -->
-                <div class="welcome-hero" id="welcomeSection">
-                    <div class="welcome-ai-emblem">
+                <div class="welcome-hero" id="welcomeSection" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; padding-bottom:100px;">
+                    <div class="welcome-ai-emblem" style="margin-bottom:24px;">
                         <i class="fa-solid fa-scale-balanced"></i>
                     </div>
-                    <h1 class="welcome-title">Namaste, <span id="welcomeUserName">Citizen</span> 👋</h1>
-                    <h2 class="welcome-subtitle">How can Nyayi help you today?</h2>
-                    <p class="welcome-tagline">Understand Indian law, rights and procedures in simple language.</p>
-                    
-                    <!-- 4 Lightweight Quick Suggestions -->
-                    <div class="domain-cards-grid">
-                        <div class="domain-card" onclick="askSuggestion('cyber')">
-                            <div class="domain-card-header">
-                                <span class="domain-card-title"><i class="fa-solid fa-shield-halved"></i> Cyber Fraud</span>
-                            </div>
-                            <p class="domain-card-desc">Recover money & report fraud</p>
-                        </div>
-
-                        <div class="domain-card" onclick="askSuggestion('fir')">
-                            <div class="domain-card-header">
-                                <span class="domain-card-title"><i class="fa-solid fa-file-circle-check"></i> Police / FIR</span>
-                            </div>
-                            <p class="domain-card-desc">FIR process & rights</p>
-                        </div>
-
-                        <div class="domain-card" onclick="askSuggestion('property')">
-                            <div class="domain-card-header">
-                                <span class="domain-card-title"><i class="fa-solid fa-house-chimney-user"></i> Property</span>
-                            </div>
-                            <p class="domain-card-desc">Property dispute guidance</p>
-                        </div>
-
-                        <div class="domain-card" onclick="askSuggestion('bns')">
-                            <div class="domain-card-header">
-                                <span class="domain-card-title"><i class="fa-solid fa-scale-balanced"></i> BNS / IPC</span>
-                            </div>
-                            <p class="domain-card-desc">Compare provisions</p>
-                        </div>
-                    </div>
+                    <h2 class="welcome-title" style="font-size:24px; font-weight:600; text-align:center; color:var(--nyayi-text);">How can I help you today, <span id="welcomeUserName">Citizen</span>?</h2>
                 </div>
             </div>
 
@@ -350,35 +310,11 @@
                     <input type="file" id="mediaUploadInput" accept=".pdf,.doc,.docx,.txt,image/*" multiple style="display:none;" onchange="handleMediaFilesSelected(event)">
                     <input type="file" id="cameraUploadInput" accept="image/*" capture="environment" style="display:none;" onchange="handleMediaFilesSelected(event)">
 
-                    <div class="composer-hint">
-                        <span>Press <b>Enter ↵</b> to send • <b>Shift + Enter</b> for new line</span>
+                    <div class="composer-hint" style="text-align:center; padding-top:8px;">
+                        <span style="font-size:11px; color:var(--nyayi-text-muted);">Nyaya AI can make mistakes. Consider verifying important information.</span>
                     </div>
                 </div>
             </div>
-
-            <!-- Mobile Bottom Navigation (64px + safe area) -->
-            <nav class="bottom-nav" id="bottomNav">
-                <div class="bottom-nav-item active" onclick="switchBottomNav('chat')">
-                    <i class="fa-solid fa-message"></i>
-                    <span>Home</span>
-                </div>
-                <div class="bottom-nav-item" onclick="switchBottomNav('tools')">
-                    <i class="fa-solid fa-layer-group"></i>
-                    <span>Tools</span>
-                </div>
-                <div class="bottom-nav-item" onclick="switchBottomNav('voice')">
-                    <i class="fa-solid fa-microphone"></i>
-                    <span>Voice</span>
-                </div>
-                <div class="bottom-nav-item" onclick="switchBottomNav('history')">
-                    <i class="fa-solid fa-clock-rotate-left"></i>
-                    <span>History</span>
-                </div>
-                <div class="bottom-nav-item sos" onclick="switchBottomNav('sos')">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                    <span>SOS</span>
-                </div>
-            </nav>
         </main>
     </div>
 
@@ -766,6 +702,38 @@
         </div>
     </div>
 
+    <!-- ONBOARDING PREFERENCES MODAL -->
+    <div class="modal-overlay" id="onboardingModal" style="z-index: 10000;">
+        <div class="modal-box" style="text-align:center; padding:32px 24px;">
+            <i class="fa-solid fa-scale-balanced" style="font-size:42px; color:var(--nyayi-primary); margin-bottom:16px;"></i>
+            <h2 style="margin-bottom:8px;">Welcome to Nyayi</h2>
+            <p style="color:var(--nyayi-text-secondary); margin-bottom:24px; font-size:14px;">Please select your preferences to get started.</p>
+            
+            <div style="text-align:left; margin-bottom:20px;">
+                <label style="display:block; margin-bottom:8px; font-weight:600; font-size:14px;">Interface Theme</label>
+                <div style="display:flex; gap:12px;">
+                    <button type="button" class="theme-btn" onclick="document.getElementById('onboardTheme').value='light'; this.style.borderColor='var(--nyayi-primary)'; this.nextElementSibling.style.borderColor='var(--nyayi-surface-border)';" style="flex:1; border:2px solid var(--nyayi-surface-border);"><i class="fa-solid fa-sun"></i> Light</button>
+                    <button type="button" class="theme-btn" onclick="document.getElementById('onboardTheme').value='dark'; this.style.borderColor='var(--nyayi-primary)'; this.previousElementSibling.style.borderColor='var(--nyayi-surface-border)';" style="flex:1; border:2px solid var(--nyayi-primary);"><i class="fa-solid fa-moon"></i> Dark</button>
+                    <input type="hidden" id="onboardTheme" value="dark">
+                </div>
+            </div>
+
+            <div style="text-align:left; margin-bottom:24px;">
+                <label style="display:block; margin-bottom:8px; font-weight:600; font-size:14px;">AI Response Language</label>
+                <select id="onboardLang" class="modal-input" style="font-size:15px; padding:12px;">
+                    <option value="English" selected>🇬🇧 English (Default)</option>
+                    <option value="Hindi">🇮🇳 हिंदी (Hindi)</option>
+                    <option value="Hinglish">🗣️ Hinglish</option>
+                    <option value="Multilingual">🌐 Multilingual (Auto-detect)</option>
+                </select>
+            </div>
+
+            <button type="button" class="modal-btn" onclick="completeOnboarding()" style="width:100%; font-size:16px; padding:14px;">
+                Start Using Nyayi <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
     <!-- VOICE ASSISTANT OVERLAY -->
     <div class="voice-overlay" id="voiceOverlay">
         <div class="voice-content">
@@ -784,16 +752,40 @@
     </div>
 
     <!-- SCRIPTS -->
-    <script src="js/script.js?v=27"></script>
+    <script src="js/script.js?v=30"></script>
     <script>
         // Render authenticated user name
         (function() {
             var user = localStorage.getItem('nyayaUser') || 'Citizen';
-            var userEl = document.getElementById('userDisplayName');
             var welcomeEl = document.getElementById('welcomeUserName');
-            if (userEl) userEl.innerText = user;
             if (welcomeEl) welcomeEl.innerText = user;
+            
+            var initial = (user && user.length > 0) ? user.charAt(0).toUpperCase() : 'U';
+            var headerAvatar = document.getElementById('headerAvatar');
+            if (headerAvatar) headerAvatar.innerText = initial;
+
+            var sidebarAvatar = document.getElementById('sidebarAvatar');
+            if (sidebarAvatar) sidebarAvatar.innerText = initial;
+
+            var sidebarUser = document.getElementById('sidebarUserName');
+            if (sidebarUser) sidebarUser.innerText = user;
+
+            // Onboarding check: Ask theme & language if not completed yet
+            if (localStorage.getItem('nyayi_onboarded') !== 'true') {
+                document.getElementById('onboardingModal').classList.add('active');
+            }
         })();
+        
+        function completeOnboarding() {
+            var theme = document.getElementById('onboardTheme').value;
+            var lang = document.getElementById('onboardLang').value;
+            
+            if(typeof setSpecificTheme === 'function') setSpecificTheme(theme);
+            if(typeof changeAILanguage === 'function') changeAILanguage(lang);
+            
+            localStorage.setItem('nyayi_onboarded', 'true');
+            document.getElementById('onboardingModal').classList.remove('active');
+        }
 
         // Persistent Sign Out — Requires explicit user action
         function logoutUser() {

@@ -527,44 +527,11 @@ function renderEmptyState() {
     if (!box) return;
 
     box.innerHTML = `
-        <div class="welcome-hero" id="welcomeSection">
-            <div class="welcome-ai-emblem">
+        <div class="welcome-hero" id="welcomeSection" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; padding-bottom:100px;">
+            <div class="welcome-ai-emblem" style="margin-bottom:24px;">
                 <i class="fa-solid fa-scale-balanced"></i>
             </div>
-            <h1 class="welcome-title">Namaste, <span id="welcomeUserName">${MessageRenderer.escapeHtml(user)}</span> 👋</h1>
-            <h2 class="welcome-subtitle">How can Nyayi help you today?</h2>
-            <p class="welcome-tagline">Understand Indian law, rights and procedures in simple language.</p>
-            
-            <!-- 4 Lightweight Quick Suggestions -->
-            <div class="domain-cards-grid">
-                <div class="domain-card" onclick="askSuggestion('Mera online financial cyber fraud ho gaya hai, paise wapas kaise paayein? 1930 helpline kaise kaam karti hai?')">
-                    <div class="domain-card-header">
-                        <span class="domain-card-title"><i class="fa-solid fa-shield-halved"></i> Cyber Fraud</span>
-                    </div>
-                    <p class="domain-card-desc">Recover money & report fraud</p>
-                </div>
-
-                <div class="domain-card" onclick="askSuggestion('Police station me FIR darj karwane ka process kya hai aur agar police FIR likhne se mana kare toh kya adhikar hain?')">
-                    <div class="domain-card-header">
-                        <span class="domain-card-title"><i class="fa-solid fa-file-circle-check"></i> Police / FIR</span>
-                    </div>
-                    <p class="domain-card-desc">FIR process & rights</p>
-                </div>
-
-                <div class="domain-card" onclick="askSuggestion('Property ya tenancy dispute me legal rights aur civil stay order (Order 39) ke niyam samjhao.')">
-                    <div class="domain-card-header">
-                        <span class="domain-card-title"><i class="fa-solid fa-house-chimney-user"></i> Property</span>
-                    </div>
-                    <p class="domain-card-desc">Property dispute guidance</p>
-                </div>
-
-                <div class="domain-card" onclick="askSuggestion('IPC Section 420, 302, 376 aur nayi BNS provisions me kya antar hai? Kaunsi dhara lagu hogi?')">
-                    <div class="domain-card-header">
-                        <span class="domain-card-title"><i class="fa-solid fa-scale-balanced"></i> BNS / IPC</span>
-                    </div>
-                    <p class="domain-card-desc">Compare provisions</p>
-                </div>
-            </div>
+            <h2 class="welcome-title" style="font-size:24px; font-weight:600; text-align:center; color:var(--nyayi-text);">How can I help you today, <span id="welcomeUserName">${MessageRenderer.escapeHtml(user)}</span>?</h2>
         </div>
     `;
     box.scrollTop = 0;

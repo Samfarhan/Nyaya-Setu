@@ -869,10 +869,13 @@
         }
 
         // --- 5. AUTHENTICATION SUCCESS REDIRECT ---
-        function grantAccess(username, email) {
+        function grantAccess(username, email, isNewSignup = false) {
             localStorage.setItem('nyayaUser', username || email.split('@')[0]);
             localStorage.setItem('nyayi_auth', 'true');
             localStorage.setItem('nyayi_user_email', email || '');
+            if (isNewSignup) {
+                localStorage.removeItem('nyayi_onboarded');
+            }
             
             setTimeout(() => {
                 const params = new URLSearchParams(window.location.search);
@@ -1013,7 +1016,7 @@
                 btn.innerHTML = '<i class="fa-solid fa-check"></i> Verified!';
                 btn.style.background = '#10b981';
                 showAlert('Account created and verified! Redirecting to Nyayi AI...', false);
-                grantAccess(data.name || (pendingSignupData ? pendingSignupData.name : currentAuthEmail.split('@')[0]), currentAuthEmail);
+                grantAccess(data.name || (pendingSignupData ? pendingSignupData.name : currentAuthEmail.split('@')[0]), currentAuthEmail, true);
 
             } catch (err) {
                 btn.disabled = false;

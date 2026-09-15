@@ -1,5 +1,5 @@
 /* =========================================================
-   NYAYI (न्यायी) — PREMIUM INDIAN LEGAL INTELLIGENCE DESIGN SYSTEM
+   NYAYI - PREMIUM INDIAN LEGAL INTELLIGENCE DESIGN SYSTEM
    Principles: Content First • Calm & Authoritative • Minimal Motion
    Architecture: 100dvh Layout • Centered 820px Document Answers
    Isolated Table Scrolling • Zero Horizontal Page Overflow
@@ -9,21 +9,21 @@
 
 /* --- 1. DESIGN TOKENS --- */
 :root {
-    --nyayi-bg: #07090e;
-    --nyayi-bg-subtle: #0b0f17;
-    --nyayi-surface: #111722;
-    --nyayi-surface-2: #161e2e;
-    --nyayi-surface-border: rgba(255, 255, 255, 0.08);
-    --nyayi-surface-border-subtle: rgba(255, 255, 255, 0.04);
-    --nyayi-border-focus: rgba(16, 185, 129, 0.5);
+    --nyayi-bg: #212121;
+    --nyayi-bg-subtle: #171717;
+    --nyayi-surface: #2f2f2f;
+    --nyayi-surface-2: #424242;
+    --nyayi-surface-border: rgba(255, 255, 255, 0.1);
+    --nyayi-surface-border-subtle: rgba(255, 255, 255, 0.05);
+    --nyayi-border-focus: #10b981;
     
     --nyayi-primary: #10b981;
     --nyayi-primary-hover: #059669;
     --nyayi-primary-subtle: rgba(16, 185, 129, 0.12);
     
-    --nyayi-text: #f8fafc;
-    --nyayi-text-secondary: #94a3b8;
-    --nyayi-text-muted: #64748b;
+    --nyayi-text: #ececec;
+    --nyayi-text-secondary: #b4b4b4;
+    --nyayi-text-muted: #8c8c8c;
     
     --nyayi-danger: #ef4444;
     --nyayi-danger-subtle: rgba(239, 68, 68, 0.12);
@@ -35,31 +35,30 @@
     --nyayi-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --nyayi-font-mono: 'JetBrains Mono', monospace;
     
-    --header-height: 64px;
-    --sidebar-width: 240px;
-    --bottom-nav-height: 64px;
-    --max-chat-width: 1100px;
-    --max-answer-width: 820px;
-    --max-composer-width: 820px;
+    --header-height: 56px;
+    --sidebar-width: 260px;
+    --max-chat-width: 800px;
+    --max-answer-width: 800px;
+    --max-composer-width: 800px;
     
     --transition-fast: 150ms ease;
-    --radius-sm: 6px;
-    --radius-md: 10px;
-    --radius-lg: 14px;
-    --radius-xl: 18px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
 }
 
-/* Light Mode Overrides (Optional / Clean Slate) */
+/* Light Mode Overrides (Clean Slate) */
 body.light-mode {
-    --nyayi-bg: #f8fafc;
-    --nyayi-bg-subtle: #f1f5f9;
-    --nyayi-surface: #ffffff;
-    --nyayi-surface-2: #f1f5f9;
-    --nyayi-surface-border: #e2e8f0;
-    --nyayi-surface-border-subtle: #cbd5e1;
-    --nyayi-text: #0f172a;
-    --nyayi-text-secondary: #475569;
-    --nyayi-text-muted: #94a3b8;
+    --nyayi-bg: #ffffff;
+    --nyayi-bg-subtle: #f9f9f9;
+    --nyayi-surface: #f4f4f4;
+    --nyayi-surface-2: #ececec;
+    --nyayi-surface-border: rgba(0,0,0,0.1);
+    --nyayi-surface-border-subtle: rgba(0,0,0,0.05);
+    --nyayi-text: #0d0d0d;
+    --nyayi-text-secondary: #4d4d4d;
+    --nyayi-text-muted: #737373;
     --nyayi-primary-subtle: rgba(16, 185, 129, 0.08);
 }
 
@@ -1230,9 +1229,8 @@ body, #app {
     width: 330px;
     max-width: calc(100vw - 32px);
     background: rgba(17, 23, 34, 0.95);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    
+    border: 1px solid var(--nyayi-surface-border);
     border-radius: var(--radius-lg);
     padding: 12px;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(16, 185, 129, 0.15);
@@ -2022,7 +2020,11 @@ body, #app {
     }
     
     .composer-hint {
-        display: none;
+        display: block;
+        text-align: center;
+        padding-top: 6px;
+        font-size: 11px;
+        color: var(--nyayi-text-muted);
     }
     
     /* Bottom Sheet Modals on Mobile */
@@ -2380,3 +2382,68 @@ input:checked + .slider:before {
     overflow-wrap: anywhere;
 }
 
+/* --- VOICE ASSISTANT OVERLAY --- */
+.voice-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85);
+    
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+.voice-overlay.active {
+    display: flex;
+    animation: fadeInUp 0.3s ease;
+}
+.voice-content {
+    background: var(--nyayi-surface);
+    border: 1px solid var(--nyayi-surface-border);
+    border-radius: 24px;
+    padding: 32px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+.voice-mic-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--nyayi-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    margin: 0 auto 24px auto;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    animation: pulseMic 2s infinite;
+}
+@keyframes pulseMic {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(16, 185, 129, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+.voice-status {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--nyayi-text);
+    margin-bottom: 12px;
+}
+.voice-transcript {
+    font-size: 14px;
+    color: var(--nyayi-text-secondary);
+    min-height: 40px;
+    margin-bottom: 24px;
+    font-style: italic;
+}
+/* ai-disclaimer text */
+.ai-disclaimer {
+    text-align: center;
+    padding-top: 8px;
+    font-size: 11px;
+    color: var(--nyayi-text-muted);
+}
