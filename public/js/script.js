@@ -1949,11 +1949,9 @@ let isVoiceActive = false;
 let isVoicePaused = false;
 let isVoiceThinking = false;
 let isVoiceSpeaking = false;
-let activeRecognition = null;
 let voiceAccumulatedTranscript = '';
 let voiceSilenceTimer = null;
 let lastVoiceAnswerText = '';
-let isVoiceMuted = false;
 
 function updateVoiceStudioUI(state) {
     const core = document.getElementById('voiceOrbCore');
