@@ -2567,7 +2567,7 @@ input:checked + .slider:before {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 8px 0;
+    margin: 4px 0;
 }
 
 .voice-orb-ring {
@@ -2575,11 +2575,21 @@ input:checked + .slider:before {
     border-radius: 50%;
     border: 1px solid rgba(16, 185, 129, 0.35);
     animation: orbPulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    transition: border-color 0.3s ease;
 }
 
 .voice-orb-ring.ring-1 { width: 110px; height: 110px; animation-delay: 0s; }
 .voice-orb-ring.ring-2 { width: 140px; height: 140px; animation-delay: 0.7s; }
 .voice-orb-ring.ring-3 { width: 170px; height: 170px; animation-delay: 1.4s; }
+
+.voice-orb-ring.paused {
+    border-color: rgba(245, 158, 11, 0.45);
+    animation-play-state: paused;
+}
+
+.voice-orb-ring.thinking {
+    border-color: rgba(14, 165, 233, 0.5);
+}
 
 @keyframes orbPulse {
     0% { transform: scale(0.85); opacity: 0.8; }
@@ -2600,18 +2610,46 @@ input:checked + .slider:before {
     z-index: 2;
     cursor: pointer;
     box-shadow: 0 0 35px rgba(16, 185, 129, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.4);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
 }
 
 .voice-orb-core:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 45px rgba(16, 185, 129, 0.7);
+    transform: scale(1.06);
+    box-shadow: 0 0 45px rgba(16, 185, 129, 0.75);
+}
+
+.voice-orb-core.listening {
+    background: radial-gradient(circle at 35% 35%, #34d399, #059669);
+    box-shadow: 0 0 40px rgba(16, 185, 129, 0.65);
+    animation: listeningBreathe 2s ease-in-out infinite alternate;
+}
+
+@keyframes listeningBreathe {
+    0% { transform: scale(0.98); box-shadow: 0 0 30px rgba(16, 185, 129, 0.5); }
+    100% { transform: scale(1.04); box-shadow: 0 0 48px rgba(16, 185, 129, 0.8); }
+}
+
+.voice-orb-core.paused {
+    background: radial-gradient(circle at 35% 35%, #fbbf24, #d97706);
+    box-shadow: 0 0 40px rgba(245, 158, 11, 0.7), inset 0 2px 4px rgba(255, 255, 255, 0.4);
+    color: #07090e;
+    animation: none;
+}
+
+.voice-orb-core.paused:hover {
+    box-shadow: 0 0 50px rgba(245, 158, 11, 0.9);
 }
 
 .voice-orb-core.thinking {
     background: radial-gradient(circle at 35% 35%, #38bdf8, #0284c7);
-    box-shadow: 0 0 35px rgba(14, 165, 233, 0.6);
+    box-shadow: 0 0 35px rgba(14, 165, 233, 0.65);
     animation: thinkingSpin 2s linear infinite;
+}
+
+@keyframes thinkingSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 .voice-orb-core.speaking {
@@ -2625,6 +2663,67 @@ input:checked + .slider:before {
     to { transform: scale(1.08); }
 }
 
+.voice-orb-core.ready {
+    background: radial-gradient(circle at 35% 35%, #34d399, #047857);
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.45);
+    animation: none;
+}
+
+/* Audio Waveform Equalizer */
+.voice-waveform {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 24px;
+    margin: 2px 0 6px;
+}
+
+.voice-waveform .bar {
+    width: 4px;
+    height: 6px;
+    border-radius: 4px;
+    background: var(--nyayi-primary);
+    transition: all 0.2s ease;
+    animation: waveBar 1.2s ease-in-out infinite alternate;
+}
+
+.voice-waveform .bar-1 { animation-delay: 0s; }
+.voice-waveform .bar-2 { animation-delay: 0.25s; }
+.voice-waveform .bar-3 { animation-delay: 0.1s; }
+.voice-waveform .bar-4 { animation-delay: 0.35s; }
+.voice-waveform .bar-5 { animation-delay: 0.15s; }
+
+@keyframes waveBar {
+    0% { height: 4px; opacity: 0.5; }
+    50% { height: 20px; opacity: 1; }
+    100% { height: 8px; opacity: 0.7; }
+}
+
+.voice-waveform.paused .bar {
+    animation: none;
+    height: 4px;
+    background: #f59e0b;
+    opacity: 0.6;
+}
+
+.voice-waveform.thinking .bar {
+    background: #38bdf8;
+    animation-duration: 0.8s;
+}
+
+.voice-waveform.speaking .bar {
+    background: #10b981;
+    animation-duration: 0.6s;
+}
+
+.voice-waveform.ready .bar {
+    animation: none;
+    height: 5px;
+    background: var(--nyayi-text-muted);
+    opacity: 0.4;
+}
+
 .voice-status-badge {
     display: inline-flex;
     align-items: center;
@@ -2635,9 +2734,12 @@ input:checked + .slider:before {
     font-size: 13px;
     font-weight: 500;
     color: var(--nyayi-text-secondary);
+    max-width: 90%;
+    line-height: 1.4;
+    transition: all 0.25s ease;
 }
 
-/* Voice Live Cards */
+/* Voice Live Cards & Header Rows */
 .voice-live-card, .voice-response-card {
     width: 100%;
     background: var(--nyayi-surface);
@@ -2646,6 +2748,19 @@ input:checked + .slider:before {
     padding: 12px 14px;
     text-align: left;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    transition: all 0.25s ease;
+}
+
+.voice-response-card {
+    border-color: rgba(16, 185, 129, 0.25);
+    background: linear-gradient(180deg, rgba(16, 185, 129, 0.04) 0%, var(--nyayi-surface) 100%);
+}
+
+.voice-card-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
 }
 
 .voice-live-label {
@@ -2654,27 +2769,127 @@ input:checked + .slider:before {
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--nyayi-text-muted);
-    margin-bottom: 5px;
     display: flex;
     align-items: center;
     gap: 6px;
+}
+
+.voice-mode-badge {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 8px;
+    border-radius: 100px;
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.voice-mode-badge.paused {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.voice-mode-badge.thinking {
+    background: rgba(14, 165, 233, 0.15);
+    color: #38bdf8;
+    border-color: rgba(14, 165, 233, 0.3);
+}
+
+.voice-mode-badge.ready {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.4);
 }
 
 .voice-live-text {
     font-size: 14px;
     color: var(--nyayi-text);
     line-height: 1.45;
-    max-height: 70px;
+    max-height: 80px;
     overflow-y: auto;
     font-style: italic;
+    word-break: break-word;
 }
 
 .voice-response-text {
     font-size: 13.5px;
     color: var(--nyayi-text);
-    line-height: 1.5;
-    max-height: 100px;
+    line-height: 1.55;
+    max-height: 180px;
     overflow-y: auto;
+    word-break: break-word;
+}
+
+/* Action Bars inside Cards */
+.voice-live-actions, .voice-response-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--nyayi-surface-border-subtle);
+    flex-wrap: wrap;
+}
+
+.voice-action-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 13px;
+    border-radius: 100px;
+    background: var(--nyayi-surface-2);
+    border: 1px solid var(--nyayi-surface-border);
+    color: var(--nyayi-text);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+}
+
+.voice-action-pill:hover {
+    transform: translateY(-1px);
+    background: var(--nyayi-surface-border);
+    color: var(--nyayi-primary);
+    border-color: var(--nyayi-primary);
+}
+
+.voice-action-pill.primary {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #07090e;
+    border: none;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+}
+
+.voice-action-pill.primary:hover {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.55);
+    color: #000;
+}
+
+.voice-action-pill.warning {
+    background: rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.35);
+    color: #f59e0b;
+}
+
+.voice-action-pill.warning:hover {
+    background: #f59e0b;
+    color: #07090e;
+}
+
+.voice-action-pill.danger {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.25);
+    color: var(--nyayi-danger);
+}
+
+.voice-action-pill.danger:hover {
+    background: var(--nyayi-danger);
+    color: white;
 }
 
 /* Bottom Controls */

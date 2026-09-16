@@ -65,7 +65,7 @@
     <link rel="apple-touch-icon" href="images/logo.png">
 
     <!-- CSS & Fonts -->
-    <link rel="stylesheet" href="css/style.css?v=33">
+    <link rel="stylesheet" href="css/style.css?v=34">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     
     <!-- Schema.org JSON-LD -->
@@ -848,7 +848,7 @@
             <!-- Studio Header -->
             <div class="voice-studio-header">
                 <div style="display:flex; align-items:center; gap:8px;">
-                    <span class="voice-live-dot"></span>
+                    <span class="voice-live-dot" id="voiceLiveDot"></span>
                     <span style="font-weight:700; font-size:15px; color:var(--nyayi-text);">Nyayi Voice Studio</span>
                 </div>
                 <button type="button" class="voice-close-circle" onclick="closeVoiceAssistant()" title="Exit Voice Mode">
@@ -858,25 +858,62 @@
 
             <!-- Pulsing Voice Orb Visualizer -->
             <div class="voice-orb-wrapper">
-                <div class="voice-orb-ring ring-3"></div>
-                <div class="voice-orb-ring ring-2"></div>
-                <div class="voice-orb-ring ring-1"></div>
-                <div class="voice-orb-core" id="voiceOrbCore" onclick="toggleVoiceMicState()">
+                <div class="voice-orb-ring ring-3" id="voiceRing3"></div>
+                <div class="voice-orb-ring ring-2" id="voiceRing2"></div>
+                <div class="voice-orb-ring ring-1" id="voiceRing1"></div>
+                <div class="voice-orb-core" id="voiceOrbCore" onclick="toggleVoiceMicState()" title="Click to Pause / Resume / Speak">
                     <i class="fa-solid fa-microphone" id="voiceOrbIcon"></i>
                 </div>
+            </div>
+
+            <!-- Equalizer Waveform -->
+            <div class="voice-waveform" id="voiceWaveform">
+                <span class="bar bar-1"></span>
+                <span class="bar bar-2"></span>
+                <span class="bar bar-3"></span>
+                <span class="bar bar-4"></span>
+                <span class="bar bar-5"></span>
             </div>
 
             <!-- Dynamic State & Transcript -->
             <div class="voice-status-badge" id="voiceStatusText">Nyayi is listening... Speak now</div>
             
             <div class="voice-live-card">
-                <div class="voice-live-label" id="voiceLiveSpeaker"><i class="fa-solid fa-user"></i> You said:</div>
+                <div class="voice-card-header-row">
+                    <div class="voice-live-label" id="voiceLiveSpeaker"><i class="fa-solid fa-user"></i> You said:</div>
+                    <span class="voice-mode-badge" id="voiceLiveModeBadge">Listening</span>
+                </div>
                 <div class="voice-live-text" id="voiceTranscriptText">"Apna kanooni sawal Hindi, English ya Hinglish me boliye..."</div>
+                <div class="voice-live-actions" id="voiceLiveActions">
+                    <button type="button" class="voice-action-pill" id="voicePauseBtn" onclick="toggleVoicePause()" title="Pause to think">
+                        <i class="fa-solid fa-pause" id="voicePauseIcon"></i> <span id="voicePauseLabel">Pause</span>
+                    </button>
+                    <button type="button" class="voice-action-pill primary" id="voiceSendBtn" onclick="submitVoiceTranscript()" title="Send question now">
+                        <i class="fa-solid fa-paper-plane"></i> Send
+                    </button>
+                    <button type="button" class="voice-action-pill danger" id="voiceClearBtn" onclick="clearVoiceTranscript()" title="Clear question text">
+                        <i class="fa-solid fa-rotate-left"></i> Reset
+                    </button>
+                </div>
             </div>
 
             <div class="voice-response-card" id="voiceResponseCard" style="display:none;">
-                <div class="voice-live-label"><i class="fa-solid fa-scale-balanced" style="color:var(--nyayi-primary);"></i> Nyayi Response:</div>
+                <div class="voice-card-header-row">
+                    <div class="voice-live-label"><i class="fa-solid fa-scale-balanced" style="color:var(--nyayi-primary);"></i> Nyayi Legal Response:</div>
+                    <span class="voice-mode-badge ready" id="voiceResponseBadge">Answer</span>
+                </div>
                 <div class="voice-response-text" id="voiceResponseText"></div>
+                <div class="voice-response-actions">
+                    <button type="button" class="voice-action-pill" id="voiceReplayBtn" onclick="replayVoiceAnswer()" title="Replay legal answer audio">
+                        <i class="fa-solid fa-rotate-right"></i> Replay
+                    </button>
+                    <button type="button" class="voice-action-pill" id="voiceCopyBtn" onclick="copyVoiceAnswer()" title="Copy answer to clipboard">
+                        <i class="fa-solid fa-copy"></i> Copy
+                    </button>
+                    <button type="button" class="voice-action-pill primary" id="voiceNextBtn" onclick="askNextVoiceQuestion()" title="Ask your next legal question">
+                        <i class="fa-solid fa-microphone"></i> Ask Next Question
+                    </button>
+                </div>
             </div>
 
             <!-- Bottom Control Tray -->
@@ -933,7 +970,7 @@
     </div>
 
     <!-- SCRIPTS -->
-    <script src="js/script.js?v=33"></script>
+    <script src="js/script.js?v=34"></script>
     <script>
         // Render authenticated user name
         (function() {

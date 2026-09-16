@@ -1946,19 +1946,137 @@ function shareResponse(text) {
 
 // --- 16. VOICE STUDIO (DEDICATED FULL-SCREEN INTERACTIVE VOICE) ---
 let isVoiceActive = false;
+let isVoicePaused = false;
 let isVoiceThinking = false;
 let isVoiceSpeaking = false;
+let activeRecognition = null;
+let voiceAccumulatedTranscript = '';
+let voiceSilenceTimer = null;
+let lastVoiceAnswerText = '';
+let isVoiceMuted = false;
+
+function updateVoiceStudioUI(state) {
+    const core = document.getElementById('voiceOrbCore');
+    const icon = document.getElementById('voiceOrbIcon');
+    const waveform = document.getElementById('voiceWaveform');
+    const statusEl = document.getElementById('voiceStatusText');
+    const modeBadge = document.getElementById('voiceLiveModeBadge');
+    const pauseBtn = document.getElementById('voicePauseBtn');
+    const pauseIcon = document.getElementById('voicePauseIcon');
+    const pauseLabel = document.getElementById('voicePauseLabel');
+    const liveDot = document.getElementById('voiceLiveDot');
+    const rings = [document.getElementById('voiceRing1'), document.getElementById('voiceRing2'), document.getElementById('voiceRing3')];
+
+    // Reset base classes
+    if (core) core.className = 'voice-orb-core';
+    if (waveform) waveform.className = 'voice-waveform';
+    if (modeBadge) modeBadge.className = 'voice-mode-badge';
+    rings.forEach(r => { if (r) r.className = r.className.replace(/\b(paused|thinking)\b/g, '').trim(); });
+
+    switch (state) {
+        case 'listening':
+            if (core) core.classList.add('listening');
+            if (icon) icon.className = 'fa-solid fa-microphone';
+            if (waveform) waveform.classList.add('listening');
+            if (modeBadge) {
+                modeBadge.innerText = 'Listening';
+                modeBadge.className = 'voice-mode-badge';
+            }
+            if (statusEl) statusEl.innerText = voiceLang === 'hi-IN' ? "न्यायी सुन रहा है... अपना सवाल बोलिए" : "Nyayi is listening... Speak your question";
+            if (pauseBtn) {
+                pauseBtn.className = 'voice-action-pill';
+                if (pauseIcon) pauseIcon.className = 'fa-solid fa-pause';
+                if (pauseLabel) pauseLabel.innerText = 'Pause';
+            }
+            if (liveDot) { liveDot.style.background = 'var(--nyayi-primary)'; liveDot.style.boxShadow = '0 0 10px var(--nyayi-primary)'; }
+            break;
+
+        case 'paused':
+            if (core) core.classList.add('paused');
+            if (icon) icon.className = 'fa-solid fa-pause';
+            if (waveform) waveform.classList.add('paused');
+            if (modeBadge) {
+                modeBadge.innerText = 'Paused';
+                modeBadge.classList.add('paused');
+            }
+            rings.forEach(r => { if (r) r.classList.add('paused'); });
+            if (statusEl) statusEl.innerText = voiceLang === 'hi-IN' ? "माइक रुका हुआ है (Paused)। सोचने का समय लें... तैयार होने पर Resume या Send दबाएं" : "Mic paused. Take your time to think... Tap Resume or Send when ready";
+            if (pauseBtn) {
+                pauseBtn.className = 'voice-action-pill warning';
+                if (pauseIcon) pauseIcon.className = 'fa-solid fa-play';
+                if (pauseLabel) pauseLabel.innerText = 'Resume';
+            }
+            if (liveDot) { liveDot.style.background = '#f59e0b'; liveDot.style.boxShadow = '0 0 10px #f59e0b'; }
+            break;
+
+        case 'thinking':
+            if (core) core.classList.add('thinking');
+            if (icon) icon.className = 'fa-solid fa-spinner fa-spin';
+            if (waveform) waveform.classList.add('thinking');
+            if (modeBadge) {
+                modeBadge.innerText = 'Analyzing';
+                modeBadge.classList.add('thinking');
+            }
+            rings.forEach(r => { if (r) r.classList.add('thinking'); });
+            if (statusEl) statusEl.innerText = voiceLang === 'hi-IN' ? "न्यायी कानून का विश्लेषण कर रहा है..." : "Nyayi is analyzing the legal provisions...";
+            if (liveDot) { liveDot.style.background = '#38bdf8'; liveDot.style.boxShadow = '0 0 10px #38bdf8'; }
+            break;
+
+        case 'speaking':
+            if (core) core.classList.add('speaking');
+            if (icon) icon.className = 'fa-solid fa-volume-high';
+            if (waveform) waveform.classList.add('speaking');
+            if (modeBadge) {
+                modeBadge.innerText = 'Speaking';
+                modeBadge.className = 'voice-mode-badge';
+            }
+            if (statusEl) statusEl.innerText = voiceLang === 'hi-IN' ? "न्यायी बोल रहा है..." : "Nyayi is speaking legal response...";
+            if (liveDot) { liveDot.style.background = '#34d399'; liveDot.style.boxShadow = '0 0 10px #34d399'; }
+            break;
+
+        case 'ready':
+        default:
+            if (core) core.classList.add('ready');
+            if (icon) icon.className = 'fa-solid fa-microphone';
+            if (waveform) waveform.classList.add('ready');
+            if (modeBadge) {
+                modeBadge.innerText = 'Ready';
+                modeBadge.classList.add('ready');
+            }
+            if (statusEl) statusEl.innerText = voiceLang === 'hi-IN' ? "उत्तर पूरा हुआ। आराम से पढ़ें या 'Ask Next Question' दबाएं।" : "Answer complete. Read at your leisure or tap 'Ask Next Question'.";
+            if (pauseBtn) {
+                pauseBtn.className = 'voice-action-pill';
+                if (pauseIcon) pauseIcon.className = 'fa-solid fa-pause';
+                if (pauseLabel) pauseLabel.innerText = 'Pause';
+            }
+            if (liveDot) { liveDot.style.background = 'var(--nyayi-primary)'; liveDot.style.boxShadow = '0 0 10px var(--nyayi-primary)'; }
+            break;
+    }
+}
 
 function openVoiceAssistant() {
     closeAllModals();
     const overlay = document.getElementById('voiceOverlay');
     if (overlay) overlay.classList.add('active');
     isVoiceActive = true;
+    isVoicePaused = false;
+    isVoiceThinking = false;
+    isVoiceSpeaking = false;
+    voiceAccumulatedTranscript = '';
 
     // Sync gender label on button
     const gender = localStorage.getItem('nyayi_voice_gender') || 'female';
     const genderLabel = document.getElementById('voiceGenderLabel');
-    if (genderLabel) genderLabel.innerText = gender === 'female' ? '👩 Female' : '👨 Male';
+    if (genderLabel) genderLabel.innerText = gender === 'female' ? '👩 Female Voice' : '👨 Male Voice';
+
+    // Sync language label
+    const langLabel = document.getElementById('voiceLangLabel');
+    if (langLabel) langLabel.innerText = voiceLang === 'hi-IN' ? '🌐 हिन्दी' : '🌐 English';
+
+    const transcriptEl = document.getElementById('voiceTranscriptText');
+    if (transcriptEl) {
+        transcriptEl.innerText = voiceLang === 'hi-IN' ? "अपना कानूनी सवाल Hindi, English या Hinglish में बोलिए..." : "Ask your legal question in Hindi, English, or Hinglish...";
+    }
 
     startVoiceListening();
 }
@@ -1967,8 +2085,18 @@ function closeVoiceAssistant() {
     isVoiceActive = false;
     isVoiceThinking = false;
     isVoiceSpeaking = false;
+    isVoicePaused = false;
+    voiceAccumulatedTranscript = '';
+    if (voiceSilenceTimer) {
+        clearTimeout(voiceSilenceTimer);
+        voiceSilenceTimer = null;
+    }
     if (activeRecognition) {
-        try { activeRecognition.stop(); } catch(e) {}
+        try {
+            activeRecognition.onend = null;
+            activeRecognition.onerror = null;
+            activeRecognition.stop();
+        } catch(e) {}
         activeRecognition = null;
     }
     if (window.speechSynthesis) {
@@ -1976,14 +2104,7 @@ function closeVoiceAssistant() {
     }
     const overlay = document.getElementById('voiceOverlay');
     if (overlay) overlay.classList.remove('active');
-    resetVoiceOrb();
-}
-
-function resetVoiceOrb() {
-    const core = document.getElementById('voiceOrbCore');
-    const icon = document.getElementById('voiceOrbIcon');
-    if (core) core.className = 'voice-orb-core';
-    if (icon) icon.className = 'fa-solid fa-microphone';
+    updateVoiceStudioUI('ready');
 }
 
 function startVoiceListening() {
@@ -1991,82 +2112,225 @@ function startVoiceListening() {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) {
         const trans = document.getElementById('voiceTranscriptText');
-        if (trans) trans.innerText = "Speech Recognition aapke browser me support nahi karta. Kripya Chrome ya Edge use karein.";
+        if (trans) trans.innerText = "Speech Recognition aapke browser me support nahi karta. Kripya Google Chrome ya Microsoft Edge use karein.";
         return;
     }
 
     if (activeRecognition) {
-        try { activeRecognition.stop(); } catch(e) {}
+        try {
+            activeRecognition.onend = null;
+            activeRecognition.onerror = null;
+            activeRecognition.stop();
+        } catch(e) {}
     }
 
-    resetVoiceOrb();
-    const statusEl = document.getElementById('voiceStatusText');
-    const transcriptEl = document.getElementById('voiceTranscriptText');
-    if (statusEl) statusEl.innerText = "Nyayi sun raha hai... Boliye";
+    isVoicePaused = false;
+    isVoiceSpeaking = false;
+    isVoiceThinking = false;
+    if (voiceSilenceTimer) {
+        clearTimeout(voiceSilenceTimer);
+        voiceSilenceTimer = null;
+    }
+
+    updateVoiceStudioUI('listening');
 
     activeRecognition = new SpeechRec();
     activeRecognition.lang = voiceLang || 'hi-IN';
-    activeRecognition.continuous = false;
+    activeRecognition.continuous = true; // Continuous listening: does not cut off when user pauses to think!
     activeRecognition.interimResults = true;
 
     activeRecognition.onstart = () => {
-        if (statusEl) statusEl.innerText = "Nyayi sun raha hai... Boliye";
+        if (!isVoiceActive || isVoicePaused) return;
+        updateVoiceStudioUI('listening');
     };
 
     activeRecognition.onresult = (e) => {
-        const transcript = Array.from(e.results)
-            .map(r => r[0].transcript)
-            .join('');
-        if (transcriptEl) transcriptEl.innerText = transcript;
+        if (!isVoiceActive || isVoicePaused || isVoiceThinking || isVoiceSpeaking) return;
+
+        let interim = '';
+        for (let i = e.resultIndex; i < e.results.length; ++i) {
+            if (e.results[i].isFinal) {
+                voiceAccumulatedTranscript += (voiceAccumulatedTranscript ? ' ' : '') + e.results[i][0].transcript.trim();
+            } else {
+                interim += e.results[i][0].transcript;
+            }
+        }
+
+        const displayTranscript = (voiceAccumulatedTranscript + (interim ? ' ' + interim : '')).trim();
+        const transcriptEl = document.getElementById('voiceTranscriptText');
+        if (transcriptEl && displayTranscript) {
+            transcriptEl.innerText = displayTranscript;
+        }
+
+        // Reset silence timer on every spoken syllable/word
+        if (voiceSilenceTimer) clearTimeout(voiceSilenceTimer);
+
+        // Auto-submit only after 3.5s of complete silence AND substantive input
+        if (displayTranscript.length > 8) {
+            voiceSilenceTimer = setTimeout(() => {
+                if (isVoiceActive && !isVoicePaused && !isVoiceThinking && !isVoiceSpeaking) {
+                    submitVoiceTranscript();
+                }
+            }, 3500);
+        }
     };
 
     activeRecognition.onerror = (e) => {
-        if (isVoiceActive && !isVoiceSpeaking && !isVoiceThinking) {
-            if (statusEl) statusEl.innerText = "Listening paused. Mic tap karein bolne ke liye.";
+        console.warn('[Voice Recognition Error]', e.error);
+        if (e.error === 'no-speech') {
+            // User paused to think, do not break
+            return;
+        }
+        if (isVoiceActive && !isVoiceSpeaking && !isVoiceThinking && !isVoicePaused) {
+            const statusEl = document.getElementById('voiceStatusText');
+            if (statusEl) statusEl.innerText = voiceLang === 'hi-IN' ? "सुन रहा हूँ... बोलना जारी रखें या Pause दबाएं" : "Listening... Continue speaking or tap Pause";
         }
     };
 
     activeRecognition.onend = () => {
-        if (!isVoiceActive || isVoiceThinking || isVoiceSpeaking) return;
-        if (transcriptEl && transcriptEl.innerText && 
-            transcriptEl.innerText.length > 3 && 
-            !transcriptEl.innerText.includes("Apna kanooni sawal")) {
-            const query = transcriptEl.innerText.trim();
-            handleVoiceStudioQuery(query);
-        } else {
+        // If Chrome timed out recognition internally while user is still thinking (and not paused/thinking/speaking),
+        // restart recognition silently without discarding user's transcript!
+        if (isVoiceActive && !isVoicePaused && !isVoiceThinking && !isVoiceSpeaking) {
             setTimeout(() => {
-                if (isVoiceActive && !isVoiceThinking && !isVoiceSpeaking) {
+                if (isVoiceActive && !isVoicePaused && !isVoiceThinking && !isVoiceSpeaking) {
                     try { activeRecognition.start(); } catch(e) {}
                 }
-            }, 600);
+            }, 300);
         }
     };
 
     try {
         activeRecognition.start();
-    } catch(e) {}
+    } catch(e) {
+        console.warn('[Voice Start Error]', e);
+    }
+}
+
+function toggleVoicePause() {
+    if (!isVoiceActive || isVoiceThinking) return;
+
+    if (isVoiceSpeaking) {
+        // Tapping pause while Nyayi is speaking cancels speech immediately
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        isVoiceSpeaking = false;
+        updateVoiceStudioUI('ready');
+        return;
+    }
+
+    if (!isVoicePaused) {
+        // --- PAUSE MIC ---
+        isVoicePaused = true;
+        if (voiceSilenceTimer) {
+            clearTimeout(voiceSilenceTimer);
+            voiceSilenceTimer = null;
+        }
+        if (activeRecognition) {
+            try {
+                activeRecognition.onend = null;
+                activeRecognition.stop();
+            } catch(e) {}
+        }
+        updateVoiceStudioUI('paused');
+    } else {
+        // --- RESUME MIC ---
+        isVoicePaused = false;
+        updateVoiceStudioUI('listening');
+        startVoiceListening();
+    }
+}
+
+function toggleVoiceMicState() {
+    if (!isVoiceActive) return;
+    if (isVoiceSpeaking) {
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        isVoiceSpeaking = false;
+        updateVoiceStudioUI('ready');
+        return;
+    }
+    if (isVoiceThinking) return;
+
+    // Tapping the central orb acts as Pause/Resume toggle during listening
+    toggleVoicePause();
+}
+
+function clearVoiceTranscript() {
+    voiceAccumulatedTranscript = '';
+    if (voiceSilenceTimer) {
+        clearTimeout(voiceSilenceTimer);
+        voiceSilenceTimer = null;
+    }
+    const transcriptEl = document.getElementById('voiceTranscriptText');
+    if (transcriptEl) {
+        transcriptEl.innerText = voiceLang === 'hi-IN' ? "अपना कानूनी सवाल बोलिए..." : "Speak your legal question...";
+    }
+    if (!isVoicePaused && isVoiceActive && !isVoiceThinking && !isVoiceSpeaking) {
+        startVoiceListening();
+    }
+}
+
+function submitVoiceTranscript() {
+    if (voiceSilenceTimer) {
+        clearTimeout(voiceSilenceTimer);
+        voiceSilenceTimer = null;
+    }
+
+    if (activeRecognition) {
+        try {
+            activeRecognition.onend = null;
+            activeRecognition.stop();
+        } catch(e) {}
+    }
+
+    const transcriptEl = document.getElementById('voiceTranscriptText');
+    let userText = voiceAccumulatedTranscript.trim();
+    if (!userText && transcriptEl) {
+        userText = transcriptEl.innerText.trim();
+    }
+
+    // Filter out placeholders
+    if (!userText || 
+        userText.includes("Apna kanooni sawal") || 
+        userText.includes("अपना कानूनी सवाल") || 
+        userText.includes("Ask your legal question") ||
+        userText.length < 4) {
+        const statusEl = document.getElementById('voiceStatusText');
+        if (statusEl) statusEl.innerText = voiceLang === 'hi-IN' ? "कृपया थोड़ा और स्पष्ट बोलें..." : "Please speak your question clearly...";
+        if (!isVoicePaused) {
+            setTimeout(() => { startVoiceListening(); }, 1200);
+        }
+        return;
+    }
+
+    handleVoiceStudioQuery(userText);
 }
 
 async function handleVoiceStudioQuery(userText) {
     if (!userText || isVoiceThinking) return;
     isVoiceThinking = true;
+    isVoicePaused = false;
 
-    const core = document.getElementById('voiceOrbCore');
-    const icon = document.getElementById('voiceOrbIcon');
-    const statusEl = document.getElementById('voiceStatusText');
+    if (voiceSilenceTimer) {
+        clearTimeout(voiceSilenceTimer);
+        voiceSilenceTimer = null;
+    }
+    if (activeRecognition) {
+        try {
+            activeRecognition.onend = null;
+            activeRecognition.stop();
+        } catch(e) {}
+    }
+
+    updateVoiceStudioUI('thinking');
+
     const responseCard = document.getElementById('voiceResponseCard');
     const responseTextEl = document.getElementById('voiceResponseText');
-
-    if (core) core.className = 'voice-orb-core thinking';
-    if (icon) icon.className = 'fa-solid fa-spinner fa-spin';
-    if (statusEl) statusEl.innerText = "Nyayi soch raha hai... (Analyzing Law)";
     if (responseCard) responseCard.style.display = 'none';
 
     try {
         const isHindi = voiceLang === 'hi-IN';
         const voicePrompt = isHindi
-            ? `[Citizen Voice Query in HINDI. Reply 100% strictly in clear, respectful spoken HINDI in Devanagari script. Maximum 2-3 short, spoken sentences for speech audio. Zero English words]: ${userText}`
-            : `[Citizen Voice Query in ENGLISH. Reply 100% strictly in clear spoken ENGLISH. Maximum 2-3 short, spoken sentences for speech audio]: ${userText}`;
+            ? `[Citizen Spoken Voice Query in HINDI. Reply strictly in clear, natural spoken HINDI in Devanagari script. Maximum 2-3 concise, complete spoken sentences suitable for speech synthesis audio. Zero English jargon]: ${userText}`
+            : `[Citizen Spoken Voice Query in ENGLISH. Reply strictly in clear, natural spoken ENGLISH. Maximum 2-3 concise, complete spoken sentences suitable for speech synthesis audio]: ${userText}`;
 
         const res = await fetch('/api/chat', {
             method: 'POST',
@@ -2085,11 +2349,13 @@ async function handleVoiceStudioQuery(userText) {
 
         if (!isVoiceActive) return;
 
-        const aiReply = data.response || data.reply || (isHindi ? "माफ करें, आपके प्रश्न पर जानकारी प्राप्त नहीं हो सकी। कृपया दोबारा बोलें।" : "Could not retrieve legal response. Please try speaking again.");
+        const rawReply = data.response || data.reply || (isHindi ? "माफ करें, आपके प्रश्न पर कानूनी जानकारी प्राप्त नहीं हो सकी। कृपया दोबारा पूछें।" : "Could not retrieve legal response. Please try speaking again.");
+        const cleanReply = rawReply.replace(/<[^>]*>/g, '').replace(/[#\*_`]/g, '').trim();
+        lastVoiceAnswerText = cleanReply;
 
         if (responseCard && responseTextEl) {
             responseCard.style.display = 'block';
-            responseTextEl.innerText = aiReply.replace(/<[^>]*>/g, '').replace(/[#\*_]/g, '');
+            responseTextEl.innerText = cleanReply;
         }
 
         // Silently preserve in active chat session
@@ -2097,7 +2363,7 @@ async function handleVoiceStudioQuery(userText) {
             activeChatId = 'chat_' + Date.now();
         }
         currentChatMessages.push({ role: 'user', text: userText, time: Date.now() });
-        currentChatMessages.push({ role: 'ai', text: aiReply, time: Date.now() });
+        currentChatMessages.push({ role: 'ai', text: cleanReply, time: Date.now() });
         await ConversationStore.save({
             id: activeChatId,
             title: MemoryManager.generateMeaningfulTitle(userText),
@@ -2108,55 +2374,79 @@ async function handleVoiceStudioQuery(userText) {
         renderHistoryList();
 
         // Speak the legal response
-        speakSpokenVoiceAnswer(aiReply);
+        speakSpokenVoiceAnswer(cleanReply);
 
     } catch (err) {
+        console.error('[Voice Query Error]', err);
         isVoiceThinking = false;
-        if (statusEl) statusEl.innerText = voiceLang === 'hi-IN' ? "त्रुटि। माइक पर टैप करके दोबारा बोलें।" : "Error. Tap mic to speak again.";
-        resetVoiceOrb();
+        const statusEl = document.getElementById('voiceStatusText');
+        if (statusEl) statusEl.innerText = voiceLang === 'hi-IN' ? "त्रुटि। माइक पर टैप करके दोबारा बोलें।" : "Network error. Tap mic to try again.";
+        updateVoiceStudioUI('ready');
     }
 }
 
 function speakSpokenVoiceAnswer(text) {
-    if (!isVoiceActive) return;
+    if (!isVoiceActive || isVoiceMuted) {
+        updateVoiceStudioUI('ready');
+        return;
+    }
     isVoiceSpeaking = true;
+    updateVoiceStudioUI('speaking');
 
-    const core = document.getElementById('voiceOrbCore');
-    const icon = document.getElementById('voiceOrbIcon');
-    const statusEl = document.getElementById('voiceStatusText');
-
-    if (core) core.className = 'voice-orb-core speaking';
-    if (icon) icon.className = 'fa-solid fa-volume-high';
-    if (statusEl) statusEl.innerText = voiceLang === 'hi-IN' ? "न्यायी बोल रहा है..." : "Nyayi is speaking...";
-
-    playTTS(text, () => {}, () => {
+    playTTS(text, () => {
+        if (isVoiceActive) updateVoiceStudioUI('speaking');
+    }, () => {
         isVoiceSpeaking = false;
         if (!isVoiceActive) return;
-        resetVoiceOrb();
-        if (statusEl) statusEl.innerText = voiceLang === 'hi-IN' ? "न्यायी सुन रहा है... अगला सवाल बोलिए" : "Nyayi is listening... Speak next question";
-        const trans = document.getElementById('voiceTranscriptText');
-        if (trans) trans.innerText = voiceLang === 'hi-IN' ? "आप अगला सवाल पूछ सकते हैं..." : "You can ask your next question...";
-        setTimeout(() => {
-            if (isVoiceActive && !isVoiceSpeaking && !isVoiceThinking) {
-                startVoiceListening();
-            }
-        }, 500);
+
+        // FIXED: DO NOT automatically restart listening!
+        // The answer card stays visible so the user can read at their leisure.
+        // User explicitly taps 'Ask Next Question' or mic orb when ready.
+        updateVoiceStudioUI('ready');
     });
 }
 
-function toggleVoiceMicState() {
-    if (isVoiceSpeaking) {
-        if (window.speechSynthesis) window.speechSynthesis.cancel();
-        isVoiceSpeaking = false;
-        resetVoiceOrb();
-        startVoiceListening();
-        return;
+function replayVoiceAnswer() {
+    if (!lastVoiceAnswerText) {
+        const responseTextEl = document.getElementById('voiceResponseText');
+        if (responseTextEl && responseTextEl.innerText) {
+            lastVoiceAnswerText = responseTextEl.innerText.trim();
+        }
     }
-    if (isVoiceThinking) return;
+    if (!lastVoiceAnswerText) return;
 
-    if (activeRecognition) {
-        try { activeRecognition.stop(); } catch(e) {}
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    speakSpokenVoiceAnswer(lastVoiceAnswerText);
+}
+
+function copyVoiceAnswer() {
+    const text = lastVoiceAnswerText || (document.getElementById('voiceResponseText') ? document.getElementById('voiceResponseText').innerText : '');
+    if (!text) return;
+
+    const copyBtn = document.getElementById('voiceCopyBtn');
+    navigator.clipboard.writeText(text).then(() => {
+        if (copyBtn) {
+            const orig = copyBtn.innerHTML;
+            copyBtn.innerHTML = '<i class="fa-solid fa-check" style="color:var(--nyayi-primary);"></i> Copied';
+            setTimeout(() => { copyBtn.innerHTML = orig; }, 2000);
+        }
+    }).catch(() => {
+        prompt("Copy legal answer:", text);
+    });
+}
+
+function askNextVoiceQuestion() {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    isVoiceSpeaking = false;
+    isVoiceThinking = false;
+    isVoicePaused = false;
+    voiceAccumulatedTranscript = '';
+
+    const transcriptEl = document.getElementById('voiceTranscriptText');
+    if (transcriptEl) {
+        transcriptEl.innerText = voiceLang === 'hi-IN' ? "अपना अगला कानूनी सवाल बोलिए..." : "Ask your next legal question...";
     }
+
     startVoiceListening();
 }
 
@@ -2188,29 +2478,23 @@ function toggleVoiceMute() {
 
 function toggleVoiceLang() {
     voiceLang = voiceLang === 'hi-IN' ? 'en-IN' : 'hi-IN';
+    localStorage.setItem('nyayi_voice_lang', voiceLang);
     const label = document.getElementById('voiceLangLabel');
     if (label) label.innerText = voiceLang === 'hi-IN' ? '🌐 हिन्दी' : '🌐 English';
 
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     isVoiceSpeaking = false;
+    voiceAccumulatedTranscript = '';
 
-    const statusEl = document.getElementById('voiceStatusText');
     const trans = document.getElementById('voiceTranscriptText');
     if (voiceLang === 'hi-IN') {
-        if (statusEl) statusEl.innerText = "भाषा बदली: हिन्दी। सुन रहा हूँ... बोलिए";
         if (trans) trans.innerText = "अपना कानूनी सवाल हिन्दी में पूछें...";
     } else {
-        if (statusEl) statusEl.innerText = "Language switched: English. Listening... Speak";
         if (trans) trans.innerText = "Ask your legal question in English...";
     }
 
-    if (activeRecognition) {
-        try { activeRecognition.stop(); } catch(e) {}
-    }
     if (isVoiceActive && !isVoiceThinking) {
-        setTimeout(() => {
-            startVoiceListening();
-        }, 200);
+        startVoiceListening();
     }
 }
 
