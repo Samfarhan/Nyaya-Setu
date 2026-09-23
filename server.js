@@ -757,8 +757,7 @@ function handleAuthAPI(req, res) {
 
             return sendJSON(200, { 
                 success: true, 
-                message: `Verification code sent to ${email}`,
-                otp: code
+                message: `Verification code sent to ${email}`
             });
         }
 
@@ -948,8 +947,7 @@ function handleAuthAPI(req, res) {
 
             return sendJSON(200, { 
                 success: true, 
-                message: `Password reset code sent to ${email}`,
-                otp: code 
+                message: `Password reset code sent to ${email}`
             });
         }
 

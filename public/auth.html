@@ -576,18 +576,12 @@
                     <i class="fa-regular fa-envelope-open"></i>
                 </div>
                 <h2 style="font-size:20px; font-weight:700; color:#fff; margin-bottom:4px;">Check Your Email</h2>
-                <p style="font-size:13px; color:var(--text-muted);">
+                <p style="font-size:13px; color:var(--text-muted); line-height:1.5;">
                     We sent a 6-digit verification code to:<br>
-                    <strong id="otpTargetEmail" style="color:#fff; display:block; margin-top:3px;"></strong>
+                    <strong id="otpTargetEmail" style="color:#fff; display:block; margin-top:3px; font-size:14.5px;"></strong>
                 </p>
-
-                <!-- Prominent Verification Code Display Card -->
-                <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.3); border-radius:14px; padding:12px 16px; margin:14px 0 16px; text-align:center;">
-                    <div style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--primary); font-weight:700; margin-bottom:4px;">Your 6-Digit Verification Code</div>
-                    <div id="otpDisplayBadge" style="font-size:28px; font-weight:900; letter-spacing:8px; color:#10b981; font-family:monospace; margin:2px 0;">123456</div>
-                    <div style="font-size:11.5px; color:#94a3b8; margin-top:4px;">
-                        <i class="fa-solid fa-circle-info" style="color:var(--primary); margin-right:4px;"></i> Enter this code below or check your email (also check <strong>Spam / Junk</strong> folder)
-                    </div>
+                <div style="font-size:12px; color:var(--text-muted); margin:12px 0 18px; padding:9px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px;">
+                    <i class="fa-solid fa-envelope" style="color:var(--primary); margin-right:6px;"></i> Please check your <strong>Inbox</strong> or <strong>Spam / Junk</strong> folder for the code.
                 </div>
 
                 <form onsubmit="handleOTPSubmit(event)">
@@ -642,14 +636,8 @@
                 <div style="text-align:center; margin-bottom:14px;">
                     <h2 style="font-size:20px; font-weight:700; color:#fff;">New Password</h2>
                     <p style="font-size:13px; color:var(--text-muted); margin-top:4px;">Enter the code received and set a new password</p>
-                </div>
-
-                <!-- Prominent Reset Code Display Card -->
-                <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.3); border-radius:14px; padding:12px 16px; margin:10px 0 14px; text-align:center;">
-                    <div style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--primary); font-weight:700; margin-bottom:4px;">Reset Authorization Code</div>
-                    <div id="resetDisplayBadge" style="font-size:28px; font-weight:900; letter-spacing:8px; color:#10b981; font-family:monospace; margin:2px 0;">123456</div>
-                    <div style="font-size:11.5px; color:#94a3b8; margin-top:4px;">
-                        <i class="fa-solid fa-circle-info" style="color:var(--primary); margin-right:4px;"></i> Enter this code below or check your email (also check <strong>Spam / Junk</strong>)
+                    <div style="font-size:12px; color:var(--text-muted); margin:10px 0 14px; padding:8px 12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px;">
+                        <i class="fa-solid fa-envelope" style="color:var(--primary); margin-right:6px;"></i> Check your email for the code (also check <strong>Spam / Junk</strong> folder).
                     </div>
                 </div>
 
@@ -811,6 +799,16 @@
                         inputs[index - 1].focus();
                     }
                 });
+                input.addEventListener('paste', function(e) {
+                    const pasteData = (e.clipboardData || window.clipboardData).getData('text').trim();
+                    if (/^\d{6}$/.test(pasteData)) {
+                        e.preventDefault();
+                        pasteData.split('').forEach((digit, i) => {
+                            if (inputs[i]) inputs[i].value = digit;
+                        });
+                        inputs[inputs.length - 1].focus();
+                    }
+                });
                 input.addEventListener('focus', function() {
                     inputs.forEach(inp => inp.classList.remove('otp-error'));
                 });
@@ -845,6 +843,7 @@
             // Clear any OTP error highlights and values when changing views
             document.querySelectorAll('.otp-input').forEach(i => {
                 i.classList.remove('otp-error');
+                i.value = '';
             });
 
             const toggleBar = document.getElementById('toggleBar');
@@ -1000,17 +999,12 @@
                 document.getElementById('otpTargetEmail').innerText = email;
                 switchView('otp');
 
-                // If OTP is available, display prominently on screen and prefill input boxes
-                const code = data.otp || '123456';
-                const badge = document.getElementById('otpDisplayBadge');
-                if (badge) badge.innerText = code;
-
+                // Clear input boxes and focus the first box for user to type code
                 const otpInputs = document.querySelectorAll('#view-otp .otp-input');
-                code.split('').forEach((digit, idx) => {
-                    if (otpInputs[idx]) otpInputs[idx].value = digit;
-                });
+                otpInputs.forEach(i => i.value = '');
+                if (otpInputs[0]) otpInputs[0].focus();
 
-                showAlert(`Verification code: ${code} (Check Spam/Junk folder or verify directly)`, false);
+                showAlert(data.message || `Verification code sent to ${email}. Please check your Inbox or Spam folder.`, false);
             } catch (err) {
                 btn.disabled = false;
                 btn.innerHTML = '<span>Create Account</span> <i class="fa-solid fa-user-plus"></i>';
@@ -1097,17 +1091,16 @@
                     return;
                 }
 
-                const resetCode = data.otp || '123456';
-                const resetBadge = document.getElementById('resetDisplayBadge');
-                if (resetBadge) resetBadge.innerText = resetCode;
                 switchView('reset');
 
                 const resetInputs = document.querySelectorAll('#view-reset-password .otp-input');
-                resetCode.split('').forEach((digit, idx) => {
-                    if (resetInputs[idx]) resetInputs[idx].value = digit;
+                resetInputs.forEach(i => {
+                    i.value = '';
+                    i.classList.remove('otp-error');
                 });
+                if (resetInputs[0]) resetInputs[0].focus();
 
-                showAlert(`Reset code: ${resetCode} (Check Spam/Junk folder or verify directly)`, false);
+                showAlert(data.message || `Password reset code sent to ${email}. (Check Inbox & Spam folder)`, false);
             } catch (err) {
                 btn.disabled = false;
                 btn.innerHTML = '<span>Send Reset Code</span> <i class="fa-solid fa-paper-plane"></i>';
@@ -1420,14 +1413,21 @@
                     body: JSON.stringify(pendingSignupData)
                 });
                 const data = await res.json().catch(() => ({}));
-                const code = data.otp || '123456';
-                const badge = document.getElementById('otpDisplayBadge');
-                if (badge) badge.innerText = code;
+                
+                // Clear input boxes and focus the first box for user to type newly received code
                 const otpInputs = document.querySelectorAll('#view-otp .otp-input');
-                code.split('').forEach((digit, idx) => {
-                    if (otpInputs[idx]) otpInputs[idx].value = digit;
+                otpInputs.forEach(i => {
+                    i.value = '';
+                    i.classList.remove('otp-error');
                 });
-                showAlert(`New verification code: ${code} (Check Spam/Junk folder or verify directly)`, false);
+                if (otpInputs[0]) otpInputs[0].focus();
+
+                if (!res.ok || !data.success) {
+                    showAlert(data.error || 'Failed to resend verification code. Please try again.');
+                    return;
+                }
+
+                showAlert(data.message || `New verification code sent to ${pendingSignupData.email}! (Check Inbox & Spam)`, false);
             } catch (err) {
                 showAlert('Failed to resend verification code. Please check your connection.');
             }
