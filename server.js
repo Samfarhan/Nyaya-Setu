@@ -944,9 +944,13 @@ function handleAuthAPI(req, res) {
             });
 
             console.log(`[FORGOT OTP] Generated code ${code} for ${email}`);
-            await sendAuthEmail(email, '', code, true);
+            sendAuthEmail(email, '', code, true).catch(err => console.warn('[EMAIL WARNING]', err));
 
-            return sendJSON(200, { success: true, message: 'Password reset code sent to your email.' });
+            return sendJSON(200, { 
+                success: true, 
+                message: `Password reset code sent to ${email}`,
+                otp: code 
+            });
         }
 
         // 5. Reset Password (Verify OTP + Set New Password)
