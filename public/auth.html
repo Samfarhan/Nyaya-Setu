@@ -1260,7 +1260,6 @@
             }
 
             // Check if returned from GitHub OAuth code redirect (?code=...)
-            const urlParams = new URLSearchParams(window.location.search);
             const ghCode = urlParams.get('code');
             if (ghCode) {
                 showAlert('Verifying GitHub authorization...', false);
