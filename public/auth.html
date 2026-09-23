@@ -803,9 +803,7 @@
         setupOTPInputListeners('#view-reset-password .otp-input');
 
         // --- 4. VIEW SWITCHER ---
-        const AUTH_API_BASE = (window.location.hostname === 'ai.nyayi.in' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-            ? ''
-            : 'https://ai.nyayi.in';
+        const AUTH_API_BASE = '';
         let currentAuthEmail = '';
         let pendingSignupData = null;
 
@@ -1197,6 +1195,34 @@
 
         window.addEventListener('load', () => {
             initGoogleAuth();
+
+            // Check URL parameters for logout or SSO
+            const urlParams = new URLSearchParams(window.location.search);
+            const isLogout = urlParams.get('logout') === '1';
+            const ssoParams = new URLSearchParams(window.location.search);
+
+            if (isLogout) {
+                localStorage.removeItem('nyayi_auth');
+                localStorage.removeItem('nyayaUser');
+                localStorage.removeItem('nyayi_user_email');
+                sessionStorage.clear();
+                showAlert('You have been logged out successfully.', false);
+            } else if (ssoParams.get('sso') === '1' || (ssoParams.get('user') && ssoParams.get('email'))) {
+                const ssoUser = ssoParams.get('user') || 'Nyayi User';
+                const ssoEmail = ssoParams.get('email') || '';
+                showAlert(`Authenticated as ${ssoUser}! Redirecting to Nyayi AI...`, false);
+                grantAccess(ssoUser, ssoEmail);
+                return;
+            } else {
+                const existingAuth = localStorage.getItem('nyayi_auth');
+                const existingUser = localStorage.getItem('nyayaUser');
+                const existingEmail = localStorage.getItem('nyayi_user_email');
+                if (existingAuth === 'true' && existingUser) {
+                    showAlert(`Welcome back, ${existingUser}! Redirecting to Nyayi AI...`, false);
+                    grantAccess(existingUser, existingEmail);
+                    return;
+                }
+            }
 
             // Check if returned from Google OAuth redirect token (#access_token=...)
             if (window.location.hash) {

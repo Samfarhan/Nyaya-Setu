@@ -307,7 +307,7 @@ const MemoryManager = {
         return clean.slice(0, 32).trim() + (clean.length > 32 ? '...' : '');
     },
 
-    getContextPayload(messages, maxTurns = 8) {
+    getContextPayload(messages, maxTurns = 20) {
         if (!Array.isArray(messages) || messages.length === 0) return [];
         const relevant = messages.slice(-maxTurns);
         return relevant.map(m => ({
@@ -318,7 +318,7 @@ const MemoryManager = {
 
     cleanContent(text) {
         if (!text) return '';
-        return text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 800);
+        return text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 3000);
     }
 };
 
@@ -438,32 +438,137 @@ const MessageRenderer = {
     },
 
     generateFollowUpQuestions(text) {
-        const questions = [];
+        if (!text) return [];
         const lower = text.toLowerCase();
+        const questions = [];
 
-        if (lower.includes('tourist') || lower.includes('foreigner')) {
-            questions.push('What should a tourist do if detained or harassed?');
-            questions.push('Which embassy or helpline assists foreign citizens?');
-        } else if (lower.includes('salary') || lower.includes('employer') || lower.includes('wages')) {
-            questions.push('What legal notice can I send for unpaid salary?');
-            questions.push('How to file a complaint before Labour Commissioner?');
-        } else if (lower.includes('cheating') || lower.includes('fraud') || lower.includes('420') || lower.includes('318') || lower.includes('1930')) {
-            questions.push('Bank me transaction chargeback request kaise karein?');
-            questions.push('Cyber Crime Helpline 1930 complaint follow-up process kya hai?');
-        } else if (lower.includes('fir') || lower.includes('police') || lower.includes('154') || lower.includes('173')) {
-            questions.push('Zero FIR darj karwane ka exact step-by-step procedure batao.');
-            questions.push('Agar police FIR na likhe toh Magistrate ko complaint kaise karein?');
-        } else if (lower.includes('tenant') || lower.includes('rent') || lower.includes('deposit') || lower.includes('landlord')) {
-            questions.push('What legal steps can I take to recover my security deposit?');
-            questions.push('Landlord ko formal demand notice kaise bhejein?');
-        } else if (lower.includes('cheque') || lower.includes('138') || lower.includes('bounce')) {
-            questions.push('Section 138 notice bhejne ke baad court me complaint kab darj hoti hai?');
-        } else if (lower.includes('bail') || lower.includes('arrest') || lower.includes('438')) {
-            questions.push('Anticipatory bail petition me kaunse documents anivarya hain?');
+        // Detect selected or active language
+        const langSelect = document.getElementById('langSelect');
+        const uiLang = langSelect ? langSelect.value : 'Multilingual';
+        const isHindi = uiLang === 'Hindi' || /[\u0900-\u097F]/.test(text);
+        const isHinglish = uiLang === 'Hinglish';
+
+        if (lower.includes('tourist') || lower.includes('foreigner') || lower.includes('visa')) {
+            if (isHindi) {
+                questions.push('विदेशी नागरिक या टूरिस्ट के लिए आपातकालीन हेल्पलाइन नंबर क्या हैं?');
+                questions.push('यदि पासपोर्ट या वीजा खो जाए तो क्या कानूनी कदम उठाएं?');
+            } else if (isHinglish) {
+                questions.push('Foreign tourist ke liye emergency helpline numbers kya hain?');
+                questions.push('Passport ya visa kho jaane par kya legal process hai?');
+            } else {
+                questions.push('What emergency helplines and legal protections exist for foreign tourists?');
+                questions.push('What is the procedure if a foreign citizen loses their passport or visa?');
+            }
+        } else if (lower.includes('salary') || lower.includes('employer') || lower.includes('wages') || lower.includes('labour') || lower.includes('company')) {
+            if (isHindi) {
+                questions.push('बकाया वेतन पाने के लिए लीगल नोटिस कैसे भेजें?');
+                questions.push('लेबर कमिश्नर (Labour Court) के समक्ष शिकायत दर्ज करने की प्रक्रिया क्या है?');
+            } else if (isHinglish) {
+                questions.push('Unpaid salary ke liye Legal Notice ka draft kaise banayein?');
+                questions.push('Labour Court me complaint file karne ki puri prakriya samjhao.');
+            } else {
+                questions.push('How can I issue a formal Legal Notice to my employer for pending salary?');
+                questions.push('What is the procedure to file a complaint before the Labour Commissioner?');
+            }
+        } else if (lower.includes('cheating') || lower.includes('fraud') || lower.includes('420') || lower.includes('318') || lower.includes('1930') || lower.includes('cyber')) {
+            if (isHindi) {
+                questions.push('बैंक में ट्रांजैक्शन चार्जबैक (Chargeback Request) कैसे दर्ज करें?');
+                questions.push('साइबर क्राइम पोर्टल (cybercrime.gov.in) पर शिकायत की स्थिति कैसे जांचें?');
+            } else if (isHinglish) {
+                questions.push('Bank me dispute & chargeback form kaise submit karein?');
+                questions.push('1930 Cyber Crime complaint ka follow-up kaise liya jata hai?');
+            } else {
+                questions.push('How do I submit an emergency chargeback request with my bank?');
+                questions.push('How can I track the status of my cyber complaint on cybercrime.gov.in?');
+            }
+        } else if (lower.includes('fir') || lower.includes('police') || lower.includes('154') || lower.includes('173') || lower.includes('thana')) {
+            if (isHindi) {
+                questions.push('जीरो एफआईआर (Zero FIR) दर्ज करवाने की क्या प्रक्रिया है?');
+                questions.push('यदि पुलिस एफआईआर लिखने से मना करे तो मजिस्ट्रेट शिकायत (Sec 175 BNSS) कैसे करें?');
+            } else if (isHinglish) {
+                questions.push('Zero FIR kaise darj karwaye aur police station ki kya zimmedari hai?');
+                questions.push('Agar SHO FIR na likhe toh SP / Magistrate ko written complaint kaise bhejein?');
+            } else {
+                questions.push('What is the step-by-step procedure to register a Zero FIR?');
+                questions.push('What remedies exist under Section 175 BNSS if police refuse to file an FIR?');
+            }
+        } else if (lower.includes('tenant') || lower.includes('rent') || lower.includes('deposit') || lower.includes('landlord') || lower.includes('eviction')) {
+            if (isHindi) {
+                questions.push('मकान मालिक से सिक्योरिटी डिपॉजिट वापस पाने का क्या तरीका है?');
+                questions.push('बिना नोटिस मकान खाली कराने की कोशिश करे तो क्या स्टे ऑर्डर ले सकते हैं?');
+            } else if (isHinglish) {
+                questions.push('Landlord se security deposit recover karne ke liye legal notice kaise bhejein?');
+                questions.push('Rent agreement dispute me civil stay order lene ki kya prakriya hai?');
+            } else {
+                questions.push('What legal steps can I take to recover my security deposit from the landlord?');
+                questions.push('How can a tenant obtain an injunction against illegal eviction under Order 39 CPC?');
+            }
+        } else if (lower.includes('cheque') || lower.includes('138') || lower.includes('bounce') || lower.includes('negotiable')) {
+            if (isHindi) {
+                questions.push('चेक बाउंस होने पर 30 दिनों के भीतर कानूनी नोटिस भेजने का क्या नियम है?');
+                questions.push('धारा 138 (Sec 138 NI Act) के तहत कोर्ट में मामला दर्ज करने की क्या प्रक्रिया है?');
+            } else if (isHinglish) {
+                questions.push('Cheque bounce hone ke kitne din ke andar legal notice bhejna zaroori hai?');
+                questions.push('Sec 138 NI Act court complaint me kaunse documents lagte hain?');
+            } else {
+                questions.push('What are the strict timelines for issuing a statutory legal notice under Section 138 NI Act?');
+                questions.push('What documents are required to file a cheque bounce complaint before a Magistrate?');
+            }
+        } else if (lower.includes('bail') || lower.includes('arrest') || lower.includes('438') || lower.includes('482') || lower.includes('bailable')) {
+            if (isHindi) {
+                questions.push('अग्रिम जमानत (Anticipatory Bail) के लिए किन आधारों पर अर्जी दी जाती है?');
+                questions.push('गिरफ्तारी के समय नागरिक के क्या-क्या मौलिक अधिकार होते हैं?');
+            } else if (isHinglish) {
+                questions.push('Anticipatory Bail petition me kaunse strong legal grounds zaroori hote hain?');
+                questions.push('Police arrest ke waqt citizen ke kya fundamental rights hote hain?');
+            } else {
+                questions.push('What essential grounds must be shown to secure Anticipatory Bail?');
+                questions.push('What constitutional safeguards protect an individual during police custody and arrest?');
+            }
+        } else if (lower.includes('consumer') || lower.includes('defective') || lower.includes('refund') || lower.includes('service')) {
+            if (isHindi) {
+                questions.push('उपभोक्ता फोरम (Consumer Court) में ऑनलाइन शिकायत (e-Daakhil) कैसे दर्ज करें?');
+                questions.push('खराब सामान या सेवा में कमी के लिए कितना मुआवजा (Compensation) मांगा जा सकता है?');
+            } else if (isHinglish) {
+                questions.push('e-Daakhil portal par online consumer complaint kaise file karein?');
+                questions.push('Defective product ya poor service ke liye kitna refund aur compensation claim kar sakte hain?');
+            } else {
+                questions.push('How do I file an online consumer complaint via the e-Daakhil portal?');
+                questions.push('What compensation and refunds can be claimed for defective goods or deficient services?');
+            }
+        } else if (lower.includes('property') || lower.includes('stay') || lower.includes('injunction') || lower.includes('land')) {
+            if (isHindi) {
+                questions.push('संपत्ति विवाद में सिविल कोर्ट से अस्थायी रोक (Temporary Stay Order - Order 39) कैसे प्राप्त करें?');
+                questions.push('पैतृक संपत्ति में अधिकारों का बंटवारा (Partition Suit) कैसे होता है?');
+            } else if (isHinglish) {
+                questions.push('Property dispute me Civil Court se Stay Order (Order 39 Rules 1 & 2) kaise lein?');
+                questions.push('Ancestral property partition suit file karne ki kya process hai?');
+            } else {
+                questions.push('How can I obtain a temporary injunction (Order 39 Rules 1 & 2 CPC) in a property dispute?');
+                questions.push('What is the procedure to file a partition suit for ancestral property?');
+            }
+        } else if (lower.includes('divorce') || lower.includes('maintenance') || lower.includes('125') || lower.includes('144') || lower.includes('family')) {
+            if (isHindi) {
+                questions.push('आपसी सहमति से तलाक (Mutual Consent Divorce) की क्या प्रक्रिया और समयसीमा है?');
+                questions.push('भरण-पोषण (Maintenance under Sec 144 BNSS / 125 CrPC) का दावा कैसे करें?');
+            } else if (isHinglish) {
+                questions.push('Mutual Consent Divorce me kitna time lagta hai aur process kya hai?');
+                questions.push('Wife ya child maintenance claim karne ke liye kya legal provisions hain?');
+            } else {
+                questions.push('What is the procedure and timeline for Mutual Consent Divorce?');
+                questions.push('How to claim monthly maintenance under Section 144 BNSS / 125 CrPC?');
+            }
         } else {
-            // General conversational follow-up
-            if (!lower.includes('what you should do') && !lower.includes('step-by-step')) {
-                questions.push('What steps should I take next?');
+            // Contextually rich general legal questions tailored to language
+            if (isHindi) {
+                questions.push('क्या हम इस मामले को आपसी बातचीत या कानूनी नोटिस से सुलझा सकते हैं?');
+                questions.push('इस स्थिति में आगे के व्यावहारिक और सुरक्षित कानूनी विकल्प क्या हैं?');
+            } else if (isHinglish) {
+                questions.push('Kya is mamle ko mutual dialogue ya legal notice se peacefully resolve kar sakte hain?');
+                questions.push('Is situation me aage ke practical aur safe legal options kya kya hain?');
+            } else {
+                questions.push('Can this issue be resolved amicably through mutual dialogue or a formal legal notice?');
+                questions.push('What practical legal steps and options do I have moving forward?');
             }
         }
         return questions.slice(0, 2);
@@ -835,7 +940,7 @@ async function sendMessage() {
     showThinkingIndicator();
 
     activeAbortController = new AbortController();
-    const historyPayload = MemoryManager.getContextPayload(currentChatMessages.slice(0, -1), 8);
+    const historyPayload = MemoryManager.getContextPayload(currentChatMessages.slice(0, -1), 20);
 
     try {
         const response = await fetch('/api/chat', {

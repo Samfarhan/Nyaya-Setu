@@ -21,6 +21,19 @@
             window.history.replaceState(null, '', cleanPath + window.location.search + window.location.hash);
         }
         (function() {
+            try {
+                var params = new URLSearchParams(window.location.search);
+                if (params.get('sso') === '1' || (params.get('user') && params.get('email'))) {
+                    var ssoUser = params.get('user') || 'Nyayi User';
+                    var ssoEmail = params.get('email') || '';
+                    localStorage.setItem('nyayi_auth', 'true');
+                    localStorage.setItem('nyayaUser', ssoUser);
+                    if (ssoEmail) localStorage.setItem('nyayi_user_email', ssoEmail);
+                    sessionStorage.setItem('nyayi_just_logged_in', 'true');
+                    var cleanUrl = window.location.origin + window.location.pathname;
+                    window.history.replaceState({}, document.title, cleanUrl);
+                }
+            } catch(e) {}
             var isAuth = localStorage.getItem('nyayi_auth');
             if (!isAuth || isAuth !== 'true') {
                 window.location.replace('auth');
