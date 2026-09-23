@@ -162,6 +162,12 @@ function handleChatAPI(req, res) {
                 return;
             }
 
+            // Auto-extract and save user persistent facts into memory
+            const userEmail = (parsedData.email || '').trim().toLowerCase();
+            if (userEmail) {
+                autoExtractUserMemory(userEmail, userMessage);
+            }
+
             let identityBlock = "";
             let languageDirective = "";
 
@@ -463,6 +469,46 @@ function saveUsers(users) {
         fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2), 'utf8');
     } catch (e) {
         console.error("Error saving users:", e);
+    }
+}
+
+function autoExtractUserMemory(userEmail, userMessage) {
+    if (!userEmail || !userMessage || userMessage.length < 5) return;
+    const cleanMsg = userMessage.trim();
+    const lower = cleanMsg.toLowerCase();
+    
+    let extractedFact = null;
+
+    if (/\b(mera naam|my name is|i am|main)\s+([A-Z][a-z]+(\s+[A-Z][a-z]+)?)\b/i.test(cleanMsg)) {
+        const m = cleanMsg.match(/\b(mera naam|my name is|i am|main)\s+([A-Z][a-z]+(\s+[A-Z][a-z]+)?)\b/i);
+        if (m && m[2] && m[2].length > 2 && !['a', 'the', 'indian', 'citizen', 'facing', 'having', 'asking', 'legal', 'lawyer'].includes(m[2].toLowerCase())) {
+            extractedFact = `User Name: ${m[2]}`;
+        }
+    } else if (/\b(rehta hu|rehti hu|live in|located in|from)\s+([A-Z][a-z]+)\b/i.test(cleanMsg)) {
+        const m = cleanMsg.match(/\b(rehta hu|rehti hu|live in|located in|from)\s+([A-Z][a-z]+)\b/i);
+        if (m && m[2] && m[2].length > 2) {
+            extractedFact = `Location: ${m[2]}`;
+        }
+    } else if (/\b(rs\.?|rupees|inr|₹)\s*([0-9,]+)/i.test(cleanMsg) || /\b([0-9,]+)\s*(rupees|rs|paise)\b/i.test(cleanMsg)) {
+        if (lower.includes('salary') || lower.includes('wages') || lower.includes('deposit') || lower.includes('rent') || lower.includes('fraud') || lower.includes('loan')) {
+            const shortSummary = cleanMsg.slice(0, 100);
+            extractedFact = `Dispute Context: ${shortSummary}`;
+        }
+    }
+
+    if (extractedFact) {
+        const users = getUsers();
+        const user = users.find(u => u.email.toLowerCase() === userEmail.toLowerCase());
+        if (user) {
+            if (!Array.isArray(user.memories)) user.memories = [];
+            const isDuplicate = user.memories.some(m => m.toLowerCase().includes(extractedFact.toLowerCase()) || extractedFact.toLowerCase().includes(m.toLowerCase()));
+            if (!isDuplicate) {
+                user.memories.push(extractedFact);
+                if (user.memories.length > 15) user.memories.shift();
+                saveUsers(users);
+                console.log(`[AUTO USER MEMORY SAVED] For ${userEmail}: "${extractedFact}"`);
+            }
+        }
     }
 }
 
