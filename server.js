@@ -236,7 +236,6 @@ ${lawyerPersonaGuide}`;
 
             // User Persistent Memory Lookup
             let userMemoryBlock = "";
-            const userEmail = (parsedData.email || '').trim().toLowerCase();
             if (userEmail) {
                 const users = getUsers();
                 const matchedUser = users.find(u => u.email.toLowerCase() === userEmail);
