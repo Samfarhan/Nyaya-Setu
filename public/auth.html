@@ -928,7 +928,7 @@
             }
         }
 
-        // B) SIGNUP (Triggers OTP Email)
+        // B) SIGNUP (Instant Account Creation + Direct Login)
         async function handleSignupSubmit(e) {
             e.preventDefault();
             hideAlert();
@@ -937,39 +937,70 @@
             const email = document.getElementById('signupEmail').value.trim();
             const pass = document.getElementById('signupPass').value;
 
+            if (!name) {
+                showAlert('Please enter your full name.');
+                return;
+            }
+            if (!email || !email.includes('@')) {
+                showAlert('Please enter a valid email address.');
+                return;
+            }
             if (pass.length < 8) {
                 showAlert('Password must be at least 8 characters long.');
                 return;
             }
 
             btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-paper-plane fa-fade"></i> Sending Verification Code...';
-
-            pendingSignupData = { name, email, pass, password: pass };
-            currentAuthEmail = email;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating Account...';
 
             try {
-                const res = await fetch(`${AUTH_API_BASE}/api/auth/send-otp`, {
+                // Direct instant registration
+                const res = await fetch(`${AUTH_API_BASE}/api/auth/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, email, pass, password: pass, type: 'signup' })
+                    body: JSON.stringify({ name, email, pass, password: pass })
                 });
 
                 const data = await res.json().catch(() => ({}));
 
-                btn.disabled = false;
-                btn.innerHTML = '<span>Create Account</span> <i class="fa-solid fa-user-plus"></i>';
-
-                if (!res.ok || !data.success) {
-                    showAlert(data.error || 'Failed to dispatch verification code. Please try again.');
+                if (res.ok && data.success) {
+                    btn.style.background = '#10b981';
+                    btn.innerHTML = '<i class="fa-solid fa-check"></i> Account Created!';
+                    showAlert(`Account created successfully, ${data.name || name}! Redirecting...`, false);
+                    grantAccess(data.name || name || email.split('@')[0], email, true);
                     return;
                 }
 
-                showAlert(data.message || `Verification code sent to ${email}!`, false);
-                document.getElementById('otpTargetEmail').innerText = email;
-                switchView('otp');
-                const firstOTP = document.querySelector('#view-otp .otp-input');
-                if (firstOTP) firstOTP.focus();
+                if (data.error && data.error.toLowerCase().includes('already exists')) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>Create Account</span> <i class="fa-solid fa-user-plus"></i>';
+                    showAlert('An account with this email already exists. Please log in instead.');
+                    return;
+                }
+
+                // Fallback to OTP verification if server requires
+                pendingSignupData = { name, email, pass, password: pass };
+                currentAuthEmail = email;
+
+                const otpRes = await fetch(`${AUTH_API_BASE}/api/auth/send-otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, pass, password: pass, type: 'signup' })
+                });
+                const otpData = await otpRes.json().catch(() => ({}));
+
+                btn.disabled = false;
+                btn.innerHTML = '<span>Create Account</span> <i class="fa-solid fa-user-plus"></i>';
+
+                if (otpRes.ok && otpData.success) {
+                    showAlert(otpData.message || `Verification code sent to ${email}!`, false);
+                    document.getElementById('otpTargetEmail').innerText = email;
+                    switchView('otp');
+                    const firstOTP = document.querySelector('#view-otp .otp-input');
+                    if (firstOTP) firstOTP.focus();
+                } else {
+                    showAlert(otpData.error || 'Failed to create account. Please try again.');
+                }
 
             } catch (err) {
                 btn.disabled = false;
