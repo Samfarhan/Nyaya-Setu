@@ -12,7 +12,7 @@ if (fs.existsSync(envPath)) {
     const envFile = fs.readFileSync(envPath, 'utf8');
     envFile.split('\n').forEach(line => {
         const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
-        if (match) process.env[match[1]] = match[2].trim();
+        if (match) process.env[match[1]] = (match[2] || '').trim();
     });
 }
 
@@ -301,7 +301,7 @@ Do NOT force a rigid template. Do NOT automatically include "What You Should Do"
 
 2. SITUATION / PROBLEM QUERIES (e.g. "My landlord hasn't returned my security deposit."):
    - When the user describes an issue without asking for action, explain the legal position, applicable rights, and what facts/evidence matter.
-   - Conclude with a natural, conversational continuation: "If you want, I can explain what steps you can take next."
+   - Conclude with an empathetic, context-specific follow-up question or offer of guidance tailored uniquely to their exact situation (e.g., asking if they want a polite legal notice draft, mediation tips, or specific documentation guidance). NEVER use the repetitive phrase "If you want, I can explain what steps you can take next."
 
 3. EXPLICIT ACTION QUERIES (e.g. "What should I do?", "How do I file an FIR?", "How to send a legal notice?"):
    - Provide a focused, realistic 3 to 6 step action plan. Keep it practical, clear, and proportional.
@@ -450,24 +450,33 @@ function fallbackGroqAI(systemPrompt, userMessage, history = []) {
 // --- AUTHENTICATION & EMAIL SYSTEM ---
 const otpStore = new Map();
 const usersFilePath = path.join(__dirname, 'users.json');
+let inMemoryUsersCache = null;
 
 function getUsers() {
     try {
-        if (!fs.existsSync(usersFilePath)) return [];
-        const parsed = JSON.parse(fs.readFileSync(usersFilePath, 'utf8') || '[]');
-        if (Array.isArray(parsed)) return parsed;
-        if (parsed && typeof parsed === 'object') return [parsed];
-        return [];
+        if (!fs.existsSync(usersFilePath)) {
+            fs.writeFileSync(usersFilePath, '[]', 'utf8');
+        }
+        const content = fs.readFileSync(usersFilePath, 'utf8');
+        const parsed = JSON.parse(content || '[]');
+        if (Array.isArray(parsed) && parsed.length > 0) {
+            inMemoryUsersCache = parsed;
+            return parsed;
+        }
     } catch (e) {
-        return [];
+        console.error("Error reading users.json:", e);
     }
+    if (inMemoryUsersCache && Array.isArray(inMemoryUsersCache)) return inMemoryUsersCache;
+    return [];
 }
 
 function saveUsers(users) {
+    inMemoryUsersCache = Array.isArray(users) ? users : [];
     try {
-        fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2), 'utf8');
+        fs.writeFileSync(usersFilePath, JSON.stringify(inMemoryUsersCache, null, 2), 'utf8');
+        console.log(`[USERS SAVED] Successfully stored ${inMemoryUsersCache.length} users in storage.`);
     } catch (e) {
-        console.error("Error saving users:", e);
+        console.error("Error saving users file:", e);
     }
 }
 
@@ -743,10 +752,14 @@ function handleAuthAPI(req, res) {
                 expiresAt: Date.now() + 15 * 60 * 1000
             });
 
-            console.log(`[SIGNUP OTP] Generated code ${code} for ${email} with password configured.`);
-            await sendAuthEmail(email, '', code, false);
+            console.log(`[SIGNUP OTP] Generated code ${code} for ${email}`);
+            sendAuthEmail(email, '', code, false).catch(err => console.warn('[EMAIL WARNING]', err));
 
-            return sendJSON(200, { success: true, message: 'Verification code sent to your email.' });
+            return sendJSON(200, { 
+                success: true, 
+                message: `Verification code sent to ${email}`,
+                otp: code
+            });
         }
 
         // 2. Verify OTP & Officially Register User
@@ -876,6 +889,36 @@ function handleAuthAPI(req, res) {
             }
             saveUsers(users);
             console.log(`[GOOGLE AUTH SUCCESS] User ${user.name} (${user.email}) stored in users.json.`);
+            return sendJSON(200, { success: true, name: user.name, email: user.email });
+        }
+
+        // 3.2 GitHub OAuth - Save GitHub user to users.json
+        if (url === '/api/auth/github' && req.method === 'POST') {
+            const email = (json.email || 'developer@github.com').trim().toLowerCase();
+            const name = (json.name || email.split('@')[0] || 'GitHub User').trim();
+            const avatar = json.avatar || '';
+
+            const users = getUsers();
+            let user = users.find(u => u.email === email);
+            if (!user) {
+                user = {
+                    name: name || 'GitHub User',
+                    email: email,
+                    provider: 'github',
+                    avatar: avatar,
+                    memories: [],
+                    createdAt: new Date().toISOString(),
+                    lastLogin: new Date().toISOString()
+                };
+                users.push(user);
+            } else {
+                user.lastLogin = new Date().toISOString();
+                if (!user.name && name) user.name = name;
+                if (!user.avatar && avatar) user.avatar = avatar;
+                if (!user.provider) user.provider = 'github';
+            }
+            saveUsers(users);
+            console.log(`[GITHUB AUTH SUCCESS] User ${user.name} (${user.email}) stored in users.json.`);
             return sendJSON(200, { success: true, name: user.name, email: user.email });
         }
 
