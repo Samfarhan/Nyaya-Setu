@@ -17,14 +17,6 @@
             if (!cleanPath) cleanPath = '/';
             window.history.replaceState(null, '', cleanPath + window.location.search + window.location.hash);
         }
-        (function() {
-            var isAuth = localStorage.getItem('nyayi_auth');
-            var params = new URLSearchParams(window.location.search);
-            if (isAuth === 'true' && !params.has('logout')) {
-                var target = params.get('redirect') || '/';
-                window.location.replace(target);
-            }
-        })();
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -1244,15 +1236,8 @@
                 showAlert(`Authenticated as ${ssoUser}! Redirecting to Nyayi AI...`, false);
                 grantAccess(ssoUser, ssoEmail);
                 return;
-            } else {
-                const existingAuth = localStorage.getItem('nyayi_auth');
-                const existingUser = localStorage.getItem('nyayaUser');
-                const existingEmail = localStorage.getItem('nyayi_user_email');
-                if (existingAuth === 'true' && existingUser) {
-                    showAlert(`Welcome back, ${existingUser}! Redirecting to Nyayi AI...`, false);
-                    grantAccess(existingUser, existingEmail);
-                    return;
-                }
+            } else if (urlParams.get('mode') === 'signup' || urlParams.get('signup') === '1' || window.location.hash === '#signup') {
+                switchView('signup');
             }
 
             // Check if returned from Google OAuth redirect token (#access_token=...)
