@@ -673,83 +673,6 @@
         </div>
     </div>
 
-    <!-- GOOGLE OAUTH POPUP SIMULATION -->
-    <div class="oauth-overlay" id="googleOverlay">
-        <div class="google-window">
-            <div class="loading-bar" id="googleLoading" style="background:#dadce0;"></div>
-            <div class="google-header">
-                <svg viewBox="0 0 48 48">
-                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
-                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
-                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
-                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
-                </svg>
-                <h1>Sign in with Google</h1>
-                <p>to continue to Nyayi Legal AI</p>
-            </div>
-            <div class="google-accounts">
-                <div class="google-account" onclick="executeGoogleLogin('Farhan Khan', 'farhankhan@nyayi.in')">
-                    <div class="google-avatar">F</div>
-                    <div>
-                        <div class="google-name">Farhan Khan</div>
-                        <div class="google-email">farhankhan@nyayi.in</div>
-                    </div>
-                </div>
-                <div class="google-account" onclick="executeGoogleLogin('Citizen User', 'user@gmail.com')">
-                    <div class="google-avatar" style="background:#0f9d58;">C</div>
-                    <div>
-                        <div class="google-name">Citizen User</div>
-                        <div class="google-email">citizen@gmail.com</div>
-                    </div>
-                </div>
-                <div class="google-account" onclick="promptGoogleCustomEmail()" style="padding:14px 24px;">
-                    <div class="google-name" style="color:#1a73e8; font-weight:500;"><i class="fa-solid fa-user-plus" style="margin-right:8px;"></i> Sign in with another Google account</div>
-                </div>
-                <div class="google-account" onclick="closeOAuth('googleOverlay')" style="padding:10px 24px;">
-                    <div class="google-name" style="color:var(--text-muted); font-size:13px;">Cancel</div>
-                </div>
-            </div>
-            <div class="google-footer">
-                <div>English (United States)</div>
-                <div><a href="#">Help</a> • <a href="#">Privacy</a> • <a href="#">Terms</a></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- GITHUB OAUTH POPUP SIMULATION -->
-    <div class="oauth-overlay" id="githubOverlay">
-        <div class="github-window">
-            <div class="loading-bar" id="githubLoading"></div>
-            <div class="github-header">
-                <i class="fa-brands fa-github"></i>
-                <h2>Authorize Nyayi Legal AI</h2>
-                <p>by Nyayi-Systems wants to access your GitHub account</p>
-            </div>
-            <div class="github-body">
-                <div class="github-permission">
-                    <i class="fa-solid fa-check"></i>
-                    <div>
-                        <div class="github-perm-title">Verify your identity</div>
-                        <div class="github-perm-desc">Know who you are on GitHub (public profile)</div>
-                    </div>
-                </div>
-                <div class="github-permission">
-                    <i class="fa-solid fa-check"></i>
-                    <div>
-                        <div class="github-perm-title">Primary email address</div>
-                        <div class="github-perm-desc">Access your verified email to deliver legal case summaries</div>
-                    </div>
-                </div>
-            </div>
-            <div class="github-actions" style="display:flex; flex-direction:column; gap:8px;">
-                <div style="display:flex; gap:10px; width:100%;">
-                    <button type="button" class="github-btn-cancel" onclick="closeOAuth('githubOverlay')" style="flex:1;">Cancel</button>
-                    <button type="button" class="github-btn-auth" onclick="executeGithubLogin('GitHub Developer', 'developer@github.com')" style="flex:2;">Authorize Nyayi-Pro</button>
-                </div>
-                <button type="button" class="github-btn-cancel" onclick="promptGithubCustomUser()" style="width:100%; border:1px dashed rgba(255,255,255,0.25); font-size:12.5px; padding:8px;"><i class="fa-brands fa-github" style="margin-right:6px;"></i> Sign in with custom GitHub username</button>
-            </div>
-        </div>
-    </div>
 
     <script>
         // --- 1. PARTICLES GENERATOR ---
@@ -1234,6 +1157,7 @@
 
         window.addEventListener('load', () => {
             initGoogleAuth();
+            setTimeout(initGoogleAuth, 1200);
 
             // Check URL parameters for logout or SSO
             const urlParams = new URLSearchParams(window.location.search);
@@ -1258,20 +1182,30 @@
 
             // Check if returned from Google OAuth redirect token (#access_token=...)
             if (window.location.hash) {
-                const params = new URLSearchParams(window.location.hash.substring(1));
-                const accessToken = params.get('access_token');
+                const hashParams = new URLSearchParams(window.location.hash.substring(1));
+                const accessToken = hashParams.get('access_token');
                 if (accessToken) {
+                    showAlert('Verifying Google Sign-In...', false);
+                    const cleanUrl = window.location.origin + window.location.pathname;
+                    window.history.replaceState({}, document.title, cleanUrl);
+
                     fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
                         headers: { 'Authorization': `Bearer ${accessToken}` }
                     })
                     .then(r => r.json())
-                    .then(u => {
+                    .then(async u => {
                         if (u && u.email) {
-                            showAlert(`Signed in as ${u.name || u.email}!`, false);
-                            grantAccess(u.name || u.email.split('@')[0], u.email);
+                            const displayName = u.name || u.email.split('@')[0];
+                            showAlert(`Welcome, ${displayName}! Syncing account...`, false);
+                            await syncGoogleUserToServer(displayName, u.email, u.picture || '');
+                            grantAccess(displayName, u.email);
+                        } else {
+                            showAlert('Failed to retrieve Google profile. Please try again.');
                         }
                     })
-                    .catch(() => {});
+                    .catch(() => {
+                        showAlert('Error verifying Google account. Please try again.');
+                    });
                 }
             }
 
@@ -1297,7 +1231,7 @@
                     }
                 })
                 .catch(() => {
-                    grantAccess('GitHub User', 'user@github.com');
+                    showAlert('Network error connecting to GitHub auth server. Please try again.');
                 });
             }
         });
@@ -1314,88 +1248,55 @@
             }
         }
 
-        async function executeGoogleLogin(name, email) {
-            const bar = document.getElementById('googleLoading');
-            if (bar) bar.style.display = 'block';
-            showAlert(`Signing in with Google as ${name}...`, false);
-            await syncGoogleUserToServer(name, email);
-            setTimeout(() => {
-                grantAccess(name, email);
-            }, 600);
-        }
-
-        function showGoogleFallback() {
-            const overlay = document.getElementById('googleOverlay');
-            if (overlay) {
-                overlay.style.display = 'flex';
-            } else {
-                const redirect = encodeURIComponent(window.location.href.split('#')[0]);
-                window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${redirect}&response_type=token&scope=email%20profile%20openid`;
-            }
-        }
-
-        function promptGoogleCustomEmail() {
-            const customEmail = prompt("Enter your Google / Gmail address:");
-            if (customEmail && customEmail.includes('@')) {
-                const customName = customEmail.split('@')[0];
-                closeOAuth('googleOverlay');
-                executeGoogleLogin(customName, customEmail);
-            }
-        }
-
-        function promptGithubCustomUser() {
-            const username = prompt("Enter your GitHub username or email:");
-            if (username && username.trim()) {
-                const cleanUser = username.trim();
-                const email = cleanUser.includes('@') ? cleanUser : `${cleanUser.toLowerCase()}@users.noreply.github.com`;
-                closeOAuth('githubOverlay');
-                executeGithubLogin(cleanUser, email);
-            }
+        function getOAuthRedirectUri() {
+            let path = window.location.pathname.replace(/\/index\.html$/, '').replace(/\.html$/, '');
+            if (!path || path === '/') path = '/auth';
+            return window.location.origin + path;
         }
 
         function openGoogleOAuth() {
-            const overlay = document.getElementById('googleOverlay');
-            if (overlay) {
-                overlay.style.display = 'flex';
-            } else {
-                showGoogleFallback();
+            if (!googleTokenClient) {
+                initGoogleAuth();
             }
+            showAlert('Connecting to Google Sign-In...', false);
+
+            // 1. Google Identity Services token popup
+            if (googleTokenClient) {
+                try {
+                    googleTokenClient.requestAccessToken({ prompt: 'select_account' });
+                    return;
+                } catch (e) {
+                    console.warn('[GSI popup failed, falling back to OAuth redirect]', e);
+                }
+            }
+
+            // 2. Google One Tap prompt
+            if (window.google && google.accounts && google.accounts.id) {
+                try {
+                    google.accounts.id.prompt((notification) => {
+                        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                            redirectToGoogleOAuth();
+                        }
+                    });
+                    return;
+                } catch (e) {}
+            }
+
+            // 3. Fallback direct OAuth 2.0 Web redirect
+            redirectToGoogleOAuth();
+        }
+
+        function redirectToGoogleOAuth() {
+            const redirectUri = getOAuthRedirectUri();
+            const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(GOOGLE_CLIENT_ID)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent('email profile openid')}&prompt=select_account`;
+            window.location.href = googleAuthUrl;
         }
 
         function openGithubOAuth() {
-            const overlay = document.getElementById('githubOverlay');
-            if (overlay) {
-                overlay.style.display = 'flex';
-            } else {
-                try {
-                    const redirectUri = encodeURIComponent(window.location.origin + '/auth');
-                    window.location.href = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&scope=read:user,user:email&redirect_uri=${redirectUri}`;
-                } catch (e) {}
-            }
-        }
-
-        function closeOAuth(id) {
-            const el = document.getElementById(id);
-            if (el) el.style.display = 'none';
-        }
-
-        async function executeGithubLogin(name, email) {
-            const bar = document.getElementById('githubLoading');
-            if (bar) bar.style.display = 'block';
-            showAlert(`Authorizing via GitHub as ${name}...`, false);
-            try {
-                await fetch(`${AUTH_API_BASE}/api/auth/github`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, email })
-                });
-            } catch (e) {
-                console.warn('[GITHUB AUTH SYNC FAILED]', e);
-            }
-            setTimeout(() => {
-                closeOAuth('githubOverlay');
-                grantAccess(name, email);
-            }, 600);
+            showAlert('Redirecting to GitHub for secure authorization...', false);
+            const redirectUri = getOAuthRedirectUri();
+            const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(GITHUB_CLIENT_ID)}&scope=${encodeURIComponent('read:user user:email')}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+            window.location.href = githubAuthUrl;
         }
 
         async function resendSignupOTP(e) {

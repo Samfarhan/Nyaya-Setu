@@ -41,8 +41,8 @@ const MIME_TYPES = {
 const server = http.createServer((req, res) => {
     // CORS Headers
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, DELETE');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
     if (req.method === 'OPTIONS') {
         res.writeHead(204);
@@ -891,35 +891,6 @@ function handleAuthAPI(req, res) {
             return sendJSON(200, { success: true, name: user.name, email: user.email });
         }
 
-        // 3.2 GitHub OAuth - Save GitHub user to users.json
-        if (url === '/api/auth/github' && req.method === 'POST') {
-            const email = (json.email || 'developer@github.com').trim().toLowerCase();
-            const name = (json.name || email.split('@')[0] || 'GitHub User').trim();
-            const avatar = json.avatar || '';
-
-            const users = getUsers();
-            let user = users.find(u => u.email === email);
-            if (!user) {
-                user = {
-                    name: name || 'GitHub User',
-                    email: email,
-                    provider: 'github',
-                    avatar: avatar,
-                    memories: [],
-                    createdAt: new Date().toISOString(),
-                    lastLogin: new Date().toISOString()
-                };
-                users.push(user);
-            } else {
-                user.lastLogin = new Date().toISOString();
-                if (!user.name && name) user.name = name;
-                if (!user.avatar && avatar) user.avatar = avatar;
-                if (!user.provider) user.provider = 'github';
-            }
-            saveUsers(users);
-            console.log(`[GITHUB AUTH SUCCESS] User ${user.name} (${user.email}) stored in users.json.`);
-            return sendJSON(200, { success: true, name: user.name, email: user.email });
-        }
 
         // 4. Forgot Password - Only allowed IF account already exists!
         if (url === '/api/auth/forgot-password' && req.method === 'POST') {
@@ -1016,8 +987,68 @@ function handleAuthAPI(req, res) {
             return sendJSON(200, { success: true, message: 'Password updated successfully!' });
         }
 
+        // 5b. Google OAuth / Credential Sync
+        if (url === '/api/auth/google' && req.method === 'POST') {
+            const email = (json.email || '').trim().toLowerCase();
+            if (!email || !email.includes('@')) {
+                return sendJSON(400, { error: 'Valid email is required' });
+            }
+            const name = (json.name || email.split('@')[0] || 'Google User').trim();
+            const avatar = json.avatar || '';
+            const users = getUsers();
+            let user = users.find(u => u.email === email);
+            if (!user) {
+                user = {
+                    name: name,
+                    email: email,
+                    provider: 'google',
+                    avatar: avatar,
+                    memories: [],
+                    createdAt: new Date().toISOString(),
+                    lastLogin: new Date().toISOString()
+                };
+                users.push(user);
+            } else {
+                user.lastLogin = new Date().toISOString();
+                if (!user.name && name) user.name = name;
+                if (!user.avatar && avatar) user.avatar = avatar;
+                if (!user.provider) user.provider = 'google';
+            }
+            saveUsers(users);
+            console.log(`[GOOGLE AUTH SYNC] User ${user.name} (${user.email}) stored in users.json.`);
+            return sendJSON(200, { success: true, name: user.name, email: user.email, avatar: user.avatar });
+        }
+
         // 6. GitHub OAuth Exchange
         if (url === '/api/auth/github' && req.method === 'POST') {
+            if (json.email && !json.code) {
+                const email = json.email.trim().toLowerCase();
+                const name = (json.name || email.split('@')[0] || 'GitHub User').trim();
+                const avatar = json.avatar || '';
+                const users = getUsers();
+                let user = users.find(u => u.email === email);
+                if (!user) {
+                    user = {
+                        name: name,
+                        email: email,
+                        provider: 'github',
+                        avatar: avatar,
+                        memories: [],
+                        createdAt: new Date().toISOString(),
+                        lastLogin: new Date().toISOString()
+                    };
+                    users.push(user);
+                } else {
+                    user.lastLogin = new Date().toISOString();
+                    if (!user.name && name) user.name = name;
+                    if (!user.avatar && avatar) user.avatar = avatar;
+                    if (!user.provider) user.provider = 'github';
+                }
+                saveUsers(users);
+                console.log(`[GITHUB AUTH SYNC] User ${user.name} (${user.email}) stored in users.json.`);
+                return sendJSON(200, { success: true, name: user.name, email: user.email });
+            }
+
             const code = (json.code || '').trim();
             if (!code) return sendJSON(400, { error: 'OAuth code is required' });
 
