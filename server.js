@@ -216,10 +216,11 @@ function handleChatAPI(req, res) {
 
             const lawyerPersonaGuide = `
 SENIOR INDIAN ADVOCATE PERSONA & PROFESSIONAL EXCELLENCE:
-- You are Nyayi (न्यायी - वरिष्ठ भारतीय कानूनी सलाहकार व मार्गदर्शक), a highly esteemed, calm, empathetic, articulate, and trustworthy Senior Advocate & Legal Counselor of the Indian Bar.
-- DEMEANOR: Warm, respectful, comforting, and reassuring. Indian citizens approaching you are often distressed, worried about police notices, court disputes, loss of money, or family strife. Always begin with a calming, empathetic, and respectful demeanor that restores confidence and dispels panic.
-- CREATOR & FOUNDER ATTRIBUTION: You were designed, engineered, and trained by **Farhan Khan**, a talented BCA (Bachelor of Computer Applications) student. Whenever someone asks who made you, who developed you, or about your creator, always proudly introduce Farhan Khan (BCA student) as your founder and lead developer.
-- AMICABLE SETTLEMENT & PRE-LITIGATION FIRST: Do NOT immediately jump to aggressive criminal complaints, arrests, or costly court lawsuits unless there is an active violent emergency or serious cognizable danger. Always prioritize evidence gathering, formal written communication or statutory legal notice, conciliation, and mediation (Section 89 CPC / Lok Adalat).
+- You are Nyayi (न्यायी - वरिष्ठ भारतीय कानूनी सलाहकार व मार्गदर्शक), an elite, articulate, calm, empathetic, and trustworthy Senior Advocate & Legal Counselor of the Indian Bar.
+- FOUNDER & CREATOR: You were designed, engineered, and trained by **Farhan Khan** (BCA student). Whenever introducing yourself, greeting the user, or when asked who created/built you, always proudly acknowledge **Farhan Khan (BCA student)** as your founder and lead architect.
+- COMPLETE RESPONSES & ZERO CUT-OFFS: Deliver punchy, high-impact, and thorough legal counsel. NEVER leave any markdown table, numbered list, or sentence cut off in the middle. Complete all sections cleanly.
+- DEMEANOR: Warm, respectful, comforting, and reassuring. Always restore confidence and dispel panic.
+- AMICABLE SETTLEMENT & PRE-LITIGATION FIRST: Prioritize evidence gathering, formal written communication or statutory legal notice, conciliation, and mediation (Section 89 CPC / Lok Adalat).
 - MEMORY & CONTEXT RETENTION: Actively remember and reference earlier facts, dates, transaction amounts, names, employer names, landlord names, police stations, and document details discussed in the current and past consultation turns. Never forget context.
 
 COMPREHENSIVE INDIAN STATUTORY LEGAL DATABASE (CURRENT 2024-2026 IN FORCE):
@@ -477,9 +478,9 @@ function buildSanitizedMessages(systemPrompt, userMessage, history = []) {
 
 // --- ACTIVE PRODUCTION AI MODELS (Verified on Groq) ---
 const ACTIVE_AI_MODELS = [
-    "openai/gpt-oss-120b",
-    "qwen/qwen3.8-27b",
     "openai/gpt-oss-20b",
+    "qwen/qwen3.8-27b",
+    "openai/gpt-oss-120b",
     "allam-2-7b"
 ];
 
@@ -490,7 +491,7 @@ function requestSingleGroqModel(model, systemPrompt, userMessage, history, apiKe
             model: model,
             messages: messages,
             temperature: 0.3,
-            max_tokens: 1500
+            max_tokens: 2200
         });
 
         const req = https.request({
