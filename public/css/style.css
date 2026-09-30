@@ -2486,176 +2486,289 @@ input:checked + .slider:before {
     color: var(--nyayi-danger);
 }
 
-/* --- DEDICATED VOICE STUDIO FULL-SCREEN --- */
+/* --- DEDICATED VOICE STUDIO FULL-SCREEN (CHATGPT-STYLE IMMERSIVE MODE) --- */
 .voice-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: radial-gradient(circle at center, rgba(16, 23, 34, 0.96) 0%, rgba(7, 9, 14, 0.98) 100%);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    z-index: 9999;
+    background: radial-gradient(circle at 50% 38%, rgba(16, 185, 129, 0.08) 0%, rgba(11, 15, 23, 0.98) 65%, #07090e 100%);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    z-index: 99999;
     display: none;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: 24px 20px 36px;
+    box-sizing: border-box;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 .voice-overlay.active {
     display: flex;
-    animation: fadeIn 0.25s ease;
+    animation: voiceOverlayFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes voiceOverlayFadeIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
 }
 
 .voice-studio-container {
     width: 100%;
-    max-width: 480px;
+    max-width: 440px;
+    height: 100%;
+    max-height: 800px;
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
     align-items: center;
     text-align: center;
-    gap: 16px;
+    position: relative;
+    user-select: none;
 }
 
+/* Minimal Top Bar */
 .voice-studio-header {
     width: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--nyayi-surface-border-subtle);
+    padding: 6px 0;
+    border-bottom: none;
+}
+
+.voice-header-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .voice-live-dot {
-    width: 8px;
-    height: 8px;
+    width: 9px;
+    height: 9px;
     border-radius: 50%;
     background-color: var(--nyayi-primary);
-    box-shadow: 0 0 10px var(--nyayi-primary);
-    animation: livePulse 1.5s infinite;
+    box-shadow: 0 0 12px var(--nyayi-primary);
+    transition: all 0.3s ease;
+    animation: livePulse 1.8s infinite;
 }
 
 @keyframes livePulse {
     0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.4; transform: scale(0.8); }
+    50% { opacity: 0.35; transform: scale(0.85); }
 }
 
-.voice-close-circle {
-    width: 36px;
-    height: 36px;
+.voice-header-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--nyayi-text);
+    letter-spacing: -0.01em;
+}
+
+.voice-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+}
+
+.voice-icon-btn {
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
-    background: var(--nyayi-surface);
-    border: 1px solid var(--nyayi-surface-border);
-    color: var(--nyayi-text-muted);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--nyayi-text-secondary);
     font-size: 15px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all var(--transition-fast);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.voice-close-circle:hover {
-    background-color: var(--nyayi-surface-2);
-    color: var(--nyayi-danger);
-    border-color: var(--nyayi-danger);
+.voice-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--nyayi-text);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
 }
 
-/* Pulsing Voice Orb Visualizer */
+/* Dropdown Menu */
+.voice-menu-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    min-width: 210px;
+    background: rgba(18, 24, 38, 0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 6px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55), 0 0 1px rgba(255, 255, 255, 0.1);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    animation: menuFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes menuFadeIn {
+    from { opacity: 0; transform: translateY(-6px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.voice-menu-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    color: var(--nyayi-text);
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s ease;
+}
+
+.voice-menu-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--nyayi-primary);
+}
+
+.voice-menu-item i {
+    width: 18px;
+    text-align: center;
+    color: var(--nyayi-primary);
+    font-size: 14px;
+}
+
+/* Central Stage & Breathing Voice Orb */
+.voice-orb-stage {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: 18px;
+}
+
 .voice-orb-wrapper {
     position: relative;
-    width: 170px;
-    height: 170px;
+    width: 220px;
+    height: 220px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 4px 0;
+    margin: 8px 0;
+}
+
+.voice-orb-aura {
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.4) 0%, rgba(16, 185, 129, 0) 70%);
+    filter: blur(24px);
+    transition: all 0.5s ease;
+    pointer-events: none;
 }
 
 .voice-orb-ring {
     position: absolute;
     border-radius: 50%;
-    border: 1px solid rgba(16, 185, 129, 0.35);
+    border: 1.5px solid rgba(16, 185, 129, 0.28);
+    pointer-events: none;
+    transition: all 0.4s ease;
     animation: orbPulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    transition: border-color 0.3s ease;
 }
 
-.voice-orb-ring.ring-1 { width: 110px; height: 110px; animation-delay: 0s; }
-.voice-orb-ring.ring-2 { width: 140px; height: 140px; animation-delay: 0.7s; }
-.voice-orb-ring.ring-3 { width: 170px; height: 170px; animation-delay: 1.4s; }
+.voice-orb-ring.ring-1 { width: 140px; height: 140px; animation-delay: 0s; }
+.voice-orb-ring.ring-2 { width: 180px; height: 180px; animation-delay: 0.8s; }
+.voice-orb-ring.ring-3 { width: 220px; height: 220px; animation-delay: 1.6s; }
 
 .voice-orb-ring.paused {
-    border-color: rgba(245, 158, 11, 0.45);
+    border-color: rgba(245, 158, 11, 0.4);
     animation-play-state: paused;
 }
 
 .voice-orb-ring.thinking {
-    border-color: rgba(14, 165, 233, 0.5);
+    border-color: rgba(14, 165, 233, 0.45);
+}
+
+.voice-orb-ring.speaking {
+    border-color: rgba(52, 211, 153, 0.55);
 }
 
 @keyframes orbPulse {
-    0% { transform: scale(0.85); opacity: 0.8; }
-    50% { transform: scale(1.05); opacity: 0.25; border-color: rgba(14, 165, 233, 0.5); }
-    100% { transform: scale(0.85); opacity: 0.8; }
+    0% { transform: scale(0.9); opacity: 0.8; }
+    50% { transform: scale(1.08); opacity: 0.2; }
+    100% { transform: scale(0.9); opacity: 0.8; }
 }
 
 .voice-orb-core {
-    width: 86px;
-    height: 86px;
+    width: 104px;
+    height: 104px;
     border-radius: 50%;
     background: radial-gradient(circle at 35% 35%, #34d399, #059669);
     color: #07090e;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 32px;
+    font-size: 34px;
     z-index: 2;
     cursor: pointer;
-    box-shadow: 0 0 35px rgba(16, 185, 129, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.4);
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    user-select: none;
+    box-shadow: 0 0 45px rgba(16, 185, 129, 0.6), inset 0 2px 6px rgba(255, 255, 255, 0.45);
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
 }
 
 .voice-orb-core:hover {
     transform: scale(1.06);
-    box-shadow: 0 0 45px rgba(16, 185, 129, 0.75);
+    box-shadow: 0 0 60px rgba(16, 185, 129, 0.85);
 }
 
 .voice-orb-core.listening {
     background: radial-gradient(circle at 35% 35%, #34d399, #059669);
-    box-shadow: 0 0 40px rgba(16, 185, 129, 0.65);
-    animation: listeningBreathe 2s ease-in-out infinite alternate;
+    box-shadow: 0 0 50px rgba(16, 185, 129, 0.65), inset 0 2px 6px rgba(255, 255, 255, 0.45);
+    animation: listeningBreathe 2.4s ease-in-out infinite alternate;
 }
 
 @keyframes listeningBreathe {
-    0% { transform: scale(0.98); box-shadow: 0 0 30px rgba(16, 185, 129, 0.5); }
-    100% { transform: scale(1.04); box-shadow: 0 0 48px rgba(16, 185, 129, 0.8); }
+    0% { transform: scale(0.96); box-shadow: 0 0 35px rgba(16, 185, 129, 0.5); }
+    100% { transform: scale(1.05); box-shadow: 0 0 60px rgba(16, 185, 129, 0.85); }
 }
 
 .voice-orb-core.paused {
     background: radial-gradient(circle at 35% 35%, #fbbf24, #d97706);
-    box-shadow: 0 0 40px rgba(245, 158, 11, 0.7), inset 0 2px 4px rgba(255, 255, 255, 0.4);
+    box-shadow: 0 0 40px rgba(245, 158, 11, 0.65), inset 0 2px 6px rgba(255, 255, 255, 0.4);
     color: #07090e;
     animation: none;
 }
 
-.voice-orb-core.paused:hover {
-    box-shadow: 0 0 50px rgba(245, 158, 11, 0.9);
-}
-
 .voice-orb-core.thinking {
     background: radial-gradient(circle at 35% 35%, #38bdf8, #0284c7);
-    box-shadow: 0 0 35px rgba(14, 165, 233, 0.65);
-    animation: thinkingSpin 2s linear infinite;
+    box-shadow: 0 0 45px rgba(14, 165, 233, 0.7), inset 0 2px 6px rgba(255, 255, 255, 0.45);
+    animation: thinkingRotate 2.2s linear infinite;
+    color: #ffffff;
 }
 
-@keyframes thinkingSpin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+@keyframes thinkingRotate {
+    0% { transform: scale(0.98) rotate(0deg); }
+    50% { transform: scale(1.03) rotate(180deg); }
+    100% { transform: scale(0.98) rotate(360deg); }
 }
 
 .voice-orb-core.speaking {
     background: radial-gradient(circle at 35% 35%, #a7f3d0, #10b981);
-    box-shadow: 0 0 50px rgba(16, 185, 129, 0.85);
-    animation: speakingPulse 0.8s ease-in-out infinite alternate;
+    box-shadow: 0 0 65px rgba(16, 185, 129, 0.9), inset 0 2px 8px rgba(255, 255, 255, 0.6);
+    animation: speakingPulse 0.75s ease-in-out infinite alternate;
+    color: #07090e;
 }
 
 @keyframes speakingPulse {
@@ -2665,7 +2778,7 @@ input:checked + .slider:before {
 
 .voice-orb-core.ready {
     background: radial-gradient(circle at 35% 35%, #34d399, #047857);
-    box-shadow: 0 0 30px rgba(16, 185, 129, 0.45);
+    box-shadow: 0 0 35px rgba(16, 185, 129, 0.5);
     animation: none;
 }
 
@@ -2676,7 +2789,6 @@ input:checked + .slider:before {
     justify-content: center;
     gap: 4px;
     height: 24px;
-    margin: 2px 0 6px;
 }
 
 .voice-waveform .bar {
@@ -2714,7 +2826,7 @@ input:checked + .slider:before {
 
 .voice-waveform.speaking .bar {
     background: #10b981;
-    animation-duration: 0.6s;
+    animation-duration: 0.55s;
 }
 
 .voice-waveform.ready .bar {
@@ -2724,215 +2836,141 @@ input:checked + .slider:before {
     opacity: 0.4;
 }
 
-.voice-status-badge {
+/* Minimal Dynamic Status Pill */
+.voice-status-pill, .voice-status-badge {
     display: inline-flex;
-    align-items: center;
-    padding: 6px 16px;
-    background: var(--nyayi-surface);
-    border: 1px solid var(--nyayi-surface-border);
-    border-radius: 100px;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--nyayi-text-secondary);
-    max-width: 90%;
-    line-height: 1.4;
-    transition: all 0.25s ease;
-}
-
-/* Voice Live Cards & Header Rows */
-.voice-live-card, .voice-response-card {
-    width: 100%;
-    background: var(--nyayi-surface);
-    border: 1px solid var(--nyayi-surface-border);
-    border-radius: var(--radius-md);
-    padding: 12px 14px;
-    text-align: left;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-    transition: all 0.25s ease;
-}
-
-.voice-response-card {
-    border-color: rgba(16, 185, 129, 0.25);
-    background: linear-gradient(180deg, rgba(16, 185, 129, 0.04) 0%, var(--nyayi-surface) 100%);
-}
-
-.voice-card-header-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 6px;
-}
-
-.voice-live-label {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--nyayi-text-muted);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.voice-mode-badge {
-    font-size: 10.5px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    padding: 2px 8px;
-    border-radius: 100px;
-    background: rgba(16, 185, 129, 0.15);
-    color: #10b981;
-    border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.voice-mode-badge.paused {
-    background: rgba(245, 158, 11, 0.15);
-    color: #f59e0b;
-    border-color: rgba(245, 158, 11, 0.3);
-}
-
-.voice-mode-badge.thinking {
-    background: rgba(14, 165, 233, 0.15);
-    color: #38bdf8;
-    border-color: rgba(14, 165, 233, 0.3);
-}
-
-.voice-mode-badge.ready {
-    background: rgba(16, 185, 129, 0.2);
-    color: #34d399;
-    border-color: rgba(16, 185, 129, 0.4);
-}
-
-.voice-live-text {
-    font-size: 14px;
-    color: var(--nyayi-text);
-    line-height: 1.45;
-    max-height: 80px;
-    overflow-y: auto;
-    font-style: italic;
-    word-break: break-word;
-}
-
-.voice-response-text {
-    font-size: 13.5px;
-    color: var(--nyayi-text);
-    line-height: 1.55;
-    max-height: 180px;
-    overflow-y: auto;
-    word-break: break-word;
-}
-
-/* Action Bars inside Cards */
-.voice-live-actions, .voice-response-actions {
-    display: flex;
     align-items: center;
     gap: 8px;
-    margin-top: 10px;
-    padding-top: 8px;
-    border-top: 1px solid var(--nyayi-surface-border-subtle);
-    flex-wrap: wrap;
-}
-
-.voice-action-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 13px;
+    padding: 7px 18px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 100px;
-    background: var(--nyayi-surface-2);
-    border: 1px solid var(--nyayi-surface-border);
-    color: var(--nyayi-text);
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    user-select: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--nyayi-text-secondary);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: all 0.25s ease;
+    letter-spacing: -0.01em;
 }
 
-.voice-action-pill:hover {
-    transform: translateY(-1px);
-    background: var(--nyayi-surface-border);
-    color: var(--nyayi-primary);
-    border-color: var(--nyayi-primary);
+/* Subtle Live Subtitles Bar (Hidden unless toggled) */
+.voice-subtitles-bar {
+    width: 100%;
+    max-width: 90%;
+    min-height: 24px;
+    text-align: center;
+    margin-top: -4px;
 }
 
-.voice-action-pill.primary {
-    background: linear-gradient(135deg, #10b981, #059669);
-    color: #07090e;
-    border: none;
-    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+.voice-subtitles-text {
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 400;
+    margin: 0;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.2s ease;
 }
 
-.voice-action-pill.primary:hover {
-    transform: translateY(-1px) scale(1.02);
-    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.55);
-    color: #000;
-}
-
-.voice-action-pill.warning {
-    background: rgba(245, 158, 11, 0.15);
-    border-color: rgba(245, 158, 11, 0.35);
-    color: #f59e0b;
-}
-
-.voice-action-pill.warning:hover {
-    background: #f59e0b;
-    color: #07090e;
-}
-
-.voice-action-pill.danger {
-    background: rgba(239, 68, 68, 0.12);
-    border-color: rgba(239, 68, 68, 0.25);
-    color: var(--nyayi-danger);
-}
-
-.voice-action-pill.danger:hover {
-    background: var(--nyayi-danger);
-    color: white;
-}
-
-/* Bottom Controls */
-.voice-studio-controls {
+/* ChatGPT-Style Minimal Bottom Dock (3 Round Floating Buttons) */
+.voice-dock-controls {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 22px;
     width: 100%;
-    margin-top: 4px;
-    flex-wrap: wrap;
+    padding-top: 10px;
 }
 
-.voice-ctrl-btn {
+.voice-dock-btn {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: var(--nyayi-text);
+    font-size: 18px;
+    cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
-    background: var(--nyayi-surface);
-    border: 1px solid var(--nyayi-surface-border);
-    border-radius: 100px;
-    color: var(--nyayi-text);
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all var(--transition-fast);
+    justify-content: center;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
 
-.voice-ctrl-btn:hover {
-    background: var(--nyayi-surface-2);
-    border-color: var(--nyayi-primary);
-    color: var(--nyayi-primary);
+.voice-dock-btn:hover {
+    transform: scale(1.08);
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.25);
 }
 
-.voice-ctrl-btn.end-btn {
+.voice-dock-btn.primary.mic-btn {
+    width: 68px;
+    height: 68px;
+    font-size: 24px;
+    background: rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.45);
+    color: #10b981;
+    box-shadow: 0 0 24px rgba(16, 185, 129, 0.35);
+}
+
+.voice-dock-btn.primary.mic-btn:hover {
+    transform: scale(1.08);
+    background: rgba(16, 185, 129, 0.32);
+    box-shadow: 0 0 35px rgba(16, 185, 129, 0.6);
+}
+
+.voice-dock-btn.primary.mic-btn.muted {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.45);
+    color: #ef4444;
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+.voice-dock-btn.danger {
     background: rgba(239, 68, 68, 0.15);
-    border-color: rgba(239, 68, 68, 0.4);
-    color: var(--nyayi-danger);
+    border-color: rgba(239, 68, 68, 0.35);
+    color: #ef4444;
 }
 
-.voice-ctrl-btn.end-btn:hover {
-    background: var(--nyayi-danger);
-    color: white;
+.voice-dock-btn.danger:hover {
+    transform: scale(1.08);
+    background: #ef4444;
+    color: #ffffff;
+    box-shadow: 0 0 25px rgba(239, 68, 68, 0.55);
+}
+
+/* Mobile Responsiveness for Voice Assistant */
+@media (max-width: 480px) {
+    .voice-studio-container {
+        padding: 16px 12px 28px;
+        max-height: 100%;
+    }
+    .voice-orb-wrapper {
+        width: 190px;
+        height: 190px;
+    }
+    .voice-orb-core {
+        width: 96px;
+        height: 96px;
+        font-size: 30px;
+    }
+    .voice-dock-controls {
+        gap: 16px;
+    }
+    .voice-dock-btn {
+        width: 48px;
+        height: 48px;
+        font-size: 16px;
+    }
+    .voice-dock-btn.primary.mic-btn {
+        width: 62px;
+        height: 62px;
+        font-size: 22px;
+    }
 }
 
 /* --- APP ENTRANCE SPLASH OVERLAY --- */

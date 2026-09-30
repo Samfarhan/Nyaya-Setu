@@ -875,92 +875,78 @@
         </div>
     </div>
 
-    <!-- VOICE ASSISTANT DEDICATED FULL-SCREEN STUDIO -->
+    <!-- VOICE ASSISTANT DEDICATED FULL-SCREEN CHATGPT-STYLE MODE -->
     <div class="voice-overlay" id="voiceOverlay">
         <div class="voice-studio-container">
-            <!-- Studio Header -->
+            <!-- Studio Minimal Top Bar -->
             <div class="voice-studio-header">
-                <div style="display:flex; align-items:center; gap:8px;">
+                <div class="voice-header-brand">
                     <span class="voice-live-dot" id="voiceLiveDot"></span>
-                    <span style="font-weight:700; font-size:15px; color:var(--nyayi-text);">Nyayi Voice Studio</span>
+                    <span class="voice-header-title">Nyayi Voice</span>
                 </div>
-                <button type="button" class="voice-close-circle" onclick="closeVoiceAssistant()" title="Exit Voice Mode">
-                    <i class="fa-solid fa-xmark"></i>
+                <div class="voice-header-actions">
+                    <div class="voice-menu-wrapper" style="position:relative;">
+                        <button type="button" class="voice-icon-btn" id="voiceMenuBtn" onclick="toggleVoiceMenu(event)" title="Voice Options">
+                            <i class="fa-solid fa-ellipsis-vertical"></i>
+                        </button>
+                        <div class="voice-menu-dropdown" id="voiceMenuDropdown" style="display:none;">
+                            <button type="button" class="voice-menu-item" onclick="toggleVoiceSubtitles()">
+                                <i class="fa-solid fa-closed-captioning"></i> <span id="voiceSubtitlesToggleLabel">Show Captions</span>
+                            </button>
+                            <button type="button" class="voice-menu-item" onclick="toggleVoiceLang()">
+                                <i class="fa-solid fa-language"></i> <span id="voiceLangLabel">Language: Hindi</span>
+                            </button>
+                            <button type="button" class="voice-menu-item" onclick="cycleVoiceGender()">
+                                <i class="fa-solid fa-user-astronaut"></i> <span id="voiceGenderLabel">Voice: Female</span>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" class="voice-icon-btn" onclick="closeVoiceAssistant()" title="Close Voice Mode">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Central Breathing Voice Orb (ChatGPT Style) -->
+            <div class="voice-orb-stage">
+                <div class="voice-orb-wrapper">
+                    <div class="voice-orb-aura" id="voiceOrbAura"></div>
+                    <div class="voice-orb-ring ring-3" id="voiceRing3"></div>
+                    <div class="voice-orb-ring ring-2" id="voiceRing2"></div>
+                    <div class="voice-orb-ring ring-1" id="voiceRing1"></div>
+                    <div class="voice-orb-core listening" id="voiceOrbCore" onclick="handleVoiceOrbTap()" title="Tap to interrupt or speak">
+                        <div class="voice-orb-inner-wave"></div>
+                        <i class="fa-solid fa-microphone" id="voiceOrbIcon"></i>
+                    </div>
+                </div>
+
+                <!-- Voice Audio Waveform Equalizer -->
+                <div class="voice-waveform" id="voiceWaveform">
+                    <span class="bar bar-1"></span>
+                    <span class="bar bar-2"></span>
+                    <span class="bar bar-3"></span>
+                    <span class="bar bar-4"></span>
+                    <span class="bar bar-5"></span>
+                </div>
+
+                <!-- Minimal Dynamic Status Pill -->
+                <div class="voice-status-pill" id="voiceStatusText">Listening...</div>
+
+                <!-- Subtle Live Subtitles Line (Hidden by default, clean & non-intrusive) -->
+                <div class="voice-subtitles-bar" id="voiceSubtitlesBar" style="display:none;">
+                    <p class="voice-subtitles-text" id="voiceSubtitlesText"></p>
+                </div>
+            </div>
+
+            <!-- ChatGPT-Style Minimal Bottom Dock (3 Round Floating Buttons) -->
+            <div class="voice-dock-controls">
+                <button type="button" class="voice-dock-btn" onclick="switchToTextChat()" title="Switch to Text / Keyboard Chat">
+                    <i class="fa-solid fa-keyboard"></i>
                 </button>
-            </div>
-
-            <!-- Pulsing Voice Orb Visualizer -->
-            <div class="voice-orb-wrapper">
-                <div class="voice-orb-ring ring-3" id="voiceRing3"></div>
-                <div class="voice-orb-ring ring-2" id="voiceRing2"></div>
-                <div class="voice-orb-ring ring-1" id="voiceRing1"></div>
-                <div class="voice-orb-core" id="voiceOrbCore" onclick="toggleVoiceMicState()" title="Click to Pause / Resume / Speak">
-                    <i class="fa-solid fa-microphone" id="voiceOrbIcon"></i>
-                </div>
-            </div>
-
-            <!-- Equalizer Waveform -->
-            <div class="voice-waveform" id="voiceWaveform">
-                <span class="bar bar-1"></span>
-                <span class="bar bar-2"></span>
-                <span class="bar bar-3"></span>
-                <span class="bar bar-4"></span>
-                <span class="bar bar-5"></span>
-            </div>
-
-            <!-- Dynamic State & Transcript -->
-            <div class="voice-status-badge" id="voiceStatusText">Nyayi is listening... Speak now</div>
-            
-            <div class="voice-live-card">
-                <div class="voice-card-header-row">
-                    <div class="voice-live-label" id="voiceLiveSpeaker"><i class="fa-solid fa-user"></i> You said:</div>
-                    <span class="voice-mode-badge" id="voiceLiveModeBadge">Listening</span>
-                </div>
-                <div class="voice-live-text" id="voiceTranscriptText">"Apna kanooni sawal Hindi, English ya Hinglish me boliye..."</div>
-                <div class="voice-live-actions" id="voiceLiveActions">
-                    <button type="button" class="voice-action-pill" id="voicePauseBtn" onclick="toggleVoicePause()" title="Pause to think">
-                        <i class="fa-solid fa-pause" id="voicePauseIcon"></i> <span id="voicePauseLabel">Pause</span>
-                    </button>
-                    <button type="button" class="voice-action-pill primary" id="voiceSendBtn" onclick="submitVoiceTranscript()" title="Send question now">
-                        <i class="fa-solid fa-paper-plane"></i> Send
-                    </button>
-                    <button type="button" class="voice-action-pill danger" id="voiceClearBtn" onclick="clearVoiceTranscript()" title="Clear question text">
-                        <i class="fa-solid fa-rotate-left"></i> Reset
-                    </button>
-                </div>
-            </div>
-
-            <div class="voice-response-card" id="voiceResponseCard" style="display:none;">
-                <div class="voice-card-header-row">
-                    <div class="voice-live-label"><i class="fa-solid fa-scale-balanced" style="color:var(--nyayi-primary);"></i> Nyayi Legal Response:</div>
-                    <span class="voice-mode-badge ready" id="voiceResponseBadge">Answer</span>
-                </div>
-                <div class="voice-response-text" id="voiceResponseText"></div>
-                <div class="voice-response-actions">
-                    <button type="button" class="voice-action-pill" id="voiceReplayBtn" onclick="replayVoiceAnswer()" title="Replay legal answer audio">
-                        <i class="fa-solid fa-rotate-right"></i> Replay
-                    </button>
-                    <button type="button" class="voice-action-pill" id="voiceCopyBtn" onclick="copyVoiceAnswer()" title="Copy answer to clipboard">
-                        <i class="fa-solid fa-copy"></i> Copy
-                    </button>
-                    <button type="button" class="voice-action-pill primary" id="voiceNextBtn" onclick="askNextVoiceQuestion()" title="Ask your next legal question">
-                        <i class="fa-solid fa-microphone"></i> Ask Next Question
-                    </button>
-                </div>
-            </div>
-
-            <!-- Bottom Control Tray -->
-            <div class="voice-studio-controls">
-                <button type="button" class="voice-ctrl-btn" onclick="toggleVoiceLang()" id="voiceLangBtn" title="Switch Language">
-                    <i class="fa-solid fa-language"></i> <span id="voiceLangLabel">Hindi</span>
+                <button type="button" class="voice-dock-btn primary mic-btn" id="voiceMicToggleBtn" onclick="toggleVoiceMicMute()" title="Mute / Unmute Microphone">
+                    <i class="fa-solid fa-microphone" id="voiceMicToggleIcon"></i>
                 </button>
-                <button type="button" class="voice-ctrl-btn" onclick="cycleVoiceGender()" id="voiceGenderBtn" title="Switch Voice Persona">
-                    <i class="fa-solid fa-user-astronaut"></i> <span id="voiceGenderLabel">Female Voice</span>
-                </button>
-                <button type="button" class="voice-ctrl-btn" onclick="toggleVoiceMute()" id="voiceMuteBtn" title="Mute/Unmute Audio">
-                    <i class="fa-solid fa-volume-high" id="voiceMuteIcon"></i>
-                </button>
-                <button type="button" class="voice-ctrl-btn end-btn" onclick="closeVoiceAssistant()" title="End Voice Session">
+                <button type="button" class="voice-dock-btn danger" onclick="closeVoiceAssistant()" title="End Voice Mode">
                     <i class="fa-solid fa-phone-slash"></i>
                 </button>
             </div>
