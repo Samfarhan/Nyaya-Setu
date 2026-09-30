@@ -2151,8 +2151,23 @@ function selectBestVoice(voices, langCode) {
     return voices.find(v => v.lang.includes('IN')) || null;
 }
 
+let ttsKeepAliveTimer = null;
+
 function playTTS(text, onStart, onEnd) {
-    if (!('speechSynthesis' in window)) return;
+    if (!('speechSynthesis' in window)) {
+        if (onEnd) onEnd();
+        return;
+    }
+
+    if (ttsKeepAliveTimer) {
+        clearInterval(ttsKeepAliveTimer);
+        ttsKeepAliveTimer = null;
+    }
+
+    // Unpause if stuck
+    if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+    }
     window.speechSynthesis.cancel();
 
     // Clean text: strip markdown links to just anchor text, remove markdown symbols
@@ -2162,7 +2177,10 @@ function playTTS(text, onStart, onEnd) {
         .replace(/[#\*_~\x60>]/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
-    if (!cleanText) return;
+    if (!cleanText) {
+        if (onEnd) onEnd();
+        return;
+    }
 
     const detectedLang = detectTextLanguage(cleanText);
 
@@ -2178,30 +2196,73 @@ function playTTS(text, onStart, onEnd) {
             .replace(/\bCPC\b/gi, 'सी.पी.सी.');
     }
 
-    const utterance = new SpeechSynthesisUtterance(cleanText.slice(0, 1200));
+    const utterance = new SpeechSynthesisUtterance(cleanText.slice(0, 1500));
     const isMale = (localStorage.getItem('nyayi_voice_gender') || 'female') === 'male';
     utterance.lang = detectedLang;
-    // 0.88 rate is crisp, human, and avoids syllable slurring in Hindi TTS engines
-    utterance.rate = detectedLang.startsWith('hi') ? 0.88 : 0.95;
+    utterance.rate = detectedLang.startsWith('hi') ? 0.90 : 0.96;
     utterance.pitch = isMale ? 0.92 : 1.02;
 
+    let spoken = false;
+    let finished = false;
+
+    const cleanup = () => {
+        if (ttsKeepAliveTimer) {
+            clearInterval(ttsKeepAliveTimer);
+            ttsKeepAliveTimer = null;
+        }
+        window.speechSynthesis.onvoiceschanged = null;
+    };
+
+    const handleEnd = () => {
+        if (finished) return;
+        finished = true;
+        cleanup();
+        if (onEnd) onEnd();
+    };
+
+    utterance.onstart = () => {
+        if (onStart) onStart();
+        // Chrome keep-alive bug fix: periodically pulse pause/resume to prevent 15s freeze
+        ttsKeepAliveTimer = setInterval(() => {
+            if (!window.speechSynthesis.speaking) {
+                cleanup();
+            } else {
+                window.speechSynthesis.pause();
+                window.speechSynthesis.resume();
+            }
+        }, 8000);
+    };
+
+    utterance.onend = handleEnd;
+    utterance.onerror = (e) => {
+        console.warn('[TTS Error]', e);
+        handleEnd();
+    };
+
     const applyVoiceAndSpeak = () => {
+        if (spoken) return;
+        spoken = true;
+        window.speechSynthesis.onvoiceschanged = null;
+
         const voices = window.speechSynthesis.getVoices();
         if (voices.length > 0) {
             const best = selectBestVoice(voices, detectedLang);
             if (best) utterance.voice = best;
         }
-        if (onStart) utterance.onstart = onStart;
-        if (onEnd) utterance.onend = onEnd;
-        utterance.onerror = () => { if (onEnd) onEnd(); };
-        window.speechSynthesis.speak(utterance);
+
+        try {
+            window.speechSynthesis.speak(utterance);
+        } catch(err) {
+            console.error('[TTS speak failed]', err);
+            handleEnd();
+        }
     };
 
     if (window.speechSynthesis.getVoices().length > 0) {
         applyVoiceAndSpeak();
     } else {
         window.speechSynthesis.onvoiceschanged = applyVoiceAndSpeak;
-        setTimeout(applyVoiceAndSpeak, 300);
+        setTimeout(applyVoiceAndSpeak, 250);
     }
 }
 
@@ -2249,7 +2310,7 @@ function shareResponse(text) {
     }
 }
 
-// --- 16. VOICE STUDIO (CHATGPT-STYLE REAL-TIME VOICE ASSISTANT) ---
+// --- 16. VOICE STUDIO (GLITCH-FREE CHATGPT-STYLE REAL-TIME VOICE) ---
 let isVoiceActive = false;
 let isVoicePaused = false;
 let isVoiceThinking = false;
@@ -2259,6 +2320,9 @@ let showVoiceSubtitles = localStorage.getItem('nyayi_voice_subtitles') === 'true
 let voiceAccumulatedTranscript = '';
 let voiceSilenceTimer = null;
 let lastVoiceAnswerText = '';
+let isRecognitionRunning = false;
+let voiceSpeechStartTime = 0;
+let voiceCurrentSpokenText = '';
 activeRecognition = null;
 let voiceAudioStream = null;
 let voiceAudioCtx = null;
@@ -2295,13 +2359,21 @@ function updateVoiceStudioUI(state) {
             if (micIcon) micIcon.className = 'fa-solid fa-microphone';
             break;
 
+        case 'user-speaking':
+            if (core) core.classList.add('listening');
+            if (icon) icon.className = 'fa-solid fa-microphone-lines';
+            if (statusEl) {
+                statusEl.innerHTML = `<i class="fa-solid fa-wave-square" style="color:var(--nyayi-primary); font-size:12px;"></i> ${voiceLang === 'hi-IN' ? "सुन रहा हूँ... (टैप करके भेजें)" : "Listening... (Tap orb to send)"}`;
+            }
+            break;
+
         case 'thinking':
             if (core) core.classList.add('thinking');
             if (icon) icon.className = 'fa-solid fa-spinner fa-spin';
             if (waveform) waveform.classList.add('thinking');
             rings.forEach(r => { if (r) r.classList.add('thinking'); });
             if (statusEl) {
-                statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin" style="color:#38bdf8; font-size:12px;"></i> ${voiceLang === 'hi-IN' ? "विश्लेषण कर रहा हूँ..." : "Thinking..."}`;
+                statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin" style="color:#38bdf8; font-size:12px;"></i> ${voiceLang === 'hi-IN' ? "विश्लेषण कर रहा हूँ..." : "Analyzing..."}`;
             }
             if (liveDot) { liveDot.style.background = '#38bdf8'; liveDot.style.boxShadow = '0 0 12px #38bdf8'; }
             if (aura) { aura.style.background = 'radial-gradient(circle, rgba(56, 189, 248, 0.45) 0%, rgba(56, 189, 248, 0) 70%)'; }
@@ -2313,7 +2385,7 @@ function updateVoiceStudioUI(state) {
             if (waveform) waveform.classList.add('speaking');
             rings.forEach(r => { if (r) r.classList.add('speaking'); });
             if (statusEl) {
-                statusEl.innerHTML = `<i class="fa-solid fa-volume-high" style="color:#34d399; font-size:12px;"></i> ${voiceLang === 'hi-IN' ? "न्यायी बोल रहा है..." : "Nyayi is speaking..."}`;
+                statusEl.innerHTML = `<i class="fa-solid fa-volume-high" style="color:#34d399; font-size:12px;"></i> ${voiceLang === 'hi-IN' ? "बोल रहा हूँ... (रोकने के लिए टैप करें)" : "Speaking... (Tap orb to interrupt)"}`;
             }
             if (liveDot) { liveDot.style.background = '#34d399'; liveDot.style.boxShadow = '0 0 12px #34d399'; }
             if (aura) { aura.style.background = 'radial-gradient(circle, rgba(52, 211, 153, 0.55) 0%, rgba(52, 211, 153, 0) 70%)'; }
@@ -2356,6 +2428,8 @@ function openVoiceAssistant() {
     isVoiceSpeaking = false;
     isVoiceMuted = false;
     voiceAccumulatedTranscript = '';
+    voiceCurrentSpokenText = '';
+    voiceSpeechStartTime = 0;
 
     applySubtitlesVisibility();
     updateVoiceControlsLabels();
@@ -2369,6 +2443,8 @@ function closeVoiceAssistant() {
     isVoiceSpeaking = false;
     isVoicePaused = false;
     voiceAccumulatedTranscript = '';
+    voiceCurrentSpokenText = '';
+    voiceSpeechStartTime = 0;
 
     if (voiceSilenceTimer) {
         clearTimeout(voiceSilenceTimer);
@@ -2382,6 +2458,8 @@ function closeVoiceAssistant() {
         } catch(e) {}
         activeRecognition = null;
     }
+    isRecognitionRunning = false;
+
     if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
     }
@@ -2419,8 +2497,12 @@ function startVoiceListening() {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) {
         const statusEl = document.getElementById('voiceStatusText');
-        if (statusEl) statusEl.innerText = "Speech Recognition aapke browser me support nahi karta. Chrome/Edge use karein.";
+        if (statusEl) statusEl.innerText = "Speech Recognition is not supported in this browser. Please use Chrome or Edge.";
         return;
+    }
+
+    if (activeRecognition && isRecognitionRunning) {
+        return; // Already running cleanly
     }
 
     if (activeRecognition) {
@@ -2431,14 +2513,14 @@ function startVoiceListening() {
         } catch(e) {}
     }
 
-    isVoiceSpeaking = false;
-    isVoiceThinking = false;
     if (voiceSilenceTimer) {
         clearTimeout(voiceSilenceTimer);
         voiceSilenceTimer = null;
     }
 
-    updateVoiceStudioUI('listening');
+    if (!isVoiceSpeaking) {
+        updateVoiceStudioUI('listening');
+    }
 
     activeRecognition = new SpeechRec();
     activeRecognition.lang = voiceLang || 'hi-IN';
@@ -2446,23 +2528,53 @@ function startVoiceListening() {
     activeRecognition.interimResults = true;
 
     activeRecognition.onstart = () => {
+        isRecognitionRunning = true;
         if (!isVoiceActive || isVoicePaused) return;
-        updateVoiceStudioUI('listening');
+        if (!isVoiceSpeaking && !isVoiceThinking) {
+            updateVoiceStudioUI('listening');
+        }
     };
 
     activeRecognition.onresult = (e) => {
         if (!isVoiceActive || isVoicePaused) return;
 
-        // --- INSTANT BARGE-IN INTERRUPTION ---
-        // If Nyayi is speaking and user starts talking, IMMEDIATELY STOP TTS & LISTEN!
+        // --- SMART BARGE-IN INTERRUPTION WITH ACOUSTIC ECHO FILTER ---
         if (isVoiceSpeaking) {
-            console.log('[Barge-in] User speech detected during playback. Cancelling TTS.');
-            if (window.speechSynthesis) {
-                window.speechSynthesis.cancel();
+            // Ignore results within first 700ms of TTS start (avoids speaker click / pop)
+            if (Date.now() - voiceSpeechStartTime < 700) return;
+
+            let heardWords = '';
+            for (let i = e.resultIndex; i < e.results.length; ++i) {
+                heardWords += ' ' + e.results[i][0].transcript.toLowerCase();
             }
-            isVoiceSpeaking = false;
-            voiceAccumulatedTranscript = '';
-            updateVoiceStudioUI('listening');
+            heardWords = heardWords.trim();
+            if (!heardWords) return;
+
+            // Explicit interruption command keywords in Hindi & English
+            const interruptCommands = ['ruko', 'chup', 'suno', 'wait', 'stop', 'khatam', 'pause', 'arre ruko', 'ek minute', 'ruk jao', 'chup raho', 'shant'];
+            const isExplicitCommand = interruptCommands.some(cmd => heardWords.includes(cmd));
+
+            // Acoustic Echo Rejection:
+            // Check if what the mic heard is simply the speaker echoing Nyayi's own voice
+            const wordsList = heardWords.split(/\s+/).filter(w => w.length > 2);
+            let echoCount = 0;
+            wordsList.forEach(w => {
+                if (voiceCurrentSpokenText.includes(w)) echoCount++;
+            });
+            const isSelfEcho = wordsList.length > 0 && (echoCount / wordsList.length) >= 0.55;
+
+            // Only barge-in if it's an explicit command OR distinctly NOT an echo of Nyayi's own speech
+            if (isExplicitCommand || (!isSelfEcho && wordsList.length >= 2)) {
+                console.log('[Barge-in] Confirmed user interruption:', heardWords);
+                if (window.speechSynthesis) window.speechSynthesis.cancel();
+                isVoiceSpeaking = false;
+                voiceAccumulatedTranscript = isExplicitCommand ? '' : heardWords;
+                updateVoiceStudioUI('listening');
+                return;
+            } else {
+                // Ignore self echo so assistant does NOT interrupt itself
+                return;
+            }
         }
 
         if (isVoiceThinking) return;
@@ -2484,36 +2596,50 @@ function startVoiceListening() {
             if (subEl) subEl.innerText = displayTranscript;
         }
 
+        // Show active speaking state in UI
+        if (displayTranscript.length > 0) {
+            updateVoiceStudioUI('user-speaking');
+        }
+
         // Reset silence timer on every spoken syllable
         if (voiceSilenceTimer) clearTimeout(voiceSilenceTimer);
 
-        // VAD: 1.4s of complete silence after speaking >= 3 characters triggers auto-send
+        // Adaptive silence detection: give user ample time to pause/think without cutting off
         if (displayTranscript.length >= 3) {
+            let silenceWait = 2500; // default 2.5s
+            if (displayTranscript.length < 16) {
+                silenceWait = 2800; // 2.8s for short utterances so user isn't cut off
+            } else if (displayTranscript.length > 35) {
+                silenceWait = 1800; // 1.8s for complete thoughts
+            }
+
             voiceSilenceTimer = setTimeout(() => {
                 if (isVoiceActive && !isVoicePaused && !isVoiceThinking && !isVoiceSpeaking) {
                     submitVoiceTranscript();
                 }
-            }, 1400);
+            }, silenceWait);
         }
     };
 
     activeRecognition.onerror = (e) => {
         if (e.error === 'no-speech') return;
         console.warn('[Voice Recognition Error]', e.error);
+        isRecognitionRunning = false;
         if (isVoiceActive && !isVoiceSpeaking && !isVoiceThinking && !isVoicePaused) {
             setTimeout(() => {
-                if (isVoiceActive && !isVoiceSpeaking && !isVoiceThinking && !isVoicePaused) {
+                if (isVoiceActive && !isVoiceSpeaking && !isVoiceThinking && !isVoicePaused && !isRecognitionRunning) {
                     try { activeRecognition.start(); } catch(err) {}
                 }
-            }, 400);
+            }, 500);
         }
     };
 
     activeRecognition.onend = () => {
-        // Continuous listening auto-restart
-        if (isVoiceActive && !isVoicePaused && !isVoiceThinking && !isVoiceSpeaking) {
+        isRecognitionRunning = false;
+        // Continuous auto-restart when in listening state
+        if (isVoiceActive && !isVoicePaused && !isVoiceThinking) {
             setTimeout(() => {
-                if (isVoiceActive && !isVoicePaused && !isVoiceThinking && !isVoiceSpeaking) {
+                if (isVoiceActive && !isVoicePaused && !isVoiceThinking && !isRecognitionRunning) {
                     try { activeRecognition.start(); } catch(err) {}
                 }
             }, 300);
@@ -2533,18 +2659,21 @@ function submitVoiceTranscript() {
         voiceSilenceTimer = null;
     }
 
-    if (activeRecognition) {
+    if (activeRecognition && isRecognitionRunning) {
         try {
             activeRecognition.onend = null;
             activeRecognition.stop();
         } catch(e) {}
     }
+    isRecognitionRunning = false;
 
     let userText = voiceAccumulatedTranscript.trim();
     voiceAccumulatedTranscript = '';
 
-    if (!userText || userText.length < 2) {
-        if (!isVoicePaused && isVoiceActive) {
+    // Ignore ultra-short noises/filler
+    if (!userText || userText.length < 3) {
+        if (!isVoicePaused && isVoiceActive && !isVoiceSpeaking) {
+            updateVoiceStudioUI('listening');
             startVoiceListening();
         }
         return;
@@ -2652,7 +2781,10 @@ function speakSpokenVoiceAnswer(text) {
         startVoiceListening();
         return;
     }
+
     isVoiceSpeaking = true;
+    voiceSpeechStartTime = Date.now();
+    voiceCurrentSpokenText = text.toLowerCase();
     updateVoiceStudioUI('speaking');
 
     if (showVoiceSubtitles) {
@@ -2663,26 +2795,31 @@ function speakSpokenVoiceAnswer(text) {
     playTTS(text, () => {
         if (isVoiceActive) {
             updateVoiceStudioUI('speaking');
-            // Keep speech recognition listening concurrently so barge-in can trigger!
-            if (activeRecognition) {
+            // Ensure recognition is running concurrently for barge-in
+            if (activeRecognition && !isRecognitionRunning) {
                 try { activeRecognition.start(); } catch(e) {}
             }
         }
     }, () => {
         isVoiceSpeaking = false;
+        voiceCurrentSpokenText = '';
         if (!isVoiceActive) return;
 
-        // AUTOMATIC CONTINUOUS PHONE-CALL TURN-TAKING:
-        // As soon as Nyayi stops speaking, immediately resume listening for the user's follow-up!
-        voiceAccumulatedTranscript = '';
-        if (showVoiceSubtitles) {
-            const subEl = document.getElementById('voiceSubtitlesText');
-            if (subEl) {
-                setTimeout(() => { if (!isVoiceSpeaking && subEl) subEl.innerText = ''; }, 3000);
+        // AUTOMATIC CONTINUOUS TURN-TAKING:
+        // Wait 350ms for room echo to decay completely, then resume clean listening!
+        setTimeout(() => {
+            if (isVoiceActive && !isVoicePaused && !isVoiceThinking && !isVoiceSpeaking) {
+                voiceAccumulatedTranscript = '';
+                if (showVoiceSubtitles) {
+                    const subEl = document.getElementById('voiceSubtitlesText');
+                    if (subEl) {
+                        setTimeout(() => { if (!isVoiceSpeaking && subEl) subEl.innerText = ''; }, 2500);
+                    }
+                }
+                updateVoiceStudioUI('listening');
+                startVoiceListening();
             }
-        }
-        updateVoiceStudioUI('listening');
-        startVoiceListening();
+        }, 350);
     });
 }
 
@@ -2708,20 +2845,23 @@ async function initVoiceAudioVAD() {
             for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
             const avg = sum / dataArray.length;
 
-            // Barge-in: if Nyayi is speaking and user starts talking into mic (> 38 avg)
-            if (isVoiceSpeaking && avg > 38) {
-                console.log('[Audio VAD Interruption Detected]');
-                if (window.speechSynthesis) window.speechSynthesis.cancel();
-                isVoiceSpeaking = false;
-                voiceAccumulatedTranscript = '';
-                updateVoiceStudioUI('listening');
+            // Live visual waveform animation reacting to user microphone input
+            if (isVoiceActive && !isVoiceSpeaking && !isVoiceThinking && !isVoicePaused) {
+                const bars = document.querySelectorAll('#voiceWaveform .bar');
+                if (bars && bars.length > 0) {
+                    const baseH = Math.min(24, Math.max(4, Math.round(avg * 0.4)));
+                    bars.forEach((b, i) => {
+                        const multiplier = [0.8, 1.2, 1.5, 1.1, 0.7][i % 5];
+                        b.style.height = Math.min(26, Math.max(4, Math.round(baseH * multiplier))) + 'px';
+                    });
+                }
             }
 
             voiceVADLoopId = requestAnimationFrame(monitorVAD);
         }
         monitorVAD();
     } catch(err) {
-        console.log('[Voice Audio VAD note]', err);
+        console.log('[Voice Audio Visuals note]', err);
     }
 }
 
@@ -2742,18 +2882,27 @@ function stopVoiceAudioVAD() {
 
 function handleVoiceOrbTap() {
     if (!isVoiceActive) return;
+
     if (isVoiceSpeaking) {
-        // Tapping the orb while speaking instantly interrupts speech
+        // INSTANT 1-TAP BARGE-IN: Tapping the orb while speaking immediately cancels audio & listens
         if (window.speechSynthesis) window.speechSynthesis.cancel();
         isVoiceSpeaking = false;
         voiceAccumulatedTranscript = '';
+        voiceCurrentSpokenText = '';
         updateVoiceStudioUI('listening');
         startVoiceListening();
         return;
     }
+
     if (isVoiceThinking) return;
 
-    // Tapping the orb while listening toggles mute/pause
+    // If user already spoke something, tapping the orb submits IMMEDIATELY without waiting for silence timer!
+    if (voiceAccumulatedTranscript.trim().length >= 3) {
+        submitVoiceTranscript();
+        return;
+    }
+
+    // Otherwise toggles pause / mute
     toggleVoiceMicMute();
 }
 
@@ -2774,12 +2923,13 @@ function toggleVoiceMicMute() {
             clearTimeout(voiceSilenceTimer);
             voiceSilenceTimer = null;
         }
-        if (activeRecognition) {
+        if (activeRecognition && isRecognitionRunning) {
             try {
                 activeRecognition.onend = null;
                 activeRecognition.stop();
             } catch(e) {}
         }
+        isRecognitionRunning = false;
         updateVoiceStudioUI('paused');
     } else {
         // Resume
