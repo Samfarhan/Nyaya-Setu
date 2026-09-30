@@ -19,8 +19,11 @@
         }
     </script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NYAYI (न्यायी) — Secure Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NYAYI (न्यायी) — Secure Citizen Portal</title>
+    <meta name="description" content="Sign in or register for your NYAYI account to access AI legal intelligence, case analysis, and saved consultations securely.">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <link rel="canonical" href="https://nyayi.in/auth">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="icon" type="image/png" href="images/logo.png">
@@ -522,12 +525,12 @@
                 <div id="view-login" class="form-view active">
                     <form onsubmit="handleLoginSubmit(event)">
                         <div class="input-group">
-                            <input type="email" id="loginEmail" placeholder="Email Address" required>
+                            <input type="email" id="loginEmail" placeholder="Email Address" autocomplete="email" required>
                             <i class="fa-regular fa-envelope"></i>
                         </div>
                         
                         <div class="input-group">
-                            <input type="password" id="loginPass" placeholder="Password" style="padding-right:45px;" required>
+                            <input type="password" id="loginPass" placeholder="Password" autocomplete="current-password" style="padding-right:45px;" required>
                             <i class="fa-solid fa-lock"></i>
                             <i class="fa-regular fa-eye-slash toggle-pass" onclick="togglePassVisibility('loginPass', this)" title="Show/Hide password"></i>
                         </div>
@@ -546,17 +549,17 @@
                 <div id="view-signup" class="form-view">
                     <form onsubmit="handleSignupSubmit(event)">
                         <div class="input-group">
-                            <input type="text" id="signupName" placeholder="Full Name" required>
+                            <input type="text" id="signupName" placeholder="Full Name" autocomplete="name" required>
                             <i class="fa-regular fa-user"></i>
                         </div>
 
                         <div class="input-group">
-                            <input type="email" id="signupEmail" placeholder="Email Address" required>
+                            <input type="email" id="signupEmail" placeholder="Email Address" autocomplete="email" required>
                             <i class="fa-regular fa-envelope"></i>
                         </div>
                         
                         <div class="input-group">
-                            <input type="password" id="signupPass" placeholder="Create Password" minlength="8" style="padding-right:110px;" required>
+                            <input type="password" id="signupPass" placeholder="Create Password" autocomplete="new-password" minlength="8" style="padding-right:110px;" required>
                             <i class="fa-solid fa-lock"></i>
                             <span class="password-hint">Min. 8 chars</span>
                             <i class="fa-regular fa-eye-slash toggle-pass" onclick="togglePassVisibility('signupPass', this)" title="Show/Hide password"></i>
@@ -615,7 +618,7 @@
 
                 <form onsubmit="handleForgotSubmit(event)">
                     <div class="input-group">
-                        <input type="email" id="forgotEmail" placeholder="Registered Email Address" required>
+                        <input type="email" id="forgotEmail" placeholder="Registered Email Address" autocomplete="email" required>
                         <i class="fa-regular fa-envelope"></i>
                     </div>
 
@@ -652,7 +655,7 @@
                     </div>
 
                     <div class="input-group">
-                        <input type="password" id="newPass" placeholder="Enter New Password" minlength="8" style="padding-right:110px;" required>
+                        <input type="password" id="newPass" placeholder="Enter New Password" autocomplete="new-password" minlength="8" style="padding-right:110px;" required>
                         <i class="fa-solid fa-lock"></i>
                         <span class="password-hint">Min. 8 chars</span>
                         <i class="fa-regular fa-eye-slash toggle-pass" onclick="togglePassVisibility('newPass', this)" title="Show/Hide password"></i>
@@ -811,11 +814,14 @@
         }
 
         // --- 5. AUTHENTICATION SUCCESS REDIRECT ---
-        function grantAccess(username, email, isNewSignup = false) {
+        function grantAccess(username, email, isNewSignup = false, token = '') {
             const finalUser = username || email.split('@')[0];
             localStorage.setItem('nyayaUser', finalUser);
             localStorage.setItem('nyayi_auth', 'true');
             localStorage.setItem('nyayi_user_email', email || '');
+            if (token) {
+                localStorage.setItem('nyayi_auth_token', token);
+            }
             sessionStorage.setItem('nyayi_just_logged_in', 'true');
             if (isNewSignup) {
                 localStorage.removeItem('nyayi_onboarded');
@@ -864,7 +870,7 @@
                 btn.style.background = '#10b981';
                 btn.innerHTML = '<i class="fa-solid fa-check"></i> Welcome Back!';
                 showAlert(`Welcome back, ${data.name}! Redirecting to Nyayi AI...`, false);
-                grantAccess(data.name || email.split('@')[0], email);
+                grantAccess(data.name || email.split('@')[0], email, false, data.token || '');
 
             } catch (err) {
                 btn.disabled = false;
@@ -977,7 +983,7 @@
                 btn.innerHTML = '<i class="fa-solid fa-check"></i> Verified!';
                 btn.style.background = '#10b981';
                 showAlert('Account created and verified! Redirecting to Nyayi AI...', false);
-                grantAccess(data.name || (pendingSignupData ? pendingSignupData.name : currentAuthEmail.split('@')[0]), currentAuthEmail, true);
+                grantAccess(data.name || (pendingSignupData ? pendingSignupData.name : currentAuthEmail.split('@')[0]), currentAuthEmail, true, data.token || '');
 
             } catch (err) {
                 btn.disabled = false;
@@ -1104,13 +1110,13 @@
             }
         }
 
-        function handleGoogleCredentialResponse(response) {
+        async function handleGoogleCredentialResponse(response) {
             if (response && response.credential) {
                 const payload = decodeJwt(response.credential);
                 if (payload && payload.email) {
                     showAlert(`Authenticated as ${payload.name || payload.email}! Redirecting...`, false);
-                    syncGoogleUserToServer(payload.name, payload.email, payload.picture || '');
-                    grantAccess(payload.name || payload.email.split('@')[0], payload.email);
+                    const token = await syncGoogleUserToServer(payload.name, payload.email, payload.picture || '');
+                    grantAccess(payload.name || payload.email.split('@')[0], payload.email, false, token || '');
                     return;
                 }
             }
@@ -1225,7 +1231,7 @@
                 .then(data => {
                     if (data && data.success) {
                         showAlert(`Welcome ${data.name}! Signed in via GitHub.`, false);
-                        grantAccess(data.name, data.email);
+                        grantAccess(data.name, data.email, false, data.token || '');
                     } else {
                         showAlert('GitHub sign in failed: ' + (data.error || 'Please try again.'));
                     }
@@ -1238,13 +1244,16 @@
 
         async function syncGoogleUserToServer(name, email, avatar = '') {
             try {
-                await fetch(`${AUTH_API_BASE}/api/auth/google`, {
+                const res = await fetch(`${AUTH_API_BASE}/api/auth/google`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, email, avatar })
                 });
+                const data = await res.json().catch(() => ({}));
+                return data.token || '';
             } catch (e) {
                 console.warn('[SYNC GOOGLE USER FAILED]', e);
+                return '';
             }
         }
 

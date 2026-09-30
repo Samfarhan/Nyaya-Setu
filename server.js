@@ -2,6 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+const crypto = require('crypto');
 
 // --- CONFIGURATION ---
 const PORT = process.env.PORT || 3000;
@@ -11,8 +12,16 @@ const envPath = path.join(__dirname, '.env');
 if (fs.existsSync(envPath)) {
     const envFile = fs.readFileSync(envPath, 'utf8');
     envFile.split('\n').forEach(line => {
-        const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
-        if (match) process.env[match[1]] = (match[2] || '').trim();
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) return;
+        const match = trimmed.match(/^([\w.-]+)\s*=\s*(.*)?$/);
+        if (match) {
+            let val = (match[2] || '').trim();
+            if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+                val = val.slice(1, -1);
+            }
+            process.env[match[1]] = val;
+        }
     });
 }
 
@@ -39,10 +48,32 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer((req, res) => {
-    // CORS Headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, DELETE');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    // --- SECURITY HEADERS (HSTS, CSP, XFO, MIME Sniffing, Referrer, Permissions) ---
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(self "https://ai.nyayi.in"), geolocation=()');
+    res.setHeader('Content-Security-Policy', "default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://www.googletagmanager.com https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self' https:; frame-src 'self' https://accounts.google.com;");
+
+    // --- SECURE DYNAMIC CORS (Restricts '*' to Authorized Domains) ---
+    const allowedOrigins = [
+        'https://nyayi.in',
+        'https://www.nyayi.in',
+        'https://ai.nyayi.in',
+        'http://localhost:3000',
+        'http://127.0.0.1:3000'
+    ];
+    const origin = req.headers.origin;
+    if (origin && allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+    } else if (!origin) {
+        // Same-origin browser navigation
+        res.setHeader('Access-Control-Allow-Origin', 'https://nyayi.in');
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, DELETE, PATCH, PUT');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
 
     if (req.method === 'OPTIONS') {
         res.writeHead(204);
@@ -53,6 +84,16 @@ const server = http.createServer((req, res) => {
     // API Routes
     if (req.url === '/api/chat' && req.method === 'POST') {
         handleChatAPI(req, res);
+        return;
+    }
+
+    if (req.url.startsWith('/api/conversations')) {
+        handleConversationsAPI(req, res);
+        return;
+    }
+
+    if (req.url === '/api/feedback' && req.method === 'POST') {
+        handleFeedbackAPI(req, res);
         return;
     }
 
@@ -147,6 +188,8 @@ function handleChatAPI(req, res) {
             const selectedLanguage = parsedData.language || "Multilingual";
             const rawHistory = Array.isArray(parsedData.history) ? parsedData.history : [];
 
+            console.log(`[Nyayi /api/chat] Query received: "${userMessage.slice(0, 60)}..." (Language: ${selectedLanguage})`);
+
             // Sanitize conversation memory: last 20 messages, valid roles, clean content
             const cleanHistory = rawHistory
                 .filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string' && m.content.trim())
@@ -172,19 +215,70 @@ function handleChatAPI(req, res) {
             let languageDirective = "";
 
             const lawyerPersonaGuide = `
-FRIENDLY & PROFESSIONAL LAWYER PERSONA:
-- You are acting as a warm, highly experienced, empathetic, polite, calm, and approachable Senior Advocate / Legal Counselor.
-- ALWAYS maintain a compassionate, reassuring tone that calms the user down and builds confidence.
-- AMICABLE RESOLUTION FIRST: Do NOT immediately advise aggressive legal actions (like filing police FIRs, criminal complaints, or court lawsuits) unless there is an ongoing violent emergency or severe criminal offense.
-- First suggest peaceful, friendly, and practical steps: open dialogue, written communication, legal notice, conciliation, or mutual settlement.
-- MEMORY CONTINUITY: Keep full track of the ongoing conversation history. Remember and refer to names, dates, financial amounts, places, and specific facts mentioned earlier in the chat. Never forget previous context.`;
+SENIOR INDIAN ADVOCATE PERSONA & PROFESSIONAL EXCELLENCE:
+- You are Nyayi (न्यायी - वरिष्ठ भारतीय कानूनी सलाहकार व मार्गदर्शक), a highly esteemed, calm, empathetic, articulate, and trustworthy Senior Advocate & Legal Counselor of the Indian Bar.
+- DEMEANOR: Warm, respectful, comforting, and reassuring. Indian citizens approaching you are often distressed, worried about police notices, court disputes, loss of money, or family strife. Always begin with a calming, empathetic, and respectful demeanor that restores confidence and dispels panic.
+- CREATOR & FOUNDER ATTRIBUTION: You were designed, engineered, and trained by **Farhan Khan**, a talented BCA (Bachelor of Computer Applications) student. Whenever someone asks who made you, who developed you, or about your creator, always proudly introduce Farhan Khan (BCA student) as your founder and lead developer.
+- AMICABLE SETTLEMENT & PRE-LITIGATION FIRST: Do NOT immediately jump to aggressive criminal complaints, arrests, or costly court lawsuits unless there is an active violent emergency or serious cognizable danger. Always prioritize evidence gathering, formal written communication or statutory legal notice, conciliation, and mediation (Section 89 CPC / Lok Adalat).
+- MEMORY & CONTEXT RETENTION: Actively remember and reference earlier facts, dates, transaction amounts, names, employer names, landlord names, police stations, and document details discussed in the current and past consultation turns. Never forget context.
+
+COMPREHENSIVE INDIAN STATUTORY LEGAL DATABASE (CURRENT 2024-2026 IN FORCE):
+1. Criminal Penal Law — Bharatiya Nyaya Sanhita, 2023 (BNS) [Replaced IPC 1860]:
+   - Cheating / Fraud: Section 318(4) BNS [Old IPC 420] — Up to 7 years + fine.
+   - Criminal Breach of Trust: Section 316 BNS [Old IPC 406] — Up to 3 years or fine.
+   - Forgery & Fake Documents: Section 338 BNS [Old IPC 468] — Up to 7 years + fine.
+   - Theft: Section 303(2) BNS [Old IPC 379] — Up to 3 years or fine or community service.
+   - Hurt: Section 115(2) BNS [Old IPC 323], Grievous Hurt: Section 117 BNS [Old IPC 325].
+   - Criminal Intimidation & Death Threats: Section 351(2) BNS [Old IPC 506].
+   - Cruelty by Husband or In-Laws: Section 85 & 86 BNS [Old IPC 498A].
+   - Outraging Modesty: Section 74 BNS [Old IPC 354], Sexual Harassment: Section 75 BNS [Old IPC 354A].
+   - Rape: Section 64 BNS [Old IPC 376], Dowry Death: Section 80 BNS [Old IPC 304B].
+   - Causing Death by Negligence: Section 106(1) BNS [Old IPC 304A].
+   - Murder: Section 103(1) BNS [Old IPC 302].
+   - Criminal Conspiracy: Section 61(2) BNS [Old IPC 120B].
+   - Defamation: Section 356 BNS [Old IPC 500] (Includes community service option).
+
+2. Criminal Procedural Law — Bharatiya Nagarik Suraksha Sanhita, 2023 (BNSS) [Replaced CrPC 1973]:
+   - Mandatory FIR & Zero FIR: Section 173(1) BNSS [Old CrPC 154] — Any police station in India is legally bound to register a Zero FIR regardless of territorial jurisdiction and transfer it to the concerned thana. E-FIR permitted with physical signature within 3 days.
+   - Preliminary Inquiry: Section 173(3) BNSS — For offences punishable between 3 to 7 years, preliminary inquiry allowed within 14 days before FIR.
+   - Arrest Notice Safeguard: Section 35(3) BNSS [Old CrPC 41A] — Offences punishable up to 7 years require mandatory prior notice of appearance before arrest, subject to SP/DCP approval.
+   - Anticipatory Bail: Section 482 BNSS [Old CrPC 438] before Sessions Court or High Court.
+   - Regular Bail: Section 480 BNSS [Old CrPC 437] (Magistrate) / Section 483 BNSS [Old CrPC 439] (Sessions/High Court).
+   - Maintenance for Wife, Minor Children & Senior Parents: Section 144 BNSS [Old CrPC 125].
+   - Electronic Statements: Section 180 BNSS [Old CrPC 161] and Section 183 BNSS [Old CrPC 164].
+   - Police Remand Limits: Section 187 BNSS [Old CrPC 167].
+
+3. Evidence Law — Bharatiya Sakshya Adhiniyam, 2023 (BSA) [Replaced Indian Evidence Act 1872]:
+   - Electronic Evidence: Section 63 BSA [Old IEA 65B] — WhatsApp messages, screenshots, emails, call logs, and CCTV are primary documents admissible with Section 63(4) certificate.
+   - Police Confessions Inadmissible: Section 23 BSA [Old IEA 25] — Statements made to police in custody cannot be used against the citizen in court.
+
+4. Special Civil, Commercial & Citizen Acts:
+   - Consumer Protection Act, 2019: Defective goods, deficiency of service, unfair contracts. National Consumer Helpline: 1915 & online filing via e-Daakhil (edaakhil.nic.in) without advocate fees.
+   - Cyber Crime & IT Act, 2000: Identity theft (Sec 66C), Cheating by impersonation/OTP fraud (Sec 66D). National Cyber Crime Helpline: 1930 & cybercrime.gov.in for Golden Hour bank account freeze.
+   - Negotiable Instruments Act, 1881: Section 138 Cheque Bounce — Mandatory statutory demand notice within 30 days of bank memo; 15 days cure window before filing complaint.
+   - Tenancy & Property: Security deposit refund disputes, wrongful eviction safeguards under Order 39 Rules 1-2 CPC (Temporary Injunction).
+   - Motor Vehicles Act, 1988/2019: Challenging incorrect challans on Virtual Courts (vcourts.gov.in).
+   - Free Legal Aid: Article 39A Constitution of India & NALSA helpline 15100.
+
+EXPLANATION STRUCTURE — HOW TO EXPLAIN EVERY CITIZEN ISSUE ("BHOT ACHE SE EXPLAIN KAREIN"):
+Whenever a citizen explains a legal problem, dispute, or question, format your response in this clean, empathetic, step-by-step structure:
+1. 📌 **कानूनी स्थिति व आपके अधिकार / Legal Overview & Standing**:
+   - Provide a clear, empathetic assessment of their situation in simple, reassuring words. Clarify if the matter is Civil or Criminal, Cognizable or Non-Cognizable.
+2. ⚖️ **लागू कानून व महत्वपूर्ण धाराएं / Relevant Statutory Provisions**:
+   - Explicitly cite the current sections (BNS / BNSS / BSA / Special Acts) and ALWAYS mention the old familiar IPC / CrPC section in brackets (e.g., "Section 318(4) BNS [earlier IPC Section 420]").
+3. 📋 **कदम-दर-कदम समाधान / Step-by-Step Action Plan**:
+   - Step 1: Evidence Preservation (save WhatsApp chats, payment slips, emails, agreements, call recordings).
+   - Step 2: Amicable Resolution / Formal Written Demand or Legal Notice (give 15 to 30 days time).
+   - Step 3: Formal Authority / Complaint Forum (Cyber Helpline 1930 / e-Daakhil / Zero FIR / Civil Court).
+4. 🏛️ **आधिकारिक हेल्पलाइन व पोर्टल / Official Portals & Helplines**:
+   - Include toll-free helplines (1930 Cyber, 1915 Consumer, 15100 NALSA Legal Aid, 1091 Women Helpline) and relevant Nyayi Portal links.`;
 
             if (selectedLanguage === "English") {
-                languageDirective = `CRITICAL DIRECTIVE — ABSOLUTE LANGUAGE ENFORCEMENT:
+                languageDirective = `CRITICAL DIRECTIVE — ABSOLUTE ENGLISH ENFORCEMENT:
 The user has explicitly selected ENGLISH mode.
-1. You MUST respond 100% EXCLUSIVELY in fluent, professional ENGLISH.
+1. You MUST respond 100% EXCLUSIVELY in fluent, professional, authoritative ENGLISH.
 2. Absolutely ZERO Hindi, ZERO Hinglish, and ZERO Devanagari script anywhere in the response.
-3. Even if the user's query is in Hindi or Hinglish, or if prior conversation history is in Hindi, you MUST TRANSLATE your entire response and explain everything in clear, authoritative ENGLISH.
+3. Even if the user's query or prior history is in Hindi or Hinglish, TRANSLATE and explain everything in clear, articulate Senior Counsel ENGLISH.
 4. All headings, bullet points, summaries, legal explanations, and advice MUST be 100% in ENGLISH.`;
 
                 identityBlock = `You are Nyayi, a warm, highly educated, empathetic Indian legal advisor created to empower citizens with legal literacy, procedural guidance, and constitutional awareness.
@@ -195,24 +289,26 @@ YOUR IDENTITY & STYLE:
 - Creator: You were created and developed by **Farhan Khan**, a talented BCA (Bachelor of Computer Applications) student. Whenever someone asks who created you, who made you, or about your developer, proudly introduce Farhan Khan (BCA student) as your creator.
 ${lawyerPersonaGuide}`;
             } else if (selectedLanguage === "Hindi") {
-                languageDirective = `CRITICAL DIRECTIVE — ABSOLUTE LANGUAGE ENFORCEMENT:
+                languageDirective = `CRITICAL DIRECTIVE — ABSOLUTE HINDI ENFORCEMENT:
 उपयोगकर्ता ने स्पष्ट रूप से हिंदी भाषा का चयन किया है।
-1. आपको 100% शुद्ध एवं सरल हिंदी (Devanagari script) में ही उत्तर देना है।
-2. मुख्य पाठ में रोमन लिपि या अंग्रेजी का उपयोग न करें (केवल कानूनी धाराओं या अधिनियमों के नाम अंग्रेजी में लिख सकते हैं)।
-3. यदि उपयोगकर्ता ने अंग्रेजी या हिंग्लिश में भी पूछा हो, तब भी पूरा उत्तर हिंदी में ही दें।`;
+1. आपको 100% शुद्ध, सरल, आदरसूचक एवं धाराप्रवाह हिंदी (Devanagari script) में ही उत्तर देना है।
+2. आदरसूचक भाषा ('आप', 'जी') का प्रयोग करें। नागरिक को ढांढस बंधाएं और धैर्यपूर्वक कानूनी अधिकार समझाएं।
+3. कानून की सभी धाराओं (BNS, BNSS, BSA) को स्पष्ट रूप से समझाएं और पुराने IPC/CrPC का भी उल्लेख कोष्ठक में करें।
+4. कदम-दर-कदम समाधान (Step-by-Step) साफ-सुथरे प्रारूप में प्रस्तुत करें।`;
 
                 identityBlock = `You are Nyayi (न्यायी), a warm, highly educated, empathetic Indian legal advisor created to empower citizens with legal literacy, procedural guidance, and constitutional awareness.
 
 YOUR IDENTITY & STYLE:
-- Name: Nyayi (न्यायी - वरिष्ठ कानूनी सलाहकार)
-- Persona: Friendly, empathetic senior Indian advocate. Speak with a respectful, caring tone (Use 'Ji', polite and reassuring).
+- Name: Nyayi (न्यायी - वरिष्ठ कानूनी सलाहकार व मार्गदर्शक)
+- Persona: Friendly, empathetic senior Indian advocate. Speak with a respectful, caring tone (Use 'आप', 'जी', polite and reassuring).
 - Creator: You were created and developed by **Farhan Khan**, a talented BCA (Bachelor of Computer Applications) student. Whenever someone asks who created you, who made you, or about your developer, proudly introduce Farhan Khan (BCA student) as your creator.
 ${lawyerPersonaGuide}`;
             } else if (selectedLanguage === "Hinglish") {
-                languageDirective = `CRITICAL DIRECTIVE — ABSOLUTE LANGUAGE ENFORCEMENT:
+                languageDirective = `CRITICAL DIRECTIVE — CONVERSATIONAL HINGLISH:
 The user has explicitly selected HINGLISH mode.
-1. You MUST respond in natural, conversational HINGLISH (Hindi spoken language written in Roman / English alphabet).
-2. Do NOT use Devanagari script. Speak naturally like modern Indian conversation.`;
+1. You MUST respond in natural, warm, conversational HINGLISH (Hindi spoken language written in Roman / English alphabet).
+2. Do NOT use Devanagari script. Speak naturally like a knowledgeable Senior Indian Lawyer ('Aap bilkul chinta mat karein, kanoon me aapke paas poore adhikar hain...').
+3. Explain everything step-by-step with clear section citations and practical advice.`;
 
                 identityBlock = `You are Nyayi (न्यायी), a warm, highly educated, empathetic Indian legal advisor created to empower citizens with legal literacy, procedural guidance, and constitutional awareness.
 
@@ -223,7 +319,10 @@ YOUR IDENTITY & STYLE:
 ${lawyerPersonaGuide}`;
             } else {
                 languageDirective = `LANGUAGE REQUIREMENT:
-Respond naturally in the language of the user's query (if query is in English, reply 100% in English; if query is in Hindi, reply in Hindi; if Hinglish, reply in Hinglish).`;
+Respond naturally in the language of the user's query:
+- If query is in English, reply 100% in polished English.
+- If query is in Hindi, reply in pure, respectful Hindi (Devanagari script).
+- If query is in Hinglish, reply in natural, conversational Hinglish (Roman alphabet).`;
 
                 identityBlock = `You are Nyayi (न्यायी), a warm, highly educated, empathetic Indian legal advisor created to empower citizens with legal literacy, procedural guidance, and constitutional awareness.
 
@@ -290,29 +389,27 @@ CRITICAL VOICE SPOKEN RULES:
                 systemPrompt += `
 
 CORE CONVERSATIONAL PRINCIPLE — INTENT-DRIVEN RESPONSES:
-Do NOT force a rigid template. Do NOT automatically include "What You Should Do" or a step-by-step action plan on every answer. Analyze the user's INTENT:
+Do NOT force a rigid template on simple informational questions. Analyze the user's INTENT:
 
 1. INFORMATIONAL / RIGHTS QUERIES (e.g. "What rights does a foreign tourist have?", "What is anticipatory bail?"):
-   - Answer ONLY what was asked.
-   - Explain the concept, rights, and relevant legal principles clearly and concisely.
-   - Mention applicable statutes (e.g. BNS/BNSS/Constitution).
+   - Answer what was asked with exceptional legal clarity.
+   - Explain the concept, rights, and relevant statutory provisions (BNS/BNSS/Constitution).
    - Append relevant Legal References.
-   - DO NOT provide a step-by-step action plan or unsolicited procedural steps.
 
-2. SITUATION / PROBLEM QUERIES (e.g. "My landlord hasn't returned my security deposit."):
-   - When the user describes an issue without asking for action, explain the legal position, applicable rights, and what facts/evidence matter.
-   - Conclude with an empathetic, context-specific follow-up question or offer of guidance tailored uniquely to their exact situation (e.g., asking if they want a polite legal notice draft, mediation tips, or specific documentation guidance). NEVER use the repetitive phrase "If you want, I can explain what steps you can take next."
+2. SITUATION / PROBLEM QUERIES (e.g. "My landlord hasn't returned my security deposit.", "Company isn't paying salary"):
+   - Structure into the 4-part legal format: Legal Position -> Applicable Laws (BNS/BNSS/Acts with IPC in brackets) -> Step-by-Step Practical Plan -> Official Helplines & Links.
+   - Conclude with a warm, empathetic follow-up offer tailored to their exact situation (e.g., offering a polite legal notice draft or mediation strategy).
 
 3. EXPLICIT ACTION QUERIES (e.g. "What should I do?", "How do I file an FIR?", "How to send a legal notice?"):
-   - Provide a focused, realistic 3 to 6 step action plan. Keep it practical, clear, and proportional.
+   - Provide a focused, realistic step-by-step action plan. Keep it practical, clear, and proportional.
 
 4. STATUTE / LAW COMPARISONS (e.g. "Compare Section 420 IPC and Section 318 BNS"):
-   - Present a clean markdown table comparing: Provision, Current Law (BNS/BNSS/BSA), Earlier Law (IPC/CrPC/IEA), and Key Difference.
+   - Present a clean markdown table comparing: Provision, Current Law (BNS/BNSS/BSA), Earlier Law (IPC/CrPC/IEA), and Key Differences.
 
 RESPONSE RULES:
-- Concise Default: Deliver high-clarity legal intelligence without dumping walls of text. Progressive disclosure allows the citizen to ask deeper questions.
-- Conversational Progression: Maintain context from previous turns. If the user previously discussed an issue and now asks "What should I do?", connect directly to that context.
-- Legal References: At the end of any response discussing statutory provisions, list the Act, Section, and Source (India Code / Supreme Court / Government portal). Never fabricate citations.`;
+- High Clarity: Deliver authoritative legal intelligence without dumping confusing walls of text.
+- Conversational Progression: Maintain context from previous turns. If user previously explained an issue and now asks "What should I do next?", directly build upon the established facts.
+- Legal References: State exact statutory provisions under Indian law. Never hallucinate citations.`;
             }
 
             systemPrompt += `\n\n${languageDirective}\n\nContext:\nCategory: ${category}\nUser Query: ${userMessage}`;
@@ -343,16 +440,53 @@ RESPONSE RULES:
 }
 
 // --- GROQ API FUNCTION ---
+function buildSanitizedMessages(systemPrompt, userMessage, history = []) {
+    const messages = [
+        { role: "system", content: systemPrompt }
+    ];
+
+    let lastRole = "system";
+    if (Array.isArray(history)) {
+        history.forEach(m => {
+            if (!m || !m.content || typeof m.content !== 'string') return;
+            const cleanText = m.content.trim();
+            // Filter out system error strings from history
+            if (!cleanText || 
+                cleanText.includes("AI service temporarily unavailable") || 
+                cleanText.includes("temporary issue hai") ||
+                cleanText.includes("Error parsing response")) return;
+            
+            const role = (m.role === 'assistant' || m.role === 'ai') ? 'assistant' : 'user';
+            if (role !== lastRole) {
+                messages.push({ role, content: cleanText.slice(0, 3500) });
+                lastRole = role;
+            } else if (role === 'user') {
+                messages[messages.length - 1].content += "\n\n" + cleanText.slice(0, 2000);
+            }
+        });
+    }
+
+    if (lastRole === 'user') {
+        messages[messages.length - 1].content += "\n\n" + userMessage;
+    } else {
+        messages.push({ role: "user", content: userMessage });
+    }
+
+    return messages;
+}
+
 function callGroqAI(systemPrompt, userMessage, history = []) {
     return new Promise((resolve) => {
-        const messages = [
-            { role: "system", content: systemPrompt },
-            ...history,
-            { role: "user", content: userMessage }
-        ];
+        const apiKey = (process.env.GROQ_API_KEY || GROQ_API_KEY || '').trim();
+        if (!apiKey) {
+            console.error("[FATAL] GROQ_API_KEY is not configured.");
+            resolve("AI service temporarily unavailable: API configuration missing.");
+            return;
+        }
 
+        const messages = buildSanitizedMessages(systemPrompt, userMessage, history);
         const postData = JSON.stringify({
-            model: "groq/compound-mini",
+            model: "llama-3.3-70b-versatile",
             messages: messages,
             temperature: 0.3,
             max_tokens: 1500
@@ -363,7 +497,7 @@ function callGroqAI(systemPrompt, userMessage, history = []) {
             path: '/openai/v1/chat/completions',
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${GROQ_API_KEY}`,
+                'Authorization': `Bearer ${apiKey}`,
                 'Content-Type': 'application/json',
                 'Content-Length': Buffer.byteLength(postData)
             }
@@ -375,24 +509,26 @@ function callGroqAI(systemPrompt, userMessage, history = []) {
             res.on('end', () => {
                 try {
                     const jsonResponse = JSON.parse(data);
-                    if (jsonResponse.choices && jsonResponse.choices.length > 0) {
+                    if (res.statusCode >= 200 && res.statusCode < 300 && jsonResponse.choices && jsonResponse.choices.length > 0) {
                         resolve(jsonResponse.choices[0].message.content);
-                    } else if (jsonResponse.error) {
-                        console.error("Groq Error Response:", jsonResponse.error);
-                        fallbackGroqAI(systemPrompt, userMessage, history).then(resolve);
                     } else {
-                        resolve("AI response generation failed. Please try again.");
+                        console.error(`[Groq Primary llama-3.3-70b-versatile Failed, HTTP ${res.statusCode}]:`, jsonResponse.error || data);
+                        fallbackGroqAI(systemPrompt, userMessage, history, "llama-3.1-8b-instant").then(resolve);
                     }
                 } catch (e) {
-                    console.error("Parse Error:", e, data);
-                    resolve("Error parsing response from AI provider.");
+                    console.error("[Groq Primary Parse Error]:", e.message);
+                    fallbackGroqAI(systemPrompt, userMessage, history, "llama-3.1-8b-instant").then(resolve);
                 }
             });
         });
 
         req.on('error', (e) => {
-            console.error("API Request Error:", e);
-            resolve("Network error connecting to AI engine. Please check internet connectivity.");
+            console.error("[Groq Primary Network Error]:", e.message);
+            fallbackGroqAI(systemPrompt, userMessage, history, "llama-3.1-8b-instant").then(resolve);
+        });
+
+        req.setTimeout(25000, () => {
+            req.destroy(new Error("Groq primary request timed out"));
         });
 
         req.write(postData);
@@ -400,19 +536,16 @@ function callGroqAI(systemPrompt, userMessage, history = []) {
     });
 }
 
-function fallbackGroqAI(systemPrompt, userMessage, history = []) {
+function fallbackGroqAI(systemPrompt, userMessage, history = [], fallbackModel = "llama-3.1-8b-instant") {
     return new Promise((resolve) => {
-        const messages = [
-            { role: "system", content: systemPrompt },
-            ...history,
-            { role: "user", content: userMessage }
-        ];
+        const apiKey = (process.env.GROQ_API_KEY || GROQ_API_KEY || '').trim();
+        const messages = buildSanitizedMessages(systemPrompt, userMessage, history);
 
         const postData = JSON.stringify({
-            model: "openai/gpt-oss-20b",
+            model: fallbackModel,
             messages: messages,
             temperature: 0.3,
-            max_tokens: 800
+            max_tokens: 1200
         });
 
         const req = https.request({
@@ -420,7 +553,7 @@ function fallbackGroqAI(systemPrompt, userMessage, history = []) {
             path: '/openai/v1/chat/completions',
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${GROQ_API_KEY}`,
+                'Authorization': `Bearer ${apiKey}`,
                 'Content-Type': 'application/json',
                 'Content-Length': Buffer.byteLength(postData)
             }
@@ -430,21 +563,171 @@ function fallbackGroqAI(systemPrompt, userMessage, history = []) {
             res.on('end', () => {
                 try {
                     const json = JSON.parse(data);
-                    if (json.choices && json.choices.length > 0) {
+                    if (res.statusCode >= 200 && res.statusCode < 300 && json.choices && json.choices.length > 0) {
+                        console.log(`[Groq Fallback Success]: Responded using ${fallbackModel}`);
                         resolve(json.choices[0].message.content);
+                    } else if (fallbackModel === "llama-3.1-8b-instant") {
+                        console.warn(`[Groq Fallback 1 Failed, HTTP ${res.statusCode}]: retrying with gemma2-9b-it...`);
+                        logSystemError('ai_fallback', `llama-3.1-8b-instant failed with HTTP ${res.statusCode}`, json.error || data);
+                        fallbackGroqAI(systemPrompt, userMessage, history, "gemma2-9b-it").then(resolve);
                     } else {
-                        resolve("AI service temporarily unavailable.");
+                        console.error("[Groq All Fallbacks Exhausted]:", json.error || data);
+                        logSystemError('ai_error', 'All Groq AI models exhausted', json.error || data);
+                        resolve("Nyayi AI server par abhi vishesh load hai. Aapka sawal surakshit hai, kripya 1 minute baad punah prayas karein.");
                     }
                 } catch (e) {
-                    resolve("AI response parsing error.");
+                    if (fallbackModel === "llama-3.1-8b-instant") {
+                        fallbackGroqAI(systemPrompt, userMessage, history, "gemma2-9b-it").then(resolve);
+                    } else {
+                        logSystemError('ai_parse_error', e.message);
+                        resolve("AI service temporarily unavailable. Kripya 1 minute baad prayas karein.");
+                    }
                 }
             });
         });
 
-        req.on('error', () => resolve("Network error."));
+        req.on('error', (err) => {
+            console.error(`[Groq Fallback Network Error (${fallbackModel})]:`, err.message);
+            logSystemError('ai_network_error', err.message);
+            if (fallbackModel === "llama-3.1-8b-instant") {
+                fallbackGroqAI(systemPrompt, userMessage, history, "gemma2-9b-it").then(resolve);
+            } else {
+                resolve("Network issue: Unable to connect to legal reasoning engine. Check internet connection.");
+            }
+        });
+
+        req.setTimeout(25000, () => {
+            req.destroy(new Error("Groq fallback request timed out"));
+        });
+
         req.write(postData);
         req.end();
     });
+}
+
+// --- SYSTEM ERROR & MONITORING BUFFER ---
+const recentErrors = [];
+function logSystemError(type, message, details = null) {
+    recentErrors.unshift({
+        type,
+        message,
+        details: typeof details === 'string' ? details : (details ? JSON.stringify(details) : null),
+        timestamp: new Date().toISOString()
+    });
+    if (recentErrors.length > 50) recentErrors.pop();
+}
+
+// --- ENTERPRISE CRYPTOGRAPHIC PASSWORD SECURITY (PBKDF2) ---
+function hashPassword(password) {
+    if (!password) return '';
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
+    return `pbkdf2$10000$${salt}$${hash}`;
+}
+
+function verifyPassword(password, storedPassword) {
+    if (!password || !storedPassword) return false;
+    if (storedPassword.startsWith('pbkdf2$10000$')) {
+        const parts = storedPassword.split('$');
+        if (parts.length !== 4) return false;
+        const salt = parts[2];
+        const originalHash = parts[3];
+        const computedHash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
+        try {
+            return crypto.timingSafeEqual(Buffer.from(computedHash, 'hex'), Buffer.from(originalHash, 'hex'));
+        } catch (e) {
+            return computedHash === originalHash;
+        }
+    }
+    // Seamless backward compatibility with existing legacy plain-text passwords
+    return password === storedPassword;
+}
+
+function generateSessionToken() {
+    return crypto.randomBytes(32).toString('hex');
+}
+
+// --- PERSISTENT CONVERSATION DATABASE STORAGE ---
+const conversationsFilePath = path.join(__dirname, 'conversations.json');
+let inMemoryConversationsCache = null;
+
+function getConversations() {
+    try {
+        if (!fs.existsSync(conversationsFilePath)) {
+            fs.writeFileSync(conversationsFilePath, '[]', 'utf8');
+        }
+        const content = fs.readFileSync(conversationsFilePath, 'utf8');
+        const parsed = JSON.parse(content || '[]');
+        if (Array.isArray(parsed)) {
+            inMemoryConversationsCache = parsed;
+            return parsed;
+        }
+    } catch (e) {
+        console.error("Error reading conversations.json:", e);
+    }
+    if (inMemoryConversationsCache && Array.isArray(inMemoryConversationsCache)) return inMemoryConversationsCache;
+    return [];
+}
+
+function saveConversations(convs) {
+    inMemoryConversationsCache = Array.isArray(convs) ? convs : [];
+    try {
+        fs.writeFileSync(conversationsFilePath, JSON.stringify(inMemoryConversationsCache, null, 2), 'utf8');
+    } catch (e) {
+        console.error("Error saving conversations.json:", e);
+    }
+}
+
+function generateChatTitle(query) {
+    if (!query || typeof query !== 'string') return 'Legal Consultation';
+    const clean = query.trim().slice(0, 100);
+    const lower = clean.toLowerCase();
+
+    if (lower.includes('deposit') || lower.includes('landlord') || lower.includes('rent') || lower.includes('tenant') || lower.includes('kiraya')) return 'Tenancy & Deposit Dispute';
+    if (lower.includes('salary') || lower.includes('wage') || lower.includes('employer') || lower.includes('boss') || lower.includes('tankhah')) return 'Salary & Employment Rights';
+    if (lower.includes('cyber') || lower.includes('fraud') || lower.includes('otp') || lower.includes('1930') || lower.includes('scam') || lower.includes('bank fraud')) return 'Cyber Fraud Recovery';
+    if (lower.includes('consumer') || lower.includes('refund') || lower.includes('defective') || lower.includes('warranty') || lower.includes('grahan')) return 'Consumer Protection Claim';
+    if (lower.includes('fir') || lower.includes('police') || lower.includes('thana') || lower.includes('arrest') || lower.includes('zero fir')) return 'Police FIR & Arrest Rights';
+    if (lower.includes('bail') || lower.includes('438') || lower.includes('482') || lower.includes('jamanat')) return 'Bail & Liberty Application';
+    if (lower.includes('cheque') || lower.includes('138') || lower.includes('bounce')) return 'Cheque Dishonor Section 138';
+    if (lower.includes('challan') || lower.includes('traffic') || lower.includes('fine') || lower.includes('rto')) return 'Traffic Fine & Challan Contest';
+    if (lower.includes('divorce') || lower.includes('maintenance') || lower.includes('125') || lower.includes('144 bnss') || lower.includes('kharcha')) return 'Family Maintenance & Rights';
+    if (lower.includes('property') || lower.includes('stay') || lower.includes('injunction') || lower.includes('kabza')) return 'Property Dispute & Injunction';
+    if (lower.includes('tourist') || lower.includes('foreigner') || lower.includes('visa')) return 'Foreign Tourist Rights in India';
+    
+    const words = clean.split(/\s+/).slice(0, 5).join(' ');
+    return words.length > 3 ? words : 'Legal Consultation';
+}
+
+// --- USER FEEDBACK DATABASE STORAGE ---
+const feedbackFilePath = path.join(__dirname, 'feedback.json');
+let inMemoryFeedbackCache = null;
+
+function getFeedback() {
+    try {
+        if (!fs.existsSync(feedbackFilePath)) {
+            fs.writeFileSync(feedbackFilePath, '[]', 'utf8');
+        }
+        const content = fs.readFileSync(feedbackFilePath, 'utf8');
+        const parsed = JSON.parse(content || '[]');
+        if (Array.isArray(parsed)) {
+            inMemoryFeedbackCache = parsed;
+            return parsed;
+        }
+    } catch (e) {
+        console.error("Error reading feedback.json:", e);
+    }
+    if (inMemoryFeedbackCache && Array.isArray(inMemoryFeedbackCache)) return inMemoryFeedbackCache;
+    return [];
+}
+
+function saveFeedback(feedbackList) {
+    inMemoryFeedbackCache = Array.isArray(feedbackList) ? feedbackList : [];
+    try {
+        fs.writeFileSync(feedbackFilePath, JSON.stringify(inMemoryFeedbackCache, null, 2), 'utf8');
+    } catch (e) {
+        console.error("Error saving feedback.json:", e);
+    }
 }
 
 // --- AUTHENTICATION & EMAIL SYSTEM ---
@@ -729,10 +1012,13 @@ function handleAuthAPI(req, res) {
 
             // If direct signup/register requested
             if (url === '/api/auth/register' || url === '/api/auth/signup') {
+                const sessionToken = generateSessionToken();
                 const newUser = {
                     name: name,
                     email: email,
-                    password: pass || 'Nyayi@2026',
+                    password: hashPassword(pass || 'Nyayi@2026'),
+                    token: sessionToken,
+                    tokenExpiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
                     memories: [],
                     createdAt: new Date().toISOString(),
                     lastLogin: new Date().toISOString()
@@ -740,7 +1026,7 @@ function handleAuthAPI(req, res) {
                 users.push(newUser);
                 saveUsers(users);
                 console.log(`[USER REGISTERED DIRECT] User ${name} (${email}) created and saved to users.json. Total users: ${users.length}`);
-                return sendJSON(200, { success: true, name: name, email: email, message: 'Account created successfully!' });
+                return sendJSON(200, { success: true, name: name, email: email, token: sessionToken, message: 'Account created successfully!' });
             }
 
             const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -776,10 +1062,13 @@ function handleAuthAPI(req, res) {
                     const userName = json.name || email.split('@')[0];
                     const userPass = json.pass || json.password || 'Nyayi@2026';
                     let existingIdx = users.findIndex(u => u.email.toLowerCase() === email);
+                    const sessionToken = generateSessionToken();
                     const userData = {
                         name: userName,
                         email: email,
-                        password: userPass,
+                        password: hashPassword(userPass),
+                        token: sessionToken,
+                        tokenExpiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
                         memories: (existingIdx >= 0 && Array.isArray(users[existingIdx].memories)) ? users[existingIdx].memories : [],
                         createdAt: (existingIdx >= 0 && users[existingIdx].createdAt) ? users[existingIdx].createdAt : new Date().toISOString(),
                         lastLogin: new Date().toISOString()
@@ -791,7 +1080,7 @@ function handleAuthAPI(req, res) {
                     }
                     saveUsers(users);
                     console.log(`[USER REGISTERED FALLBACK] User ${userName} (${email}) saved to users.json.`);
-                    return sendJSON(200, { success: true, name: userName, email });
+                    return sendJSON(200, { success: true, name: userName, email, token: sessionToken });
                 }
                 return sendJSON(400, { error: 'Wrong or expired verification code! Please check your code or resend.' });
             }
@@ -805,11 +1094,14 @@ function handleAuthAPI(req, res) {
             const existingIdx = users.findIndex(u => u.email.toLowerCase() === email);
             const userName = (stored && stored.name) || json.name || email.split('@')[0];
             const userPass = (stored && stored.pass) || json.pass || json.password || 'Nyayi@2026';
+            const sessionToken = generateSessionToken();
 
             const userData = {
                 name: userName,
                 email: email,
-                password: userPass,
+                password: hashPassword(userPass),
+                token: sessionToken,
+                tokenExpiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
                 memories: (existingIdx >= 0 && Array.isArray(users[existingIdx].memories)) ? users[existingIdx].memories : [],
                 createdAt: (existingIdx >= 0 && users[existingIdx].createdAt) ? users[existingIdx].createdAt : new Date().toISOString(),
                 lastLogin: new Date().toISOString()
@@ -823,8 +1115,8 @@ function handleAuthAPI(req, res) {
             saveUsers(users);
             if (stored) otpStore.delete(email);
 
-            console.log(`[USER REGISTERED] User ${userName} (${email}) created and password stored. Total users: ${users.length}`);
-            return sendJSON(200, { success: true, name: userName, email });
+            console.log(`[USER REGISTERED] User ${userName} (${email}) created and password hashed with PBKDF2. Total users: ${users.length}`);
+            return sendJSON(200, { success: true, name: userName, email, token: sessionToken });
         }
 
         // 3. Login - Strictly authenticate registered users
@@ -844,18 +1136,23 @@ function handleAuthAPI(req, res) {
             }
 
             const storedPass = user.password || user.pass || '';
-            if (storedPass && storedPass !== pass) {
+            if (!verifyPassword(pass, storedPass)) {
                 return sendJSON(400, { error: 'Incorrect password. Please verify and try again, or reset your password.' });
             }
-            if (!storedPass) {
-                user.password = pass;
+
+            // Seamless migration: upgrade legacy plain-text password to PBKDF2 hash on first login
+            if (!storedPass.startsWith('pbkdf2$10000$')) {
+                user.password = hashPassword(pass);
             }
 
+            const sessionToken = generateSessionToken();
+            user.token = sessionToken;
+            user.tokenExpiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
             user.lastLogin = new Date().toISOString();
             saveUsers(users);
 
-            console.log(`[LOGIN SUCCESS] User ${user.name} (${user.email}) logged in.`);
-            return sendJSON(200, { success: true, name: user.name, email: user.email });
+            console.log(`[LOGIN SUCCESS] User ${user.name} (${user.email}) logged in with verified credentials.`);
+            return sendJSON(200, { success: true, name: user.name, email: user.email, token: sessionToken });
         }
 
         // 3.1 Google OAuth - Save Google user to users.json
@@ -948,12 +1245,12 @@ function handleAuthAPI(req, res) {
                 return sendJSON(400, { error: 'Account not found. Please sign up.' });
             }
 
-            user.password = newPassword;
+            user.password = hashPassword(newPassword);
             user.updatedAt = new Date().toISOString();
             saveUsers(users);
             otpStore.delete(email);
 
-            console.log(`[PASSWORD RESET] User ${user.email} updated password successfully.`);
+            console.log(`[PASSWORD RESET] User ${user.email} updated password successfully with PBKDF2.`);
             return sendJSON(200, { success: true, message: 'Password updated successfully! Please login.' });
         }
 
@@ -975,11 +1272,11 @@ function handleAuthAPI(req, res) {
             if (!user) {
                 return sendJSON(404, { error: 'User account not found.' });
             }
-            if (user.password && user.password !== currentPassword) {
+            if (user.password && !verifyPassword(currentPassword, user.password)) {
                 return sendJSON(400, { error: 'Current password does not match.' });
             }
 
-            user.password = newPassword;
+            user.password = hashPassword(newPassword);
             user.updatedAt = new Date().toISOString();
             saveUsers(users);
 
@@ -995,6 +1292,7 @@ function handleAuthAPI(req, res) {
             }
             const name = (json.name || email.split('@')[0] || 'Google User').trim();
             const avatar = json.avatar || '';
+            const sessionToken = generateSessionToken();
             const users = getUsers();
             let user = users.find(u => u.email === email);
             if (!user) {
@@ -1003,6 +1301,8 @@ function handleAuthAPI(req, res) {
                     email: email,
                     provider: 'google',
                     avatar: avatar,
+                    token: sessionToken,
+                    tokenExpiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
                     memories: [],
                     createdAt: new Date().toISOString(),
                     lastLogin: new Date().toISOString()
@@ -1010,13 +1310,15 @@ function handleAuthAPI(req, res) {
                 users.push(user);
             } else {
                 user.lastLogin = new Date().toISOString();
+                user.token = sessionToken;
+                user.tokenExpiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
                 if (!user.name && name) user.name = name;
                 if (!user.avatar && avatar) user.avatar = avatar;
                 if (!user.provider) user.provider = 'google';
             }
             saveUsers(users);
             console.log(`[GOOGLE AUTH SYNC] User ${user.name} (${user.email}) stored in users.json.`);
-            return sendJSON(200, { success: true, name: user.name, email: user.email, avatar: user.avatar });
+            return sendJSON(200, { success: true, name: user.name, email: user.email, avatar: user.avatar, token: sessionToken });
         }
 
         // 6. GitHub OAuth Exchange
@@ -1025,6 +1327,7 @@ function handleAuthAPI(req, res) {
                 const email = json.email.trim().toLowerCase();
                 const name = (json.name || email.split('@')[0] || 'GitHub User').trim();
                 const avatar = json.avatar || '';
+                const sessionToken = generateSessionToken();
                 const users = getUsers();
                 let user = users.find(u => u.email === email);
                 if (!user) {
@@ -1033,6 +1336,8 @@ function handleAuthAPI(req, res) {
                         email: email,
                         provider: 'github',
                         avatar: avatar,
+                        token: sessionToken,
+                        tokenExpiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
                         memories: [],
                         createdAt: new Date().toISOString(),
                         lastLogin: new Date().toISOString()
@@ -1040,13 +1345,15 @@ function handleAuthAPI(req, res) {
                     users.push(user);
                 } else {
                     user.lastLogin = new Date().toISOString();
+                    user.token = sessionToken;
+                    user.tokenExpiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
                     if (!user.name && name) user.name = name;
                     if (!user.avatar && avatar) user.avatar = avatar;
                     if (!user.provider) user.provider = 'github';
                 }
                 saveUsers(users);
                 console.log(`[GITHUB AUTH SYNC] User ${user.name} (${user.email}) stored in users.json.`);
-                return sendJSON(200, { success: true, name: user.name, email: user.email });
+                return sendJSON(200, { success: true, name: user.name, email: user.email, token: sessionToken });
             }
 
             const code = (json.code || '').trim();
@@ -1165,6 +1472,7 @@ function handleAuthAPI(req, res) {
                 const finalName = ghUser.name || ghUser.login || 'GitHub User';
                 const finalEmail = userEmail || `${ghUser.login || 'user'}@users.noreply.github.com`;
 
+                const sessionToken = generateSessionToken();
                 const users = getUsers();
                 const existing = users.find(u => u.email === finalEmail);
                 if (!existing) {
@@ -1174,11 +1482,15 @@ function handleAuthAPI(req, res) {
                         githubId: ghUser.id,
                         avatar: ghUser.avatar_url,
                         provider: 'github',
+                        token: sessionToken,
+                        tokenExpiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
                         createdAt: new Date().toISOString(),
                         lastLogin: new Date().toISOString()
                     });
                 } else {
                     existing.lastLogin = new Date().toISOString();
+                    existing.token = sessionToken;
+                    existing.tokenExpiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
                     if (ghUser.avatar_url) existing.avatar = ghUser.avatar_url;
                 }
                 saveUsers(users);
@@ -1188,7 +1500,8 @@ function handleAuthAPI(req, res) {
                     success: true,
                     name: finalName,
                     email: finalEmail,
-                    avatar: ghUser.avatar_url
+                    avatar: ghUser.avatar_url,
+                    token: sessionToken
                 });
             } catch (err) {
                 console.error('[GITHUB AUTH EXCEPTION]', err);
@@ -1225,6 +1538,65 @@ function handleAuthAPI(req, res) {
                 serverTime: new Date().toISOString(),
                 downloadLink: `https://ai.nyayi.in/api/admin/users?key=${encodeURIComponent(ADMIN_SECRET)}&download=true`,
                 users: users
+            });
+        }
+
+        // 7. Admin Real-Time System Metrics & Health Endpoint
+        if (url === '/api/admin/metrics' && req.method === 'GET') {
+            const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+            const key = parsedUrl.searchParams.get('key');
+            const ADMIN_SECRET = process.env.ADMIN_SECRET || 'nyayi_farhan_2026';
+
+            if (key !== ADMIN_SECRET) {
+                return sendJSON(403, { 
+                    error: 'Access Denied. Please provide valid admin key, e.g. ?key=nyayi_farhan_2026' 
+                });
+            }
+
+            const users = getUsers();
+            const convs = getConversations();
+            const fbs = getFeedback();
+
+            const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+            const activeToday = users.filter(u => u.lastLogin && new Date(u.lastLogin).getTime() > oneDayAgo).length;
+
+            let totalMessages = 0;
+            convs.forEach(c => {
+                if (Array.isArray(c.messages)) totalMessages += c.messages.length;
+            });
+
+            const avgRating = fbs.length > 0 
+                ? (fbs.reduce((acc, f) => acc + (f.rating || 5), 0) / fbs.length).toFixed(2)
+                : '5.00';
+
+            return sendJSON(200, {
+                status: 'operational',
+                system: {
+                    nodeVersion: process.version,
+                    uptimeSeconds: Math.floor(process.uptime()),
+                    uptimeFormatted: `${Math.floor(process.uptime() / 3600)}h ${Math.floor((process.uptime() % 3600) / 60)}m`,
+                    memoryUsageMB: Math.round(process.memoryUsage().heapUsed / 1024 / 1024)
+                },
+                users: {
+                    total: users.length,
+                    activeLast24Hours: activeToday,
+                    providers: {
+                        email: users.filter(u => !u.provider || u.provider === 'email').length,
+                        google: users.filter(u => u.provider === 'google').length,
+                        github: users.filter(u => u.provider === 'github').length
+                    }
+                },
+                conversations: {
+                    totalConversations: convs.length,
+                    totalMessagesExchanged: totalMessages
+                },
+                feedback: {
+                    totalSubmissions: fbs.length,
+                    averageRating: parseFloat(avgRating),
+                    recent: fbs.slice(0, 10)
+                },
+                recentSystemErrors: recentErrors.slice(0, 20),
+                serverTime: new Date().toISOString()
             });
         }
 
@@ -1306,6 +1678,205 @@ function handleUserAPI(req, res) {
         return sendJSON(404, { error: 'User endpoint not found' });
     });
 }
+
+// --- CONVERSATIONS & PERSISTENT CHAT HISTORY API ---
+function handleConversationsAPI(req, res) {
+    const sendJSON = (statusCode, data) => {
+        res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(data));
+    };
+
+    const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    const pathname = parsedUrl.pathname;
+    const method = req.method;
+
+    // Helper to extract email from query, headers, or token
+    const getAuthEmail = (bodyJson = {}) => {
+        let email = (parsedUrl.searchParams.get('email') || '').trim().toLowerCase();
+        if (email) return email;
+        if (bodyJson && bodyJson.userEmail) return bodyJson.userEmail.trim().toLowerCase();
+        if (bodyJson && bodyJson.email) return bodyJson.email.trim().toLowerCase();
+
+        const authHeader = req.headers.authorization || '';
+        if (authHeader.startsWith('Bearer ')) {
+            const token = authHeader.slice(7).trim();
+            const users = getUsers();
+            const matched = users.find(u => u.token === token && (!u.tokenExpiresAt || u.tokenExpiresAt > Date.now()));
+            if (matched) return matched.email.toLowerCase();
+        }
+        return '';
+    };
+
+    // 1. GET /api/conversations (List user's consultations)
+    if (pathname === '/api/conversations' && method === 'GET') {
+        const email = getAuthEmail();
+        if (!email) {
+            return sendJSON(200, { success: true, conversations: [] });
+        }
+
+        const allConvs = getConversations();
+        const userConvs = allConvs
+            .filter(c => c && c.userEmail && c.userEmail.toLowerCase() === email)
+            .map(c => {
+                const lastMsg = (Array.isArray(c.messages) && c.messages.length > 0) ? c.messages[c.messages.length - 1] : null;
+                const preview = c.preview || (lastMsg ? (lastMsg.text || lastMsg.content || '').slice(0, 75) : 'Legal consultation...');
+                return {
+                    id: c.id,
+                    title: c.title || 'Legal Consultation',
+                    pinned: !!c.pinned,
+                    preview: preview,
+                    createdAt: c.createdAt || Date.now(),
+                    updatedAt: c.updatedAt || Date.now(),
+                    messageCount: Array.isArray(c.messages) ? c.messages.length : 0
+                };
+            })
+            .sort((a, b) => {
+                if (a.pinned && !b.pinned) return -1;
+                if (!a.pinned && b.pinned) return 1;
+                return (b.updatedAt || 0) - (a.updatedAt || 0);
+            });
+
+        return sendJSON(200, { success: true, conversations: userConvs });
+    }
+
+    // 2. GET /api/conversations/:id (Get full conversation details)
+    if (pathname.startsWith('/api/conversations/') && method === 'GET') {
+        const id = pathname.replace('/api/conversations/', '').trim();
+        if (!id) return sendJSON(400, { error: 'Conversation ID required' });
+
+        const allConvs = getConversations();
+        const conv = allConvs.find(c => c.id === id);
+        if (!conv) {
+            return sendJSON(404, { error: 'Conversation not found' });
+        }
+
+        return sendJSON(200, { success: true, conversation: conv });
+    }
+
+    // Read request body for POST, PATCH, DELETE
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+        let json = {};
+        try { if (body) json = JSON.parse(body); } catch (e) {}
+
+        const email = getAuthEmail(json);
+
+        // 3. POST /api/conversations (Save/sync consultation)
+        if (pathname === '/api/conversations' && method === 'POST') {
+            const id = json.id || ('chat_' + Date.now());
+            const userEmail = email || (json.userEmail || '').trim().toLowerCase();
+            if (!userEmail) {
+                return sendJSON(400, { error: 'User email is required to store persistent conversation' });
+            }
+
+            const allConvs = getConversations();
+            const existingIdx = allConvs.findIndex(c => c.id === id);
+
+            const initialQuery = (Array.isArray(json.messages) && json.messages.length > 0)
+                ? (json.messages[0].text || json.messages[0].content || '')
+                : '';
+            const title = json.title || (existingIdx >= 0 ? allConvs[existingIdx].title : generateChatTitle(initialQuery));
+
+            const conversationData = {
+                id: id,
+                userEmail: userEmail,
+                title: title,
+                pinned: typeof json.pinned === 'boolean' ? json.pinned : (existingIdx >= 0 ? !!allConvs[existingIdx].pinned : false),
+                createdAt: json.createdAt || (existingIdx >= 0 ? allConvs[existingIdx].createdAt : Date.now()),
+                updatedAt: Date.now(),
+                messages: Array.isArray(json.messages) ? json.messages : (existingIdx >= 0 ? allConvs[existingIdx].messages : [])
+            };
+
+            if (existingIdx >= 0) {
+                allConvs[existingIdx] = conversationData;
+            } else {
+                allConvs.unshift(conversationData);
+            }
+
+            saveConversations(allConvs);
+            console.log(`[CONVERSATION SAVED] "${conversationData.title}" (${id}) for ${userEmail}. Messages: ${conversationData.messages.length}`);
+            return sendJSON(200, { success: true, conversation: conversationData });
+        }
+
+        // 4. DELETE /api/conversations/:id
+        if (pathname.startsWith('/api/conversations/') && (method === 'DELETE' || (method === 'POST' && json.action === 'delete'))) {
+            const id = pathname.replace('/api/conversations/', '').trim();
+            if (!id) return sendJSON(400, { error: 'Conversation ID required' });
+
+            const allConvs = getConversations();
+            const filtered = allConvs.filter(c => c.id !== id);
+            saveConversations(filtered);
+            console.log(`[CONVERSATION DELETED] Removed ${id}. Remaining: ${filtered.length}`);
+            return sendJSON(200, { success: true, message: 'Conversation deleted successfully' });
+        }
+
+        // 5. PATCH /api/conversations/:id (Rename or toggle pin)
+        if (pathname.startsWith('/api/conversations/') && (method === 'PATCH' || method === 'POST')) {
+            const id = pathname.replace('/api/conversations/', '').trim();
+            const allConvs = getConversations();
+            const conv = allConvs.find(c => c.id === id);
+            if (!conv) return sendJSON(404, { error: 'Conversation not found' });
+
+            if (typeof json.title === 'string' && json.title.trim()) {
+                conv.title = json.title.trim();
+            }
+            if (typeof json.pinned === 'boolean') {
+                conv.pinned = json.pinned;
+            }
+            conv.updatedAt = Date.now();
+            saveConversations(allConvs);
+            return sendJSON(200, { success: true, conversation: conv });
+        }
+
+        sendJSON(404, { error: 'Endpoint not found' });
+    });
+}
+
+// --- USER FEEDBACK API ---
+function handleFeedbackAPI(req, res) {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+        let json = {};
+        try { if (body) json = JSON.parse(body); } catch (e) {}
+
+        const sendJSON = (statusCode, data) => {
+            res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(data));
+        };
+
+        const rating = parseInt(json.rating, 10) || 5;
+        const feedbackText = (json.feedback || json.comment || json.text || '').trim();
+        const userEmail = (json.userEmail || json.email || '').trim().toLowerCase();
+        const conversationId = (json.conversationId || '').trim();
+
+        const feedbackEntry = {
+            id: 'fb_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            rating: Math.min(Math.max(rating, 1), 5),
+            feedback: feedbackText,
+            userEmail: userEmail || 'anonymous',
+            conversationId: conversationId || null,
+            createdAt: new Date().toISOString()
+        };
+
+        const allFb = getFeedback();
+        allFb.unshift(feedbackEntry);
+        saveFeedback(allFb);
+
+        console.log(`[USER FEEDBACK RECORDED] ${feedbackEntry.rating} Stars from ${feedbackEntry.userEmail}: "${feedbackEntry.feedback.slice(0, 50)}"`);
+        return sendJSON(200, { success: true, message: 'Thank you for your feedback! It helps improve Nyayi Legal AI.' });
+    });
+}
+
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.error(`\n[PORT CONFLICT] Port ${PORT} is already in use by an existing process.`);
+        console.error(`Run: "npx kill-port ${PORT}" or close the existing node window before restarting.\n`);
+    } else {
+        console.error('Server error:', err);
+    }
+});
 
 server.listen(PORT, () => {
     console.log(`Nyayi Server running on http://localhost:${PORT}`);

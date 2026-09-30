@@ -13,6 +13,7 @@ let user = localStorage.getItem('nyayaUser') || "Citizen";
 let aiLanguage = localStorage.getItem('nyayaLanguage') || 'Multilingual';
 let activeAbortController = null;
 let isGenerating = false;
+let isSending = false;
 
 // Voice Assistant state
 let voiceLang = 'hi-IN';
@@ -100,13 +101,18 @@ const ConversationStore = {
         return new Promise((resolve) => {
             if (!window.indexedDB) {
                 console.warn('IndexedDB not supported, falling back to localStorage');
+                this.syncCloudConversations();
                 resolve(false);
                 return;
             }
             const request = indexedDB.open(this.dbName, this.dbVersion);
-            request.onerror = () => resolve(false);
+            request.onerror = () => {
+                this.syncCloudConversations();
+                resolve(false);
+            };
             request.onsuccess = (e) => {
                 this.db = e.target.result;
+                this.syncCloudConversations();
                 resolve(true);
             };
             request.onupgradeneeded = (e) => {
@@ -117,6 +123,41 @@ const ConversationStore = {
                 }
             };
         });
+    },
+
+    async syncCloudConversations() {
+        const email = localStorage.getItem('nyayi_user_email');
+        if (!email) return;
+        try {
+            const res = await fetch(`/api/conversations?email=${encodeURIComponent(email)}`);
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data && data.success && Array.isArray(data.conversations)) {
+                for (const c of data.conversations) {
+                    const local = await this.get(c.id);
+                    if (!local || (c.updatedAt && c.updatedAt > (local.updatedAt || 0))) {
+                        const detailRes = await fetch(`/api/conversations/${encodeURIComponent(c.id)}?email=${encodeURIComponent(email)}`);
+                        if (detailRes.ok) {
+                            const detailData = await detailRes.json();
+                            if (detailData && detailData.conversation) {
+                                this.saveToStorage(detailData.conversation);
+                                if (this.db) {
+                                    try {
+                                        const tx = this.db.transaction(this.storeName, 'readwrite');
+                                        tx.objectStore(this.storeName).put(detailData.conversation);
+                                    } catch (e) {}
+                                }
+                            }
+                        }
+                    }
+                }
+                if (typeof renderHistoryList === 'function') {
+                    renderHistoryList();
+                }
+            }
+        } catch (err) {
+            console.warn('[Cloud Conversation Sync Notice]:', err);
+        }
     },
 
     async getAll() {
@@ -159,6 +200,14 @@ const ConversationStore = {
 
     async save(chat) {
         this.saveToStorage(chat);
+        const userEmail = localStorage.getItem('nyayi_user_email');
+        if (userEmail) {
+            fetch('/api/conversations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...chat, userEmail })
+            }).catch(e => console.warn('[Cloud sync notice]', e));
+        }
         if (!this.db) return true;
         return new Promise((resolve) => {
             try {
@@ -175,6 +224,12 @@ const ConversationStore = {
 
     async delete(id) {
         this.deleteFromStorage(id);
+        const userEmail = localStorage.getItem('nyayi_user_email');
+        if (userEmail) {
+            fetch('/api/conversations/' + encodeURIComponent(id) + '?email=' + encodeURIComponent(userEmail), {
+                method: 'DELETE'
+            }).catch(e => console.warn('[Cloud delete notice]', e));
+        }
         if (!this.db) return true;
         return new Promise((resolve) => {
             try {
@@ -956,12 +1011,18 @@ function showChatError(message, canRetry = true) {
 // --- 10. CHAT SEND & API SERVICE ---
 async function sendMessage() {
     const input = document.getElementById('userInput');
-    if (!input || isGenerating) return;
+    if (!input || isGenerating || isSending) return;
 
     const message = input.value.trim();
     if (!message && attachedMediaList.length === 0) return;
 
-    // Snapshot attached files & reset tray
+    // Synchronous mutex lock to eliminate duplicate submissions & multi-chat race conditions
+    isSending = true;
+    isGenerating = true;
+    updateSendButtonState(true);
+    showThinkingIndicator();
+
+    // Snapshot attached files & reset composer input immediately
     const currentAttachments = [...attachedMediaList];
     attachedMediaList = [];
     renderAttachmentTray();
@@ -1007,6 +1068,7 @@ async function sendMessage() {
         };
         await ConversationStore.save(newChat);
     }
+    const targetChatId = activeChatId;
 
     // Append User Message with attachments
     appendMessage(displayMessage, 'user', false, currentAttachments);
@@ -1018,22 +1080,17 @@ async function sendMessage() {
     });
 
     // Update conversation in storage
-    const chatData = await ConversationStore.get(activeChatId) || {
-        id: activeChatId,
+    const chatData = await ConversationStore.get(targetChatId) || {
+        id: targetChatId,
         title: MemoryManager.generateMeaningfulTitle(message || (currentAttachments[0] ? currentAttachments[0].name : 'Document Review')),
         createdAt: Date.now(),
         updatedAt: Date.now(),
         messages: []
     };
-    chatData.messages = currentChatMessages;
+    chatData.messages = [...currentChatMessages];
     chatData.updatedAt = Date.now();
     await ConversationStore.save(chatData);
     await renderHistoryList();
-
-    // Setup Generation State & AbortController
-    isGenerating = true;
-    updateSendButtonState(true);
-    showThinkingIndicator();
 
     activeAbortController = new AbortController();
     const historyPayload = MemoryManager.getContextPayload(currentChatMessages.slice(0, -1), 20);
@@ -1061,14 +1118,25 @@ async function sendMessage() {
         const data = await response.json();
         const replyText = data.reply || "Aapke prashna par kanooni jaankari taiyar nahi ho saki. Kripya punah prayas karein.";
 
-        appendMessage(replyText, 'ai');
-        currentChatMessages.push({ role: 'ai', text: replyText, timestamp: Date.now() });
+        // Only append to DOM if citizen is currently viewing targetChat
+        if (activeChatId === targetChatId) {
+            appendMessage(replyText, 'ai');
+            currentChatMessages.push({ role: 'ai', text: replyText, timestamp: Date.now() });
+        }
 
-        chatData.messages = currentChatMessages;
-        chatData.updatedAt = Date.now();
-        await ConversationStore.save(chatData);
+        // Always safely save response to target consultation
+        const updatedChat = await ConversationStore.get(targetChatId) || chatData;
+        if (activeChatId !== targetChatId) {
+            updatedChat.messages = updatedChat.messages || [];
+            updatedChat.messages.push({ role: 'ai', text: replyText, timestamp: Date.now() });
+        } else {
+            updatedChat.messages = currentChatMessages;
+        }
+        updatedChat.updatedAt = Date.now();
+        await ConversationStore.save(updatedChat);
+        await renderHistoryList();
 
-        if (isVoiceQuery && autoSpeak && !isVoiceMuted) {
+        if (activeChatId === targetChatId && isVoiceQuery && autoSpeak && !isVoiceMuted) {
             const cleanText = replyText.replace(/<[^>]*>/g, '').replace(/[\[\]\*#_]/g, '');
             playTTS(cleanText);
         }
@@ -1080,10 +1148,13 @@ async function sendMessage() {
             console.log('Response generation cancelled by citizen.');
         } else {
             console.error('Chat API Error:', err);
-            showChatError("Nyayi couldn't complete that response. Please check your connection and try again.");
+            if (activeChatId === targetChatId) {
+                showChatError("Nyayi couldn't complete that response. Please check your connection and try again.");
+            }
         }
     } finally {
         isGenerating = false;
+        isSending = false;
         activeAbortController = null;
         updateSendButtonState(false);
     }
@@ -1095,6 +1166,7 @@ function stopGeneration() {
         activeAbortController = null;
     }
     isGenerating = false;
+    isSending = false;
     removeThinkingIndicator();
     updateSendButtonState(false);
 }
@@ -1144,7 +1216,8 @@ function regenerateLastResponse() {
 }
 
 function handleInputKey(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    const sendOnEnter = localStorage.getItem("nyayi_send_enter") !== "false";
+    if (e.key === 'Enter' && !e.shiftKey && sendOnEnter) {
         e.preventDefault();
         sendMessage();
     }
@@ -1195,7 +1268,8 @@ async function renderHistoryList() {
         items.forEach(c => {
             const isActive = c.id === activeChatId ? ' active' : '';
             const titleEsc = MessageRenderer.escapeHtml(c.title || 'Legal Consultation');
-            const previewEsc = MessageRenderer.escapeHtml(c.preview || 'Legal inquiry...');
+            const lastMsgText = (c.messages && c.messages.length > 0) ? c.messages[c.messages.length - 1].text : '';
+            const previewEsc = MessageRenderer.escapeHtml(c.preview || (lastMsgText ? lastMsgText.slice(0, 70) : '') || 'Legal consultation...');
             const pinIcon = c.pinned ? '<i class="fa-solid fa-thumbtack" style="color:#f59e0b; font-size:11px; margin-right:5px;" title="Pinned"></i>' : '';
             out += `
                 <div class="history-item${isActive}" onclick="openChat('${c.id}')">
@@ -1257,6 +1331,7 @@ async function filterHistory(query) {
 }
 
 async function openChat(id) {
+    stopGeneration();
     const chat = await ConversationStore.get(id);
     if (!chat) return;
 
@@ -1305,6 +1380,7 @@ async function deleteChat(id) {
 }
 
 function startNewChat() {
+    stopGeneration();
     activeChatId = null;
     localStorage.removeItem('nyayi_active_chat_id');
     currentChatMessages = [];
@@ -1408,12 +1484,22 @@ document.addEventListener('click', (e) => {
 
 async function shareActiveChat() {
     toggleChatMenu();
-    let textToShare = "Nyayi Legal Consultation:\n";
+    let textToShare = "⚖️ NYAYI (न्यायी) — Indian Legal Advisory Consultation\n";
+    if (activeChatId) {
+        const chat = await ConversationStore.get(activeChatId);
+        if (chat && chat.title) textToShare += `Topic: ${chat.title}\n`;
+    }
+    textToShare += `Date: ${new Date().toLocaleDateString('en-IN')}\n\n`;
+
     if (currentChatMessages.length > 0) {
-        const lastMsg = currentChatMessages[currentChatMessages.length - 1];
-        textToShare += `Summary: ${lastMsg.text.slice(0, 300)}...\n\nAccess on: https://ai.nyayi.in`;
+        currentChatMessages.forEach(m => {
+            const sender = m.role === 'user' ? 'Citizen' : 'Nyayi AI';
+            const cleanText = m.text.replace(/<[^>]*>/g, '').replace(/[#\*`]/g, '').trim();
+            textToShare += `[${sender}]:\n${cleanText}\n\n`;
+        });
+        textToShare += `Verified on Nyayi Legal Intelligence: https://ai.nyayi.in`;
     } else {
-        textToShare = "Consult Indian Law, BNS 2023 & Citizen Rights on Nyayi AI: https://ai.nyayi.in";
+        textToShare += "Consult Indian Law, BNS 2023 & Citizen Rights on Nyayi AI: https://ai.nyayi.in";
     }
 
     if (navigator.share) {
@@ -1423,9 +1509,9 @@ async function shareActiveChat() {
         } catch (err) {}
     }
     navigator.clipboard.writeText(textToShare).then(() => {
-        alert("Consultation summary link copied to clipboard!");
+        alert("Consultation transcript copied to clipboard!");
     }).catch(() => {
-        prompt("Copy consultation link:", textToShare);
+        prompt("Copy consultation text:", textToShare);
     });
 }
 
@@ -1502,6 +1588,22 @@ function setFeedbackRating(n) {
 function submitFeedback() {
     const alertBox = document.getElementById('feedbackAlert');
     const text = document.getElementById('feedbackText');
+    const comment = text ? text.value.trim() : '';
+    const userEmail = localStorage.getItem('nyayi_user_email') || '';
+
+    // Asynchronously send feedback to backend API
+    fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            rating: selectedRating,
+            feedback: comment,
+            userEmail: userEmail,
+            conversationId: activeChatId || null,
+            timestamp: Date.now()
+        })
+    }).catch(err => console.warn('[Feedback sync notice]:', err));
+
     if (alertBox) {
         alertBox.style.display = 'block';
         alertBox.style.background = 'rgba(16,185,129,0.15)';
@@ -2799,33 +2901,6 @@ async function handleChangePassword() {
 }
 
 // --- 17. SETTINGS ENHANCEMENTS ---
-function switchSettingsTab(tabId) {
-    document.querySelectorAll(".settings-tab").forEach(tab => tab.classList.remove("active"));
-    document.querySelectorAll(".settings-pane").forEach(pane => pane.classList.remove("active"));
-    
-    const clickedTab = Array.from(document.querySelectorAll(".settings-tab")).find(tab => tab.getAttribute("onclick").includes(tabId));
-    if (clickedTab) clickedTab.classList.add("active");
-    
-    const pane = document.getElementById("settings-" + tabId);
-    if (pane) pane.classList.add("active");
-}
-
-function setSpecificTheme(theme) {
-    document.querySelectorAll(".theme-btn").forEach(btn => btn.classList.remove("active"));
-    const btn = document.getElementById(theme === "dark" ? "themeBtnDark" : "themeBtnLight");
-    if (btn) btn.classList.add("active");
-    
-    if (theme === "light") {
-        document.body.classList.add("light-mode");
-    } else {
-        document.body.classList.remove("light-mode");
-    }
-    
-    localStorage.setItem("nyayi_theme", theme);
-    const icon = document.getElementById("themeIcon");
-    if (icon) icon.className = theme === "light" ? "fa-solid fa-sun" : "fa-solid fa-moon";
-}
-
 function exportData() {
     ConversationStore.getAll().then(data => {
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
@@ -2949,15 +3024,6 @@ saveSettings = function() {
     banner.innerHTML = '<i class="fa-solid fa-check"></i> Preferences Saved Successfully!';
     document.body.appendChild(banner);
     setTimeout(() => { banner.remove(); }, 2500);
-};
-
-// Fix for handleInputKey
-handleInputKey = function(e) {
-    const sendOnEnter = localStorage.getItem("nyayi_send_enter") !== "false";
-    if (e.key === "Enter" && !e.shiftKey && sendOnEnter) {
-        e.preventDefault();
-        sendMessage();
-    }
 };
 
 // ResizeObserver for #chat-box
