@@ -2152,26 +2152,33 @@ function selectBestVoice(voices, langCode) {
 }
 
 let ttsKeepAliveTimer = null;
+let activeTtsAudio = null;
 
-function playTTS(text, onStart, onEnd) {
-    if (!('speechSynthesis' in window)) {
-        if (onEnd) onEnd();
-        return;
+function stopAnyPlayingTTS() {
+    if (activeTtsAudio) {
+        try {
+            activeTtsAudio.pause();
+            activeTtsAudio.currentTime = 0;
+            activeTtsAudio.src = '';
+        } catch(e) {}
+        activeTtsAudio = null;
     }
-
+    if (window.speechSynthesis) {
+        try {
+            window.speechSynthesis.cancel();
+        } catch(e) {}
+    }
     if (ttsKeepAliveTimer) {
         clearInterval(ttsKeepAliveTimer);
         ttsKeepAliveTimer = null;
     }
+}
 
-    // Unpause if stuck
-    if (window.speechSynthesis.paused) {
-        window.speechSynthesis.resume();
-    }
-    window.speechSynthesis.cancel();
+function playTTS(text, onStart, onEnd) {
+    stopAnyPlayingTTS();
 
     // Clean text: strip markdown links to just anchor text, remove markdown symbols
-    let cleanText = text
+    let cleanText = (text || '')
         .replace(/<[^>]*>/g, ' ')
         .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
         .replace(/[#\*_~\x60>]/g, ' ')
@@ -2196,84 +2203,111 @@ function playTTS(text, onStart, onEnd) {
             .replace(/\bCPC\b/gi, 'सी.पी.सी.');
     }
 
-    const utterance = new SpeechSynthesisUtterance(cleanText.slice(0, 1500));
-    const isMale = (localStorage.getItem('nyayi_voice_gender') || 'female') === 'male';
-    utterance.lang = detectedLang;
-    utterance.rate = detectedLang.startsWith('hi') ? 0.90 : 0.96;
-    utterance.pitch = isMale ? 0.92 : 1.02;
-
-    let spoken = false;
     let finished = false;
-
-    const cleanup = () => {
-        if (ttsKeepAliveTimer) {
-            clearInterval(ttsKeepAliveTimer);
-            ttsKeepAliveTimer = null;
-        }
-        window.speechSynthesis.onvoiceschanged = null;
-    };
-
     const handleEnd = () => {
         if (finished) return;
         finished = true;
-        cleanup();
+        stopAnyPlayingTTS();
         if (onEnd) onEnd();
     };
 
-    utterance.onstart = () => {
-        if (onStart) onStart();
-        // Chrome keep-alive bug fix: periodically pulse pause/resume to prevent 15s freeze
-        ttsKeepAliveTimer = setInterval(() => {
-            if (!window.speechSynthesis.speaking) {
-                cleanup();
-            } else {
-                window.speechSynthesis.pause();
-                window.speechSynthesis.resume();
+    const tryNativeSpeechSynthesisFallback = () => {
+        if (!('speechSynthesis' in window)) {
+            handleEnd();
+            return;
+        }
+
+        setTimeout(() => {
+            if (finished) return;
+            try {
+                if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+                window.speechSynthesis.cancel();
+            } catch(e) {}
+
+            const utterance = new SpeechSynthesisUtterance(cleanText.slice(0, 1000));
+            const isMale = (localStorage.getItem('nyayi_voice_gender') || 'female') === 'male';
+            utterance.lang = detectedLang;
+            utterance.rate = detectedLang.startsWith('hi') ? 0.90 : 0.96;
+            utterance.pitch = isMale ? 0.92 : 1.02;
+
+            utterance.onstart = () => {
+                if (onStart && !finished) onStart();
+                ttsKeepAliveTimer = setInterval(() => {
+                    if (!window.speechSynthesis.speaking) {
+                        if (ttsKeepAliveTimer) { clearInterval(ttsKeepAliveTimer); ttsKeepAliveTimer = null; }
+                    } else {
+                        window.speechSynthesis.pause();
+                        window.speechSynthesis.resume();
+                    }
+                }, 8000);
+            };
+
+            utterance.onend = handleEnd;
+            utterance.onerror = (e) => {
+                console.warn('[Native TTS Error]', e);
+                handleEnd();
+            };
+
+            const voices = window.speechSynthesis.getVoices();
+            if (voices.length > 0) {
+                const best = selectBestVoice(voices, detectedLang);
+                if (best) utterance.voice = best;
             }
-        }, 8000);
+
+            try {
+                window.speechSynthesis.speak(utterance);
+            } catch(err) {
+                console.error('[SpeechSynthesis speak error]', err);
+                handleEnd();
+            }
+        }, 50);
     };
 
-    utterance.onend = handleEnd;
-    utterance.onerror = (e) => {
-        console.warn('[TTS Error]', e);
+    // Primary Engine: /api/tts streaming proxy
+    // Google TTS provides clear human audio across all platforms without silent driver dropouts
+    const ttsLang = detectedLang.startsWith('hi') ? 'hi' : 'en';
+    const audioUrl = `/api/tts?text=${encodeURIComponent(cleanText.slice(0, 700))}&lang=${encodeURIComponent(ttsLang)}&t=${Date.now()}`;
+
+    let audioStarted = false;
+    const audio = new Audio();
+    activeTtsAudio = audio;
+    audio.preload = 'auto';
+
+    audio.onplay = () => {
+        audioStarted = true;
+        if (onStart && !finished) onStart();
+    };
+
+    audio.onended = () => {
         handleEnd();
     };
 
-    const applyVoiceAndSpeak = () => {
-        if (spoken) return;
-        spoken = true;
-        window.speechSynthesis.onvoiceschanged = null;
-
-        const voices = window.speechSynthesis.getVoices();
-        if (voices.length > 0) {
-            const best = selectBestVoice(voices, detectedLang);
-            if (best) utterance.voice = best;
-        }
-
-        try {
-            window.speechSynthesis.speak(utterance);
-        } catch(err) {
-            console.error('[TTS speak failed]', err);
+    audio.onerror = (err) => {
+        console.warn('[Server TTS Audio Error, falling back to Native TTS]', err);
+        if (!audioStarted && !finished) {
+            tryNativeSpeechSynthesisFallback();
+        } else {
             handleEnd();
         }
     };
 
-    if (window.speechSynthesis.getVoices().length > 0) {
-        applyVoiceAndSpeak();
-    } else {
-        window.speechSynthesis.onvoiceschanged = applyVoiceAndSpeak;
-        setTimeout(applyVoiceAndSpeak, 250);
+    audio.src = audioUrl;
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+            console.warn('[Audio play blocked/failed, trying Native TTS]', err);
+            if (!audioStarted && !finished) {
+                tryNativeSpeechSynthesisFallback();
+            } else {
+                handleEnd();
+            }
+        });
     }
 }
 
 function speakMessage(btn, text) {
-    if (!('speechSynthesis' in window)) {
-        alert("Aapke browser me text-to-speech support uplabdh nahi hai.");
-        return;
-    }
-
-    if (window.speechSynthesis.speaking) {
-        window.speechSynthesis.cancel();
+    if (activeTtsAudio || (window.speechSynthesis && window.speechSynthesis.speaking)) {
+        stopAnyPlayingTTS();
         if (btn) btn.innerHTML = '<i class="fa-solid fa-volume-high"></i> Listen';
         return;
     }
@@ -2318,6 +2352,7 @@ let isVoiceSpeaking = false;
 isVoiceMuted = false;
 let showVoiceSubtitles = localStorage.getItem('nyayi_voice_subtitles') === 'true';
 let voiceAccumulatedTranscript = '';
+let latestVoiceCapturedText = '';
 let voiceSilenceTimer = null;
 let lastVoiceAnswerText = '';
 let isRecognitionRunning = false;
@@ -2443,6 +2478,7 @@ function closeVoiceAssistant() {
     isVoiceSpeaking = false;
     isVoicePaused = false;
     voiceAccumulatedTranscript = '';
+    latestVoiceCapturedText = '';
     voiceCurrentSpokenText = '';
     voiceSpeechStartTime = 0;
 
@@ -2460,9 +2496,7 @@ function closeVoiceAssistant() {
     }
     isRecognitionRunning = false;
 
-    if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-    }
+    stopAnyPlayingTTS();
     stopVoiceAudioVAD();
 
     const overlay = document.getElementById('voiceOverlay');
@@ -2540,8 +2574,8 @@ function startVoiceListening() {
 
         // --- SMART BARGE-IN INTERRUPTION WITH ACOUSTIC ECHO FILTER ---
         if (isVoiceSpeaking) {
-            // Ignore results within first 700ms of TTS start (avoids speaker click / pop)
-            if (Date.now() - voiceSpeechStartTime < 700) return;
+            // Ignore results within first 600ms of TTS start (avoids speaker click / pop)
+            if (Date.now() - voiceSpeechStartTime < 600) return;
 
             let heardWords = '';
             for (let i = e.resultIndex; i < e.results.length; ++i) {
@@ -2561,14 +2595,15 @@ function startVoiceListening() {
             wordsList.forEach(w => {
                 if (voiceCurrentSpokenText.includes(w)) echoCount++;
             });
-            const isSelfEcho = wordsList.length > 0 && (echoCount / wordsList.length) >= 0.55;
+            const isSelfEcho = wordsList.length > 0 && (echoCount / wordsList.length) >= 0.50;
 
             // Only barge-in if it's an explicit command OR distinctly NOT an echo of Nyayi's own speech
             if (isExplicitCommand || (!isSelfEcho && wordsList.length >= 2)) {
                 console.log('[Barge-in] Confirmed user interruption:', heardWords);
-                if (window.speechSynthesis) window.speechSynthesis.cancel();
+                stopAnyPlayingTTS();
                 isVoiceSpeaking = false;
                 voiceAccumulatedTranscript = isExplicitCommand ? '' : heardWords;
+                latestVoiceCapturedText = voiceAccumulatedTranscript;
                 updateVoiceStudioUI('listening');
                 return;
             } else {
@@ -2589,6 +2624,7 @@ function startVoiceListening() {
         }
 
         const displayTranscript = (voiceAccumulatedTranscript + (interim ? ' ' + interim : '')).trim();
+        latestVoiceCapturedText = displayTranscript;
 
         // Update subtle subtitle bar if enabled
         if (showVoiceSubtitles) {
@@ -2604,14 +2640,9 @@ function startVoiceListening() {
         // Reset silence timer on every spoken syllable
         if (voiceSilenceTimer) clearTimeout(voiceSilenceTimer);
 
-        // Adaptive silence detection: give user ample time to pause/think without cutting off
+        // Responsive turn-taking silence detection (1.4s default, 1.2s for complete thoughts)
         if (displayTranscript.length >= 3) {
-            let silenceWait = 2500; // default 2.5s
-            if (displayTranscript.length < 16) {
-                silenceWait = 2800; // 2.8s for short utterances so user isn't cut off
-            } else if (displayTranscript.length > 35) {
-                silenceWait = 1800; // 1.8s for complete thoughts
-            }
+            let silenceWait = displayTranscript.length > 25 ? 1200 : 1400;
 
             voiceSilenceTimer = setTimeout(() => {
                 if (isVoiceActive && !isVoicePaused && !isVoiceThinking && !isVoiceSpeaking) {
@@ -2667,8 +2698,9 @@ function submitVoiceTranscript() {
     }
     isRecognitionRunning = false;
 
-    let userText = voiceAccumulatedTranscript.trim();
+    let userText = (voiceAccumulatedTranscript || latestVoiceCapturedText || '').trim();
     voiceAccumulatedTranscript = '';
+    latestVoiceCapturedText = '';
 
     // Ignore ultra-short noises/filler
     if (!userText || userText.length < 3) {
@@ -2885,9 +2917,10 @@ function handleVoiceOrbTap() {
 
     if (isVoiceSpeaking) {
         // INSTANT 1-TAP BARGE-IN: Tapping the orb while speaking immediately cancels audio & listens
-        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        stopAnyPlayingTTS();
         isVoiceSpeaking = false;
         voiceAccumulatedTranscript = '';
+        latestVoiceCapturedText = '';
         voiceCurrentSpokenText = '';
         updateVoiceStudioUI('listening');
         startVoiceListening();
@@ -2897,7 +2930,8 @@ function handleVoiceOrbTap() {
     if (isVoiceThinking) return;
 
     // If user already spoke something, tapping the orb submits IMMEDIATELY without waiting for silence timer!
-    if (voiceAccumulatedTranscript.trim().length >= 3) {
+    const pendingText = (voiceAccumulatedTranscript || latestVoiceCapturedText || '').trim();
+    if (pendingText.length >= 3) {
         submitVoiceTranscript();
         return;
     }
@@ -2910,7 +2944,7 @@ function toggleVoiceMicMute() {
     if (!isVoiceActive) return;
 
     if (isVoiceSpeaking) {
-        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        stopAnyPlayingTTS();
         isVoiceSpeaking = false;
         updateVoiceStudioUI('listening');
         return;

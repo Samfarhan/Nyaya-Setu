@@ -82,6 +82,11 @@ const server = http.createServer((req, res) => {
     }
 
     // API Routes
+    if (req.url.startsWith('/api/tts') && req.method === 'GET') {
+        handleTTSAPI(req, res);
+        return;
+    }
+
     if (req.url === '/api/chat' && req.method === 'POST') {
         handleChatAPI(req, res);
         return;
@@ -162,6 +167,97 @@ const server = http.createServer((req, res) => {
         }
     });
 });
+
+// --- TTS AUDIO STREAM PROXY (Bulletproof Voice Synthesis for all devices) ---
+function splitTextIntoTTSChunks(text, maxLen = 170) {
+    const clean = text.replace(/<[^>]*>/g, ' ').replace(/[#\*_\x60~]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!clean) return [];
+    if (clean.length <= maxLen) return [clean];
+
+    const chunks = [];
+    const sentences = clean.split(/(?<=[।\.\?!])\s+/);
+    let current = '';
+
+    for (const sentence of sentences) {
+        if (!sentence) continue;
+        if ((current + ' ' + sentence).trim().length <= maxLen) {
+            current = (current + ' ' + sentence).trim();
+        } else {
+            if (current) chunks.push(current);
+            if (sentence.length <= maxLen) {
+                current = sentence;
+            } else {
+                const words = sentence.split(/\s+/);
+                current = '';
+                for (const word of words) {
+                    if ((current + ' ' + word).trim().length <= maxLen) {
+                        current = (current + ' ' + word).trim();
+                    } else {
+                        if (current) chunks.push(current);
+                        current = word;
+                    }
+                }
+            }
+        }
+    }
+    if (current) chunks.push(current);
+    return chunks.slice(0, 4); // Limit to max 4 chunks to keep speech snappy & low latency
+}
+
+function handleTTSAPI(req, res) {
+    try {
+        const parsedUrl = new URL(req.url, 'http://localhost');
+        const text = parsedUrl.searchParams.get('text');
+        const lang = parsedUrl.searchParams.get('lang') || 'hi';
+        if (!text) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Text query parameter is required' }));
+            return;
+        }
+
+        const chunks = splitTextIntoTTSChunks(text, 170);
+        if (chunks.length === 0) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Empty text' }));
+            return;
+        }
+
+        const fetchChunk = (chunkText) => {
+            return new Promise((resolve, reject) => {
+                const targetUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${encodeURIComponent(lang)}&client=tw-ob&q=${encodeURIComponent(chunkText)}`;
+                const clientReq = https.get(targetUrl, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    }
+                }, (ttsRes) => {
+                    const bufs = [];
+                    ttsRes.on('data', d => bufs.push(d));
+                    ttsRes.on('end', () => resolve(Buffer.concat(bufs)));
+                });
+                clientReq.on('error', reject);
+            });
+        };
+
+        Promise.all(chunks.map(fetchChunk)).then((buffers) => {
+            const combined = Buffer.concat(buffers);
+            res.writeHead(200, {
+                'Content-Type': 'audio/mpeg',
+                'Content-Length': combined.length,
+                'Cache-Control': 'public, max-age=86400',
+                'Access-Control-Allow-Origin': '*'
+            });
+            res.end(combined);
+        }).catch((err) => {
+            console.error('[TTS Proxy Fetch Error]', err);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Failed to synthesize speech audio' }));
+        });
+    } catch(err) {
+        console.error('[TTS Handler Error]', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Server error' }));
+    }
+}
 
 // --- AI CHAT HANDLER ---
 function handleChatAPI(req, res) {
